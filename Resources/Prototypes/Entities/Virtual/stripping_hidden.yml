@@ -3,10 +3,11 @@
 
 - type: entity
   id: StrippingHiddenEntity
-  name: hidden entity
+  name: Hidden Entity
   description: There is something in this pocket. #Or maybe they ar... nah... too obvious a joke.
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Sprite
     texture: Interface/VerbIcons/information.svg.192dpi.png
+    netsync: false
     scale: 0.3,0.3

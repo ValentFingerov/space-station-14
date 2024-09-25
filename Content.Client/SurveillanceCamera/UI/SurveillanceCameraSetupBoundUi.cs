@@ -5,16 +5,15 @@ namespace Content.Client.SurveillanceCamera.UI;
 
 public sealed class SurveillanceCameraSetupBoundUi : BoundUserInterface
 {
-    [ViewVariables]
-    private readonly SurveillanceCameraSetupUiKey _type;
-
-    [ViewVariables]
     private SurveillanceCameraSetupWindow? _window;
+    private SurveillanceCameraSetupUiKey _type;
 
-    public SurveillanceCameraSetupBoundUi(EntityUid component, Enum uiKey) : base(component, uiKey)
+    public SurveillanceCameraSetupBoundUi(ClientUserInterfaceComponent component, Enum uiKey) : base(component, uiKey)
     {
         if (uiKey is not SurveillanceCameraSetupUiKey key)
+        {
             return;
+        }
 
         _type = key;
     }
@@ -31,7 +30,7 @@ public sealed class SurveillanceCameraSetupBoundUi : BoundUserInterface
         _window.OpenCentered();
         _window.OnNameConfirm += SendDeviceName;
         _window.OnNetworkConfirm += SendSelectedNetwork;
-        _window.OnClose += Close;
+
     }
 
     private void SendSelectedNetwork(int idx)
@@ -63,8 +62,7 @@ public sealed class SurveillanceCameraSetupBoundUi : BoundUserInterface
 
         if (disposing)
         {
-            _window?.Dispose();
-            _window = null;
+            _window!.Dispose();
         }
     }
 }

@@ -1,31 +1,32 @@
-- type: entity
+﻿- type: entity
   abstract: true
   parent: BaseItem
   id: ShardBase
   description: It's a shard of some unknown material.
   components:
   - type: Sharp
-  - type: Execution
-    doAfterDuration: 4.0
   - type: Sprite
     layers:
       - sprite: Objects/Materials/Shards/shard.rsi
         state: shard1
         map: [ "enum.DamageStateVisualLayers.Base" ]
+    netsync: false
   - type: RandomSprite
     available:
       - enum.DamageStateVisualLayers.Base:
           shard1: ""
+      - enum.DamageStateVisualLayers.Base:
           shard2: ""
+      - enum.DamageStateVisualLayers.Base:
           shard3: ""
+  - type: ItemCooldown
   - type: MeleeWeapon
-    attackRate: 1
+    attackRate: 1.5
     damage:
       types:
         Slash: 3.5
   - type: Item
     sprite: Objects/Materials/Shards/shard.rsi
-    size: Tiny
   - type: CollisionWake
     enabled: false
   - type: Fixtures
@@ -65,7 +66,8 @@
         acts: [ "Destruction" ]
   - type: StepTrigger
     intersectRatio: 0.2
-  - type: PreventableStepTrigger
+    requiredTriggeredSpeed: 0
+  - type: ShoesRequiredStepTrigger
   - type: Slippery
     slipSound:
       path: /Audio/Effects/glass_step.ogg
@@ -87,28 +89,17 @@
   components:
   - type: Sprite
     color: "#bbeeff"
-  - type: ToolRefinable
+  - type: WelderRefinable
     refineResult:
-    - id: SheetGlass1
+    - SheetGlass1
   - type: DamageUserOnTrigger
     damage:
       types:
-        Piercing: 4.5
+        Piercing: 5
   - type: Tag
     tags:
       - GlassShard
       - Trash
-  - type: Extractable
-    grindableSolutionName: shardglass
-  - type: SolutionContainerManager
-    solutions:
-      shardglass:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 5 #Half of the value of regular glass. TECHNICALLY, welding a single shard of glass gives you the full thing back with just 1 sheet, but that is stupid so I am making it half.
-  - type: Construction
-    graph: ShivConstruct
-    node: start
 
 - type: entity
   parent: ShardBase
@@ -118,33 +109,14 @@
   components:
   - type: Sprite
     color: "#96cdef"
-  - type: MeleeWeapon
-    damage:
-      types:
-        Slash: 4.5
-  - type: ToolRefinable
+  - type: WelderRefinable
     refineResult:
-    - id: SheetGlass1
-    - id: PartRodMetal1
+    - SheetGlass1
+    - PartRodMetal1
   - type: DamageUserOnTrigger
     damage:
       types:
-        Piercing: 5.5
-  - type: Tag
-    tags:
-      - ReinforcedGlassShard
-      - Trash
-  - type: Extractable
-    grindableSolutionName: shardrglass
-  - type: SolutionContainerManager
-    solutions:
-      shardrglass:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 5 #I don't care enough to divide all of the reinforced glass materials by 2 because reinforced glass shards are due for removal anyways.
-  - type: Construction
-    graph: ReinforcedShivConstruct
-    node: start
+        Piercing: 10
 
 - type: entity
   parent: ShardBase
@@ -153,36 +125,15 @@
   description: A small piece of plasma glass.
   components:
   - type: Sprite
-    color: "#FF72E7"
-  - type: MeleeWeapon
-    damage:
-      types:
-        Slash: 5.5
-  - type: ToolRefinable
+    color: "#f3b489"
+  - type: WelderRefinable
     refineResult:
-    - id: SheetGlass1
-    - id: SheetPlasma1
+    - SheetGlass1
+    - SheetPlasma1
   - type: DamageUserOnTrigger
     damage:
       types:
-        Piercing: 6.5
-  - type: Tag
-    tags:
-      - PlasmaGlassShard
-      - Trash
-  - type: Extractable
-    grindableSolutionName: shardpglass
-  - type: SolutionContainerManager
-    solutions:
-      shardpglass:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 5
-        - ReagentId: Plasma
-          Quantity: 5
-  - type: Construction
-    graph: PlasmaShivConstruct
-    node: start
+        Piercing: 15
 
 - type: entity
   parent: ShardBase
@@ -192,67 +143,11 @@
   components:
   - type: Sprite
     color: "#8eff7a"
-  - type: MeleeWeapon
-    damage:
-      types:
-        Slash: 4.5
-        Radiation: 2
-  - type: ToolRefinable
+  - type: WelderRefinable
     refineResult:
-    - id: SheetGlass1
-    - id: SheetUranium1
+    - SheetGlass1
+    - SheetUranium1
   - type: DamageUserOnTrigger
     damage:
       types:
-        Piercing: 5
-        Radiation: 2.5
-  - type: Tag
-    tags:
-      - UraniumGlassShard
-      - Trash
-  - type: Extractable
-    grindableSolutionName: sharduglass
-  - type: SolutionContainerManager
-    solutions:
-      sharduglass:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 5
-        - ReagentId: Uranium
-          Quantity: 5
-  - type: Construction
-    graph: UraniumShivConstruct
-    node: start
-
-- type: entity
-  parent: ShardBase
-  id: ShardGlassClockwork
-  name: clockwork glass shard
-  description: A small piece of brass-infused glass.
-  components:
-  - type: Sprite
-    color: "#e0aa36"
-  - type: ToolRefinable
-    refineResult:
-    - id: SheetGlass1
-    - id: SheetBrass1
-  - type: DamageUserOnTrigger
-    damage:
-      types:
-        Piercing: 5
-  - type: Tag
-    tags:
-      - ClockworkGlassShard
-      - Trash
-  - type: Extractable
-    grindableSolutionName: shardcglass
-  - type: SolutionContainerManager
-    solutions:
-      shardcglass:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 5
-        - ReagentId: Zinc
-          Quantity: 1.65
-        - ReagentId: Copper
-          Quantity: 3.35
+        Piercing: 15

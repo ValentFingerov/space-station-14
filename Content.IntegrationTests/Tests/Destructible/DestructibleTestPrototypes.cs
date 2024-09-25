@@ -8,35 +8,27 @@ namespace Content.IntegrationTests.Tests.Destructible
         public const string DestructibleDamageTypeEntityId = "DestructibleTestsDestructibleDamageTypeEntity";
         public const string DestructibleDamageGroupEntityId = "DestructibleTestsDestructibleDamageGroupEntity";
 
-        [TestPrototypes]
-        public const string DamagePrototypes = $@"
+        public static readonly string Prototypes = $@"
 - type: damageType
   id: TestBlunt
-  name: damage-type-blunt
 
 - type: damageType
   id: TestSlash
-  name: damage-type-slash
 
 - type: damageType
   id: TestPiercing
-  name: damage-type-piercing
 
 - type: damageType
   id: TestHeat
-  name: damage-type-heat
 
 - type: damageType
   id: TestShock
-  name: damage-type-shock
 
 - type: damageType
   id: TestCold
-  name: damage-type-cold
 
 - type: damageGroup
   id: TestBrute
-  name: damage-group-brute
   damageTypes:
     - TestBlunt
     - TestSlash
@@ -44,7 +36,6 @@ namespace Content.IntegrationTests.Tests.Destructible
 
 - type: damageGroup
   id: TestBurn
-  name: damage-group-burn
   damageTypes:
     - TestHeat
     - TestShock
@@ -72,7 +63,7 @@ namespace Content.IntegrationTests.Tests.Destructible
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-            collection: WoodDestroy
+            path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           {SpawnedEntityId}:
@@ -94,7 +85,7 @@ namespace Content.IntegrationTests.Tests.Destructible
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-            collection: WoodDestroyHeavy
+            path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           {SpawnedEntityId}:

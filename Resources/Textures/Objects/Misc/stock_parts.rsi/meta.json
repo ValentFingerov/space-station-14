@@ -8,7 +8,12 @@
   "copyright": "Taken from BeeStation at commit https://github.com/BeeStation/BeeStation-Hornet/commit/3eed41635791f62b3f7b60f411e3c4427d842a15б, triphasic_scan_module.png modified by github:Morb0",
   "states": [
     {
-      "name": "adv_capacitor"
+      "name": "adv_capacitor",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "adv_electrolite",
@@ -26,10 +31,20 @@
       "name": "adv_scan_module_static"
     },
     {
-      "name": "advanced_matter_bin"
+      "name": "advanced_matter_bin",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "ansible_crystal"
+      "name": "ansible_crystal",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "bluespace_electrolite",
@@ -44,7 +59,7 @@
       "name": "bluespace_matter_bin",
       "delays": [
         [
-          0.3,
+          0.1,
           0.1,
           0.1,
           0.1
@@ -52,10 +67,90 @@
       ]
     },
     {
-      "name": "capacitor"
+      "name": "capacitor",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "card_reader"
+      "name": "card_reader",
+      "delays": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk0",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk1",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk2",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk3",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk4",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk5",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "datadisk6",
+      "delays": [
+        [
+          0.1,
+          0.1,
+          0.1
+        ]
+      ]
     },
     {
       "name": "electrolite",
@@ -76,40 +171,85 @@
       ]
     },
     {
-      "name": "hdd1"
+      "name": "hdd1",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "hdd2"
+      "name": "hdd2",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "high_micro_laser"
+      "name": "high_micro_laser",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "hyperwave_filter"
+      "name": "hyperwave_filter",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "matter_bin"
+      "name": "matter_bin",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "micro_laser"
+      "name": "micro_laser",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "micro_mani"
+      "name": "micro_mani",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "nano_mani"
+      "name": "nano_mani",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "pico_mani"
+      "name": "pico_mani",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "quadratic_capacitor",
       "delays": [
         [
-          0.15,
-          0.15,
-          0.15,
-          0.15
+          0.1,
+          0.1,
+          0.1,
+          0.1
         ]
       ]
     },
@@ -124,16 +264,36 @@
       ]
     },
     {
-      "name": "rom1"
+      "name": "rom1",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "rom2"
+      "name": "rom2",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "romos1"
+      "name": "romos1",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "romos2"
+      "name": "romos2",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "scan_module"
@@ -150,13 +310,28 @@
       ]
     },
     {
-      "name": "subspace_ansible"
+      "name": "subspace_ansible",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "subspace_transmitter"
+      "name": "subspace_transmitter",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "super_capacitor"
+      "name": "super_capacitor",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "super_electrolite",
@@ -168,30 +343,50 @@
       ]
     },
     {
-      "name": "super_matter_bin"
+      "name": "super_matter_bin",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "super_scan_module"
     },
     {
-      "name": "treatment_disk"
+      "name": "treatment_disk",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "triphasic_scan_module",
       "delays": [
         [
           0.1,
-          0.3,
-          0.05,
+          0.1,
+          0.1,
           0.1
         ]
       ]
     },
     {
-      "name": "ultra_high_micro_laser"
+      "name": "ultra_high_micro_laser",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
-      "name": "wavelength_analyzer"
+      "name": "wavelength_analyzer",
+      "delays": [
+        [
+          1
+        ]
+      ]
     },
     {
       "name": "scan_module_static"

@@ -7,15 +7,13 @@ namespace Content.Shared.Construction.Conditions
 {
     [UsedImplicitly]
     [DataDefinition]
-    public sealed partial class NoWindowsInTile : IConstructionCondition
+    public sealed class NoWindowsInTile : IConstructionCondition
     {
         public bool Condition(EntityUid user, EntityCoordinates location, Direction direction)
         {
-            var entManager = IoCManager.Resolve<IEntityManager>();
-            var sysMan = entManager.EntitySysManager;
-            var tagSystem = sysMan.GetEntitySystem<TagSystem>();
+            var tagSystem = IoCManager.Resolve<IEntitySystemManager>().GetEntitySystem<TagSystem>();
 
-            foreach (var entity in location.GetEntitiesInTile(LookupFlags.Static))
+            foreach (var entity in location.GetEntitiesInTile(LookupFlags.Approximate | LookupFlags.Static))
             {
                 if (tagSystem.HasTag(entity, "Window"))
                     return false;

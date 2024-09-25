@@ -1,5 +1,6 @@
 using Content.Shared.Drunk;
 using Content.Shared.StatusEffect;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
@@ -14,7 +15,6 @@ public sealed class DrunkOverlay : Overlay
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntitySystemManager _sysMan = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpace;
     public override bool RequestScreenTexture => true;
@@ -35,8 +35,7 @@ public sealed class DrunkOverlay : Overlay
 
     protected override void FrameUpdate(FrameEventArgs args)
     {
-
-        var playerEntity = _playerManager.LocalEntity;
+        var playerEntity = _playerManager.LocalPlayer?.ControlledEntity;
 
         if (playerEntity == null)
             return;
@@ -49,16 +48,13 @@ public sealed class DrunkOverlay : Overlay
         if (!statusSys.TryGetTime(playerEntity.Value, SharedDrunkSystem.DrunkKey, out var time, status))
             return;
 
-        var curTime = _timing.CurTime;
-        var timeLeft = (float) (time.Value.Item2 - curTime).TotalSeconds;
-
-
-        CurrentBoozePower += 8f * (0.5f*timeLeft - CurrentBoozePower) * args.DeltaSeconds / (timeLeft+1);
+        var timeLeft = (float) (time.Value.Item2 - time.Value.Item1).TotalSeconds;
+        CurrentBoozePower += (timeLeft - CurrentBoozePower) * args.DeltaSeconds / 16f;
     }
 
     protected override bool BeforeDraw(in OverlayDrawArgs args)
     {
-        if (!_entityManager.TryGetComponent(_playerManager.LocalEntity, out EyeComponent? eyeComp))
+        if (!_entityManager.TryGetComponent(_playerManager.LocalPlayer?.ControlledEntity, out EyeComponent? eyeComp))
             return false;
 
         if (args.Viewport.Eye != eyeComp.Eye)
@@ -88,14 +84,6 @@ public sealed class DrunkOverlay : Overlay
     /// <param name="boozePower"></param>
     private float BoozePowerToVisual(float boozePower)
     {
-        // Clamp booze power when it's low, to prevent really jittery effects
-        if (boozePower < 50f)
-        {
-            return 0;
-        }
-        else
-        {
-            return Math.Clamp((boozePower - VisualThreshold) / PowerDivisor, 0.0f, 1.0f);
-        }
+        return Math.Clamp((boozePower - VisualThreshold) / PowerDivisor, 0.0f, 1.0f);
     }
 }

@@ -1,7 +1,9 @@
+using Content.Shared.Eye.Blinding;
 using Content.Shared.Eye.Blinding.Components;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
-using Robust.Shared.Player;
+using Robust.Shared.GameStates;
 
 namespace Content.Client.Eye.Blinding;
 
@@ -18,31 +20,31 @@ public sealed class BlurryVisionSystem : EntitySystem
         SubscribeLocalEvent<BlurryVisionComponent, ComponentInit>(OnBlurryInit);
         SubscribeLocalEvent<BlurryVisionComponent, ComponentShutdown>(OnBlurryShutdown);
 
-        SubscribeLocalEvent<BlurryVisionComponent, LocalPlayerAttachedEvent>(OnPlayerAttached);
-        SubscribeLocalEvent<BlurryVisionComponent, LocalPlayerDetachedEvent>(OnPlayerDetached);
+        SubscribeLocalEvent<BlurryVisionComponent, PlayerAttachedEvent>(OnPlayerAttached);
+        SubscribeLocalEvent<BlurryVisionComponent, PlayerDetachedEvent>(OnPlayerDetached);
 
         _overlay = new();
     }
 
-    private void OnPlayerAttached(EntityUid uid, BlurryVisionComponent component, LocalPlayerAttachedEvent args)
+    private void OnPlayerAttached(EntityUid uid, BlurryVisionComponent component, PlayerAttachedEvent args)
     {
         _overlayMan.AddOverlay(_overlay);
     }
 
-    private void OnPlayerDetached(EntityUid uid, BlurryVisionComponent component, LocalPlayerDetachedEvent args)
+    private void OnPlayerDetached(EntityUid uid, BlurryVisionComponent component, PlayerDetachedEvent args)
     {
         _overlayMan.RemoveOverlay(_overlay);
     }
 
     private void OnBlurryInit(EntityUid uid, BlurryVisionComponent component, ComponentInit args)
     {
-        if (_player.LocalEntity == uid)
+        if (_player.LocalPlayer?.ControlledEntity == uid)
             _overlayMan.AddOverlay(_overlay);
     }
 
     private void OnBlurryShutdown(EntityUid uid, BlurryVisionComponent component, ComponentShutdown args)
     {
-        if (_player.LocalEntity == uid)
+        if (_player.LocalPlayer?.ControlledEntity == uid)
         {
             _overlayMan.RemoveOverlay(_overlay);
         }

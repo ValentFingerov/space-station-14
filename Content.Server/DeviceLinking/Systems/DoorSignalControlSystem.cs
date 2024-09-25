@@ -1,7 +1,6 @@
 using Content.Server.DeviceLinking.Components;
 using Content.Server.DeviceNetwork;
 using Content.Server.Doors.Systems;
-using Content.Shared.DeviceNetwork;
 using Content.Shared.Doors.Components;
 using Content.Shared.Doors;
 using JetBrains.Annotations;
@@ -12,6 +11,7 @@ namespace Content.Server.DeviceLinking.Systems
     [UsedImplicitly]
     public sealed class DoorSignalControlSystem : EntitySystem
     {
+        [Dependency] private readonly AirlockSystem _airlockSystem = default!;
         [Dependency] private readonly DoorSystem _doorSystem = default!;
         [Dependency] private readonly DeviceLinkSystem _signalSystem = default!;
 
@@ -43,7 +43,7 @@ namespace Content.Server.DeviceLinking.Systems
             {
                 if (state == SignalState.High || state == SignalState.Momentary)
                 {
-                    if (door.State == DoorState.Closed)
+                    if (door.State != DoorState.Open)
                         _doorSystem.TryOpen(uid, door);
                 }
             }
@@ -51,7 +51,7 @@ namespace Content.Server.DeviceLinking.Systems
             {
                 if (state == SignalState.High || state == SignalState.Momentary)
                 {
-                    if (door.State == DoorState.Open)
+                    if (door.State != DoorState.Closed)
                         _doorSystem.TryClose(uid, door);
                 }
             }
@@ -64,38 +64,38 @@ namespace Content.Server.DeviceLinking.Systems
             }
             else if (args.Port == component.InBolt)
             {
-                if (!TryComp<DoorBoltComponent>(uid, out var bolts))
-                    return;
-
-                // if its a pulse toggle, otherwise set bolts to high/low
-                bool bolt;
-                if (state == SignalState.Momentary)
+                if (state == SignalState.High)
                 {
-                    bolt = !bolts.BoltsDown;
+                    if(TryComp<AirlockComponent>(uid, out var airlockComponent))
+                        _airlockSystem.SetBoltsWithAudio(uid, airlockComponent, true);
                 }
                 else
                 {
-                    bolt = state == SignalState.High;
+                    if(TryComp<AirlockComponent>(uid, out var airlockComponent))
+                        _airlockSystem.SetBoltsWithAudio(uid, airlockComponent, false);
                 }
-
-                _doorSystem.SetBoltsDown((uid, bolts), bolt);
             }
         }
 
         private void OnStateChanged(EntityUid uid, DoorSignalControlComponent door, DoorStateChangedEvent args)
         {
+            var data = new NetworkPayload()
+            {
+                { DeviceNetworkConstants.LogicState, SignalState.Momentary }
+            };
+
             if (args.State == DoorState.Closed)
             {
-                // only ever say the door is closed when it is completely airtight
-                _signalSystem.SendSignal(uid, door.OutOpen, false);
+                data[DeviceNetworkConstants.LogicState] = SignalState.Low;
+                _signalSystem.InvokePort(uid, door.OutOpen, data);
             }
             else if (args.State == DoorState.Open
                   || args.State == DoorState.Opening
                   || args.State == DoorState.Closing
                   || args.State == DoorState.Emagging)
             {
-                // say the door is open whenever it would be letting air pass
-                _signalSystem.SendSignal(uid, door.OutOpen, true);
+                data[DeviceNetworkConstants.LogicState] = SignalState.High;
+                _signalSystem.InvokePort(uid, door.OutOpen, data);
             }
         }
     }

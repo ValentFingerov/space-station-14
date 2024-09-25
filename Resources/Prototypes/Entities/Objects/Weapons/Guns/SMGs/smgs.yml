@@ -6,8 +6,9 @@
   abstract: true
   components:
   - type: Sprite
+    netsync: false
   - type: Item
-    size: Large
+    size: 30
   - type: Clothing
     sprite: Objects/Weapons/Guns/SMGs/atreides.rsi
     quickEquip: false
@@ -17,10 +18,8 @@
   - type: AmmoCounter
   - type: Gun
     minAngle: 2
-    maxAngle: 16
+    maxAngle: 8
     fireRate: 8
-    angleIncrease: 3
-    angleDecay: 16
     selectedMode: FullAuto
     availableModes:
     - SemiAuto
@@ -28,8 +27,6 @@
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/smg.ogg
   - type: ChamberMagazineAmmoProvider
-    soundRack:
-      path: /Audio/Weapons/Guns/Cock/smg_cock.ogg
   - type: ItemSlots
     slots:
       gun_magazine:
@@ -41,7 +38,6 @@
         whitelist:
           tags:
             - MagazinePistolSubMachineGun
-        whitelistFailPopup: gun-magazine-whitelist-fail
       gun_chamber:
         name: Chamber
         startingItem: CartridgePistol
@@ -58,7 +54,7 @@
 
 - type: entity
   name: Atreides
-  parent: [BaseWeaponSubMachineGun, BaseMajorContraband]
+  parent: BaseWeaponSubMachineGun
   id: WeaponSubMachineGunAtreides
   description: Pla-ket-ket-ket-ket! Uses .35 auto ammo.
   components:
@@ -81,7 +77,7 @@
 
 - type: entity
   name: C-20r sub machine gun
-  parent: [BaseWeaponSubMachineGun, BaseSyndicateContraband]
+  parent: BaseWeaponSubMachineGun
   id: WeaponSubMachineGunC20r
   description: A firearm that is often used by the infamous nuclear operatives. Uses .35 auto ammo.
   components:
@@ -94,23 +90,11 @@
       map: ["enum.GunVisualLayers.Mag"]
   - type: Clothing
     sprite: Objects/Weapons/Guns/SMGs/c20r.rsi
-  - type: Wieldable
-    unwieldOnUse: false
-  - type: GunWieldBonus
-    minAngle: -19
-    maxAngle: -16
   - type: Gun
-    minAngle: 21
-    maxAngle: 32
-    shotsPerBurst: 5
-    availableModes:
-    - SemiAuto
-    - Burst
-    - FullAuto
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/c-20r.ogg
   - type: ChamberMagazineAmmoProvider
-    autoEject: true
+    # autoEject: true # Do not set this until the PVS prediction issue is resolved
   - type: MagazineVisuals
     magState: mag
     steps: 6
@@ -119,7 +103,7 @@
 
 - type: entity
   name: Drozd
-  parent: [BaseWeaponSubMachineGun, BaseRestrictedContraband]
+  parent: BaseWeaponSubMachineGun
   id: WeaponSubMachineGunDrozd
   description: An excellent fully automatic Heavy SMG.
   components:
@@ -132,14 +116,7 @@
           map: ["enum.GunVisualLayers.Mag"]
     - type: Clothing
       sprite: Objects/Weapons/Guns/SMGs/drozd.rsi
-    - type: Wieldable
-      unwieldOnUse: false
-    - type: GunWieldBonus
-      minAngle: -19
-      maxAngle: -16
     - type: Gun
-      minAngle: 21
-      maxAngle: 32
       fireRate: 6
       selectedMode: FullAuto
       soundGunshot:
@@ -157,7 +134,6 @@
           whitelist:
             tags:
               - MagazinePistolSubMachineGun
-          whitelistFailPopup: gun-magazine-whitelist-fail
         gun_chamber:
           name: Chamber
           startingItem: CartridgePistol
@@ -212,7 +188,6 @@
         whitelist:
           tags:
             - CartridgeMagnum
-        whitelistFailPopup: gun-magazine-whitelist-fail
   - type: MagazineVisuals
     magState: mag
     steps: 1
@@ -221,7 +196,7 @@
 
 - type: entity
   name: WT550
-  parent: [ BaseWeaponSubMachineGun, BaseRestrictedContraband ]
+  parent: BaseWeaponSubMachineGun
   id: WeaponSubMachineGunWt550
   description: An excellent SMG, produced by NanoTrasen's Small Arms Division. Uses .35 auto ammo.
   components:
@@ -240,19 +215,10 @@
         shader: unshaded
   - type: Clothing
     sprite: Objects/Weapons/Guns/SMGs/wt550.rsi
-  - type: ChamberMagazineAmmoProvider
-    boltClosed: null
   - type: Gun
-    fireRate: 5.5
-    minAngle: 1
-    maxAngle: 6
-    angleIncrease: 1.5
-    angleDecay: 6
+    fireRate: 5
     selectedMode: FullAuto
-    shotsPerBurst: 5
     availableModes:
-    - SemiAuto
-    - Burst
     - FullAuto
   - type: ItemSlots
     slots:
@@ -265,7 +231,6 @@
         whitelist:
           tags:
             - MagazinePistolSubMachineGunTopMounted
-        whitelistFailPopup: gun-magazine-whitelist-fail
       gun_chamber:
         name: Chamber
         startingItem: CartridgePistol
@@ -278,3 +243,55 @@
     steps: 6
     zeroVisible: true
   - type: Appearance
+
+# Rubber
+- type: entity
+  name: Drozd
+  parent: WeaponSubMachineGunDrozd
+  id: WeaponSubMachineGunDrozdRubber
+  suffix: Non-Lethal
+  components:
+    - type: ItemSlots
+      slots:
+        gun_magazine:
+          name: Magazine
+          startingItem: MagazinePistolSubMachineGunRubber
+          insertSound: /Audio/Weapons/Guns/MagIn/smg_magin.ogg
+          ejectSound: /Audio/Weapons/Guns/MagOut/smg_magout.ogg
+          priority: 2
+          whitelist:
+            tags:
+              - MagazinePistolSubMachineGun
+        gun_chamber:
+          name: Chamber
+          startingItem: CartridgePistolRubber
+          priority: 1
+          whitelist:
+            tags:
+              - CartridgePistol
+
+- type: entity
+  name: Vector
+  parent: WeaponSubMachineGunVector
+  id: WeaponSubMachineGunVectorRubber
+  description: An excellent fully automatic Heavy SMG. Uses .45 magnum ammo.
+  suffix: Non-Lethal
+  components:
+  - type: ItemSlots
+    slots:
+      gun_magazine:
+        name: Magazine
+        startingItem: MagazineMagnumSubMachineGunRubber
+        insertSound: /Audio/Weapons/Guns/MagIn/smg_magin.ogg
+        ejectSound: /Audio/Weapons/Guns/MagOut/smg_magout.ogg
+        priority: 2
+        whitelist:
+          tags:
+            - MagazineMagnumSubMachineGun
+      gun_chamber:
+        name: Chamber
+        startingItem: CartridgeMagnumRubber
+        priority: 1
+        whitelist:
+          tags:
+            - CartridgeMagnum

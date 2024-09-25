@@ -3,7 +3,7 @@ using Robust.Shared.GameStates;
 namespace Content.Shared.Singularity.Components;
 
 [RegisterComponent, NetworkedComponent]
-public sealed partial class ContainmentFieldComponent : Component
+public sealed class ContainmentFieldComponent : Component
 {
     /// <summary>
     /// The throw force for the field if an entity collides with it
@@ -18,10 +18,4 @@ public sealed partial class ContainmentFieldComponent : Component
     /// </summary>
     [DataField("maxMass")]
     public float MaxMass = 10000f;
-
-    /// <summary>
-    /// Should field vaporize garbage that collides with it?
-    /// </summary>
-    [DataField]
-    public bool DestroyGarbage = true;
 }

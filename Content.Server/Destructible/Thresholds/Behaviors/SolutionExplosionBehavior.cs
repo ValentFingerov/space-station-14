@@ -1,4 +1,7 @@
-using Content.Shared.Explosion.Components;
+using Content.Server.Chemistry.EntitySystems;
+using Content.Server.Fluids.Components;
+using Content.Server.Fluids.EntitySystems;
+using Content.Server.Explosion.Components;
 using JetBrains.Annotations;
 
 namespace Content.Server.Destructible.Thresholds.Behaviors
@@ -8,14 +11,14 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
     /// </summary>
     [UsedImplicitly]
     [DataDefinition]
-    public sealed partial class SolutionExplosionBehavior : IThresholdBehavior
+    public sealed class SolutionExplosionBehavior : IThresholdBehavior
     {
-        [DataField(required: true)]
+        [DataField("solution", required: true)]
         public string Solution = default!;
 
         public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
         {
-            if (system.SolutionContainerSystem.TryGetSolution(owner, Solution, out _, out var explodingSolution)
+            if (system.SolutionContainerSystem.TryGetSolution(owner, Solution, out var explodingSolution)
                 && system.EntityManager.TryGetComponent(owner, out ExplosiveComponent? explosiveComponent))
             {
                 // Don't explode if there's no solution

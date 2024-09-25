@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Content.Server.Administration.Components;
+﻿using Content.Server.Administration.Components;
 using Content.Shared.Administration;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
@@ -12,8 +11,7 @@ public sealed class BufferingSystem : EntitySystem
 
     public override void Update(float frameTime)
     {
-        var query = EntityQueryEnumerator<BufferingComponent>();
-        while (query.MoveNext(out var uid, out var buffering))
+        foreach (var buffering in EntityQuery<BufferingComponent>())
         {
             if (buffering.BufferingIcon is not null)
             {
@@ -22,7 +20,7 @@ public sealed class BufferingSystem : EntitySystem
                     continue;
 
                 Del(buffering.BufferingIcon.Value);
-                RemComp<AdminFrozenComponent>(uid);
+                RemComp<AdminFrozenComponent>(buffering.Owner);
                 buffering.TimeTilNextBuffer = _random.NextFloat(buffering.MinimumTimeTilNextBuffer, buffering.MaximumTimeTilNextBuffer);
                 buffering.BufferingIcon = null;
             }
@@ -33,8 +31,8 @@ public sealed class BufferingSystem : EntitySystem
                     continue;
 
                 buffering.BufferingTimer = _random.NextFloat(buffering.MinimumBufferTime, buffering.MaximumBufferTime);
-                buffering.BufferingIcon = Spawn("BufferingIcon", new EntityCoordinates(uid, Vector2.Zero));
-                EnsureComp<AdminFrozenComponent>(uid);
+                buffering.BufferingIcon = Spawn("BufferingIcon", new EntityCoordinates(buffering.Owner, Vector2.Zero));
+                EnsureComp<AdminFrozenComponent>(buffering.Owner);
             }
         }
     }

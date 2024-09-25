@@ -1,12 +1,12 @@
 using Content.Server.Labels.Components;
+using Content.Server.Paper;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Examine;
 using Content.Shared.Labels;
-using Content.Shared.Labels.Components;
-using Content.Shared.Labels.EntitySystems;
-using Content.Shared.Paper;
 using JetBrains.Annotations;
+using Robust.Server.GameObjects;
 using Robust.Shared.Containers;
+using Robust.Shared.Utility;
 
 namespace Content.Server.Labels
 {
@@ -14,7 +14,7 @@ namespace Content.Server.Labels
     /// A system that lets players see the contents of a label on an object.
     /// </summary>
     [UsedImplicitly]
-    public sealed class LabelSystem : SharedLabelSystem
+    public sealed class LabelSystem : EntitySystem
     {
         [Dependency] private readonly ItemSlotsSystem _itemSlotsSystem = default!;
         [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
@@ -25,6 +25,7 @@ namespace Content.Server.Labels
         {
             base.Initialize();
 
+            SubscribeLocalEvent<LabelComponent, ExaminedEvent>(OnExamine);
             SubscribeLocalEvent<PaperLabelComponent, ComponentInit>(OnComponentInit);
             SubscribeLocalEvent<PaperLabelComponent, ComponentRemove>(OnComponentRemove);
             SubscribeLocalEvent<PaperLabelComponent, EntInsertedIntoContainerMessage>(OnContainerModified);
@@ -39,22 +40,40 @@ namespace Content.Server.Labels
         /// <param name="text">intended label text (null to remove)</param>
         /// <param name="label">label component for resolve</param>
         /// <param name="metadata">metadata component for resolve</param>
-        public override void Label(EntityUid uid, string? text, MetaDataComponent? metadata = null, LabelComponent? label = null)
+        public void Label(EntityUid uid, string? text, MetaDataComponent? metadata = null, LabelComponent? label = null)
         {
+            if (!Resolve(uid, ref metadata))
+                return;
             if (!Resolve(uid, ref label, false))
                 label = EnsureComp<LabelComponent>(uid);
 
-            label.CurrentLabel = text;
-            NameMod.RefreshNameModifiers(uid);
+            if (string.IsNullOrEmpty(text))
+            {
+                if (label.OriginalName is null)
+                    return;
 
-            Dirty(uid, label);
+                // Remove label
+                metadata.EntityName = label.OriginalName;
+                label.CurrentLabel = null;
+                label.OriginalName = null;
+
+                return;
+            }
+
+            // Update label
+            label.OriginalName ??= metadata.EntityName;
+            label.CurrentLabel = text;
+            metadata.EntityName = $"{label.OriginalName} ({text})";
         }
 
         private void OnComponentInit(EntityUid uid, PaperLabelComponent component, ComponentInit args)
         {
             _itemSlotsSystem.AddItemSlot(uid, ContainerName, component.LabelSlot);
 
-            UpdateAppearance((uid, component));
+            if (!EntityManager.TryGetComponent(uid, out AppearanceComponent? appearance))
+                return;
+
+            _appearance.SetData(uid, PaperLabelVisuals.HasLabel, false, appearance);
         }
 
         private void OnComponentRemove(EntityUid uid, PaperLabelComponent component, ComponentRemove args)
@@ -62,33 +81,43 @@ namespace Content.Server.Labels
             _itemSlotsSystem.RemoveItemSlot(uid, component.LabelSlot);
         }
 
+        private void OnExamine(EntityUid uid, LabelComponent? label, ExaminedEvent args)
+        {
+            if (!Resolve(uid, ref label))
+                return;
+
+            if (label.CurrentLabel == null)
+                return;
+
+            var message = new FormattedMessage();
+            message.AddText(Loc.GetString("hand-labeler-has-label", ("label", label.CurrentLabel)));
+            args.PushMessage(message);
+        }
+
         private void OnExamined(EntityUid uid, PaperLabelComponent comp, ExaminedEvent args)
         {
             if (comp.LabelSlot.Item is not {Valid: true} item)
                 return;
 
-            using (args.PushGroup(nameof(PaperLabelComponent)))
+            if (!args.IsInDetailsRange)
             {
-                if (!args.IsInDetailsRange)
-                {
-                    args.PushMarkup(Loc.GetString("comp-paper-label-has-label-cant-read"));
-                    return;
-                }
-
-                if (!EntityManager.TryGetComponent(item, out PaperComponent? paper))
-                    // Assuming yaml has the correct entity whitelist, this should not happen.
-                    return;
-
-                if (string.IsNullOrWhiteSpace(paper.Content))
-                {
-                    args.PushMarkup(Loc.GetString("comp-paper-label-has-label-blank"));
-                    return;
-                }
-
-                args.PushMarkup(Loc.GetString("comp-paper-label-has-label"));
-                var text = paper.Content;
-                args.PushMarkup(text.TrimEnd());
+                args.PushMarkup(Loc.GetString("comp-paper-label-has-label-cant-read"));
+                return;
             }
+
+            if (!EntityManager.TryGetComponent(item, out PaperComponent? paper))
+                // Assuming yaml has the correct entity whitelist, this should not happen.
+                return;
+
+            if (string.IsNullOrWhiteSpace(paper.Content))
+            {
+                args.PushMarkup(Loc.GetString("comp-paper-label-has-label-blank"));
+                return;
+            }
+
+            args.PushMarkup(Loc.GetString("comp-paper-label-has-label"));
+            var text = paper.Content;
+            args.PushMarkup(text.TrimEnd());
         }
 
         private void OnContainerModified(EntityUid uid, PaperLabelComponent label, ContainerModifiedMessage args)
@@ -98,18 +127,10 @@ namespace Content.Server.Labels
             if (args.Container.ID != label.LabelSlot.ID)
                 return;
 
-            UpdateAppearance((uid, label));
-        }
-
-        private void UpdateAppearance(Entity<PaperLabelComponent, AppearanceComponent?> ent)
-        {
-            if (!Resolve(ent, ref ent.Comp2, false))
+            if (!EntityManager.TryGetComponent(uid, out AppearanceComponent? appearance))
                 return;
 
-            var slot = ent.Comp1.LabelSlot;
-            _appearance.SetData(ent, PaperLabelVisuals.HasLabel, slot.HasItem, ent.Comp2);
-            if (TryComp<PaperLabelTypeComponent>(slot.Item, out var type))
-                _appearance.SetData(ent, PaperLabelVisuals.LabelType, type.PaperType, ent.Comp2);
+            _appearance.SetData(uid, PaperLabelVisuals.HasLabel, label.LabelSlot.HasItem, appearance);
         }
     }
 }

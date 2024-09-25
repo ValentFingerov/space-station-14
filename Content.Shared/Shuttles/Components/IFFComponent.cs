@@ -6,24 +6,26 @@ namespace Content.Shared.Shuttles.Components;
 /// <summary>
 /// Handles what a grid should look like on radar.
 /// </summary>
-[RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
-[Access(typeof(SharedShuttleSystem))]
-public sealed partial class IFFComponent : Component
+[RegisterComponent, NetworkedComponent, Access(typeof(SharedShuttleSystem))]
+public sealed class IFFComponent : Component
 {
-    public static readonly Color SelfColor = Color.MediumSpringGreen;
+    /// <summary>
+    /// Should we show IFF by default?
+    /// </summary>
+    public const bool ShowIFFDefault = true;
 
     /// <summary>
     /// Default color to use for IFF if no component is found.
     /// </summary>
-    public static readonly Color IFFColor = Color.Gold;
+    public static readonly Color IFFColor = Color.Aquamarine;
 
-    [ViewVariables(VVAccess.ReadWrite), DataField, AutoNetworkedField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("flags")]
     public IFFFlags Flags = IFFFlags.None;
 
     /// <summary>
     /// Color for this to show up on IFF.
     /// </summary>
-    [ViewVariables(VVAccess.ReadWrite), DataField, AutoNetworkedField]
+    [ViewVariables(VVAccess.ReadWrite), DataField("color")]
     public Color Color = IFFColor;
 }
 

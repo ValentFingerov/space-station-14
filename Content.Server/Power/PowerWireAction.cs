@@ -8,7 +8,7 @@ namespace Content.Server.Power;
 
 // Generic power wire action. Use on anything
 // that requires power.
-public sealed partial class PowerWireAction : BaseWireAction
+public sealed class PowerWireAction : BaseWireAction
 {
     public override Color Color { get; set; } = Color.Red;
     public override string Name { get; set; } = "wire-name-power";
@@ -159,7 +159,7 @@ public sealed partial class PowerWireAction : BaseWireAction
     {
         base.Initialize();
 
-        _electrocutionSystem = EntityManager.System<ElectrocutionSystem>();
+        _electrocutionSystem = EntitySystem.Get<ElectrocutionSystem>();
     }
 
     // This should add a wire into the entity's state, whether it be

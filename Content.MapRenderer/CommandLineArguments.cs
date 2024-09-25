@@ -101,7 +101,7 @@ Options:
     }
 }
 
-public sealed class CommandLineArgumentException : Exception
+public class CommandLineArgumentException : Exception
 {
     public CommandLineArgumentException(string? message) : base(message)
     {

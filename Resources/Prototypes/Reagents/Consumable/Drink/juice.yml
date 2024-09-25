@@ -1,17 +1,16 @@
 - type: reagent
   id: JuiceApple
   name: reagent-name-juice-apple
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-apple
   physicalDesc: reagent-physical-desc-crisp
   flavor: apple
   color: "#FDAD01"
-  recognizable: true
 
 - type: reagent
   id: JuiceBanana
   name: reagent-name-juice-banana
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-banana
   physicalDesc: reagent-physical-desc-crisp
   flavor: banana
@@ -20,34 +19,45 @@
 - type: reagent
   id: JuiceBerry
   name: reagent-name-juice-berry
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-berry
   physicalDesc: reagent-physical-desc-sweet
-  flavor: berry
+  flavor: juice
   color: "#660099"
 
 - type: reagent
-  id: JuiceBluePumpkin
-  name: reagent-name-juice-blue-pumpkin
-  parent: BaseJuice
-  desc: reagent-desc-juice-blue-pumpkin
-  physicalDesc: reagent-physical-desc-strong-smelling
-  flavor: bluepumpkin
-  color: "#00BFFF"
+  id: JuiceBerryPoison
+  name: reagent-name-juice-berry-poison
+  desc: reagent-desc-juice-berry-poison
+  physicalDesc: reagent-physical-desc-sickly
+  flavor: bitter
+  color: "#6600CC"
+  metabolisms:
+    Drink:
+      effects:
+      - !type:SatiateThirst
+    Poison:
+      effects:
+      - !type:HealthChange
+        damage:
+          types:
+            Poison: 1
 
-- type: reagent
-  id: JuiceBungo
-  name: reagent-name-juice-bungo
-  parent: BaseJuice
-  desc: reagent-desc-juice-bungo
-  physicalDesc: reagent-physical-desc-tart
-  flavor: bungo
-  color: "#F9E43D"
+#TODO: restore eyesight
+#if(..())
+#return 1
+# M.eye_blurry = max(M.eye_blurry - 1 , 0)
+# M.eye_blind = max(M.eye_blind - 1 , 0)
+# switch(data)
+# if(21 to INFINITY)
+# if(prob(data - 10))
+# M.disabilities &= ~NEARSIGHTED
+# data++
 
 - type: reagent
   id: JuiceCarrot
   name: reagent-name-juice-carrot
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-carrot
   physicalDesc: reagent-physical-desc-crisp
   flavor: carrot
@@ -59,7 +69,7 @@
         factor: 2
       - !type:AdjustReagent
         reagent: Oculine
-        amount: 0.5
+        amount: 0.15
       - !type:AdjustReagent
         reagent: Nutriment
         amount: 0.5
@@ -67,7 +77,7 @@
 - type: reagent
   id: JuiceGrape
   name: reagent-name-juice-grape
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-grape
   physicalDesc: reagent-physical-desc-crisp
   flavor: juice
@@ -76,22 +86,16 @@
 - type: reagent
   id: JuiceLemon
   name: reagent-name-juice-lemon
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-lemon
   physicalDesc: reagent-physical-desc-citric
   flavor: sour
   color: "#fff690"
-  metamorphicSprite:
-    sprite: Objects/Consumable/Drinks/lemonjuiceglass.rsi
-    state: icon_empty
-  metamorphicMaxFillLevels: 5
-  metamorphicFillBaseName: fill-
-  metamorphicChangeColor: false
 
 - type: reagent
   id: JuiceLime
   name: reagent-name-juice-lime
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-lime
   physicalDesc: reagent-physical-desc-citric
   flavor: sour
@@ -108,22 +112,16 @@
 - type: reagent
   id: JuiceOrange
   name: reagent-name-juice-orange
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-orange
   physicalDesc: reagent-physical-desc-citric
   flavor: orange
   color: "#E78108"
-  metamorphicSprite:
-    sprite: Objects/Consumable/Drinks/orangejuiceglass.rsi
-    state: icon_empty
-  metamorphicMaxFillLevels: 5
-  metamorphicFillBaseName: fill-
-  metamorphicChangeColor: false
 
 - type: reagent
   id: JuicePineapple
   name: reagent-name-juice-pineapple
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-pineapple
   physicalDesc: reagent-physical-desc-tropical
   flavor: pineapple
@@ -132,7 +130,7 @@
 - type: reagent
   id: JuicePotato
   name: reagent-name-juice-potato
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-potato
   physicalDesc: reagent-physical-desc-starchy
   flavor: potatoes
@@ -141,7 +139,7 @@
 - type: reagent
   id: JuiceTomato
   name: reagent-name-juice-tomato
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-tomato
   physicalDesc: reagent-physical-desc-saucey
   flavor: tomato
@@ -150,23 +148,8 @@
 - type: reagent
   id: JuiceWatermelon
   name: reagent-name-juice-watermelon
-  parent: BaseJuice
+  parent: BaseDrink
   desc: reagent-desc-juice-watermelon
   physicalDesc: reagent-physical-desc-sweet
   flavor: watermelon
   color: "#EF3520"
-  metamorphicSprite:
-    sprite: Objects/Consumable/Drinks/watermelonglass.rsi
-    state: icon_empty
-  metamorphicMaxFillLevels: 4
-  metamorphicFillBaseName: fill-
-  metamorphicChangeColor: false
-
-- type: reagent
-  id: JuiceCherry
-  name: reagent-name-juice-cherry
-  parent: BaseJuice
-  desc: reagent-desc-juice-cherry
-  physicalDesc: reagent-physical-desc-sweet
-  flavor: cherry
-  color: "#84031a"

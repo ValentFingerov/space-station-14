@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Hands.Components;
 using Content.Shared.Interaction;
 using Content.Shared.Tabletop.Components;
 using Content.Shared.Tabletop.Events;
+using Robust.Shared.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
@@ -16,11 +16,12 @@ namespace Content.Shared.Tabletop
         [Dependency] protected readonly ActionBlockerSystem ActionBlockerSystem = default!;
         [Dependency] private readonly SharedInteractionSystem _interactionSystem = default!;
         [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
-        [Dependency] protected readonly SharedTransformSystem Transforms = default!;
+        [Dependency] private readonly SharedTransformSystem _transforms = default!;
         [Dependency] private readonly IMapManager _mapMan = default!;
 
         public override void Initialize()
         {
+            SubscribeLocalEvent<TabletopDraggableComponent, ComponentGetState>(GetDraggableState);
             SubscribeAllEvent<TabletopDraggingPlayerChangedEvent>(OnDraggingPlayerChanged);
             SubscribeAllEvent<TabletopMoveEvent>(OnTabletopMove);
         }
@@ -33,27 +34,29 @@ namespace Content.Shared.Tabletop
             if (args.SenderSession is not { AttachedEntity: { } playerEntity } playerSession)
                 return;
 
-            var table = GetEntity(msg.TableUid);
-            var moved = GetEntity(msg.MovedEntityUid);
-
-            if (!CanSeeTable(playerEntity, table) || !CanDrag(playerEntity, moved, out _))
+            if (!CanSeeTable(playerEntity, msg.TableUid) || !CanDrag(playerEntity, msg.MovedEntityUid, out _))
                 return;
 
             // Move the entity and dirty it (we use the map ID from the entity so noone can try to be funny and move the item to another map)
-            var transform = EntityManager.GetComponent<TransformComponent>(moved);
-            Transforms.SetParent(moved, transform, _mapMan.GetMapEntityId(transform.MapID));
-            Transforms.SetLocalPositionNoLerp(transform, msg.Coordinates.Position);
+            var transform = EntityManager.GetComponent<TransformComponent>(msg.MovedEntityUid);
+            _transforms.SetParent(msg.MovedEntityUid, transform, _mapMan.GetMapEntityId(transform.MapID));
+            _transforms.SetLocalPositionNoLerp(transform, msg.Coordinates.Position);
+        }
+
+        private void GetDraggableState(EntityUid uid, TabletopDraggableComponent component, ref ComponentGetState args)
+        {
+            args.State = new TabletopDraggableComponentState(component.DraggingPlayer);
         }
 
         private void OnDraggingPlayerChanged(TabletopDraggingPlayerChangedEvent msg, EntitySessionEventArgs args)
         {
-            var dragged = GetEntity(msg.DraggedEntityUid);
+            var dragged = msg.DraggedEntityUid;
 
             if (!TryComp(dragged, out TabletopDraggableComponent? draggableComponent))
                 return;
 
             draggableComponent.DraggingPlayer = msg.IsDragging ? args.SenderSession.UserId : null;
-            Dirty(dragged, draggableComponent);
+            Dirty(draggableComponent);
 
             if (!TryComp(dragged, out AppearanceComponent? appearance))
                 return;
@@ -80,13 +83,6 @@ namespace Content.Shared.Tabletop
             {
                 DraggingPlayer = draggingPlayer;
             }
-        }
-
-        [Serializable, NetSerializable]
-        public sealed class TabletopRequestTakeOut : EntityEventArgs
-        {
-            public NetEntity Entity;
-            public NetEntity TableUid;
         }
 
         #region Utility

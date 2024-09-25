@@ -34,7 +34,9 @@ namespace Content.Client.Administration.UI.ManageSolutions
         public override void HandleState(EuiStateBase baseState)
         {
             var state = (EditSolutionsEuiState) baseState;
-            _window.SetState(state);
+            _window.SetTargetEntity(state.Target);
+            _window.UpdateSolutions(state.Solutions);
+            _window.UpdateReagents();
         }
     }
 }

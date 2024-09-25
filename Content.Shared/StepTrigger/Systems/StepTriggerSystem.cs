@@ -1,6 +1,7 @@
-using Content.Shared.Gravity;
 using Content.Shared.StepTrigger.Components;
-using Content.Shared.Whitelist;
+using Content.Shared.Tag;
+using Robust.Shared.Collections;
+using Robust.Shared.GameStates;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
@@ -11,14 +12,12 @@ namespace Content.Shared.StepTrigger.Systems;
 public sealed class StepTriggerSystem : EntitySystem
 {
     [Dependency] private readonly EntityLookupSystem _entityLookup = default!;
-    [Dependency] private readonly SharedGravitySystem _gravity = default!;
-    [Dependency] private readonly SharedMapSystem _map = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
 
     public override void Initialize()
     {
         UpdatesOutsidePrediction = true;
-        SubscribeLocalEvent<StepTriggerComponent, AfterAutoHandleStateEvent>(TriggerHandleState);
+        SubscribeLocalEvent<StepTriggerComponent, ComponentGetState>(TriggerGetState);
+        SubscribeLocalEvent<StepTriggerComponent, ComponentHandleState>(TriggerHandleState);
 
         SubscribeLocalEvent<StepTriggerComponent, StartCollideEvent>(OnStartCollide);
         SubscribeLocalEvent<StepTriggerComponent, EndCollideEvent>(OnEndCollide);
@@ -31,7 +30,7 @@ public sealed class StepTriggerSystem : EntitySystem
             return;
 
         if (!TryComp(uid, out FixturesComponent? fixtures) || fixtures.FixtureCount == 0)
-            Log.Warning($"{ToPrettyString(uid)} has an active step trigger without any fixtures.");
+            Logger.Warning($"{ToPrettyString(uid)} has an active step trigger without any fixtures.");
 #endif
     }
 
@@ -43,9 +42,7 @@ public sealed class StepTriggerSystem : EntitySystem
         while (enumerator.MoveNext(out var uid, out var active, out var trigger, out var transform))
         {
             if (!Update(uid, trigger, transform, query))
-            {
                 continue;
-            }
 
             RemCompDeferred(uid, active);
         }
@@ -61,15 +58,14 @@ public sealed class StepTriggerSystem : EntitySystem
 
         if (component.Blacklist != null && TryComp<MapGridComponent>(transform.GridUid, out var grid))
         {
-            var positon = _map.LocalToTile(transform.GridUid.Value, grid, transform.Coordinates);
-            var anch = _map.GetAnchoredEntitiesEnumerator(uid, grid, positon);
+            var anch = grid.GetAnchoredEntitiesEnumerator(grid.LocalToTile(transform.Coordinates));
 
             while (anch.MoveNext(out var ent))
             {
                 if (ent == uid)
                     continue;
 
-                if (_whitelistSystem.IsBlacklistPass(component.Blacklist, ent.Value))
+                if (component.Blacklist.IsValid(ent.Value, EntityManager) == true)
                 {
                     return false;
                 }
@@ -78,56 +74,44 @@ public sealed class StepTriggerSystem : EntitySystem
 
         foreach (var otherUid in component.Colliding)
         {
-            UpdateColliding(uid, component, transform, otherUid, query);
+            UpdateColliding(component, transform, otherUid, query);
         }
 
         return false;
     }
 
-    private void UpdateColliding(EntityUid uid, StepTriggerComponent component, TransformComponent ownerXform, EntityUid otherUid, EntityQuery<PhysicsComponent> query)
+    private void UpdateColliding(StepTriggerComponent component, TransformComponent ownerTransform, EntityUid otherUid, EntityQuery<PhysicsComponent> query)
     {
         if (!query.TryGetComponent(otherUid, out var otherPhysics))
             return;
 
-        var otherXform = Transform(otherUid);
         // TODO: This shouldn't be calculating based on world AABBs.
-        var ourAabb = _entityLookup.GetAABBNoContainer(uid, ownerXform.LocalPosition, ownerXform.LocalRotation);
-        var otherAabb = _entityLookup.GetAABBNoContainer(otherUid, otherXform.LocalPosition, otherXform.LocalRotation);
+        var ourAabb = _entityLookup.GetWorldAABB(component.Owner, ownerTransform);
+        var otherAabb = _entityLookup.GetWorldAABB(otherUid);
 
         if (!ourAabb.Intersects(otherAabb))
         {
             if (component.CurrentlySteppedOn.Remove(otherUid))
             {
-                Dirty(uid, component);
+                Dirty(component);
             }
             return;
         }
 
-        // max 'area of enclosure' between the two aabbs
-        // this is hard to explain
-        var intersect = Box2.Area(otherAabb.Intersect(ourAabb));
-        var ratio = Math.Max(intersect / Box2.Area(otherAabb), intersect / Box2.Area(ourAabb));
-        if (otherPhysics.LinearVelocity.Length() < component.RequiredTriggeredSpeed
+        if (otherPhysics.LinearVelocity.Length < component.RequiredTriggerSpeed
             || component.CurrentlySteppedOn.Contains(otherUid)
-            || ratio < component.IntersectRatio
-            || !CanTrigger(uid, otherUid, component))
+            || otherAabb.IntersectPercentage(ourAabb) < component.IntersectRatio
+            || !CanTrigger(component.Owner, otherUid, component))
         {
             return;
         }
 
-        if (component.StepOn)
-        {
-            var evStep = new StepTriggeredOnEvent(uid, otherUid);
-            RaiseLocalEvent(uid, ref evStep);
-        }
-        else
-        {
-            var evStep = new StepTriggeredOffEvent(uid, otherUid);
-            RaiseLocalEvent(uid, ref evStep);
-        }
+        var ev = new StepTriggeredEvent { Source = component.Owner, Tripper = otherUid };
+        RaiseLocalEvent(component.Owner, ref ev, true);
 
         component.CurrentlySteppedOn.Add(otherUid);
-        Dirty(uid, component);
+        Dirty(component);
+        return;
     }
 
     private bool CanTrigger(EntityUid uid, EntityUid otherUid, StepTriggerComponent component)
@@ -135,16 +119,9 @@ public sealed class StepTriggerSystem : EntitySystem
         if (!component.Active || component.CurrentlySteppedOn.Contains(otherUid))
             return false;
 
-        // Can't trigger if we don't ignore weightless entities
-        // and the entity is flying or currently weightless
-        // Makes sense simulation wise to have this be part of steptrigger directly IMO
-        if (!component.IgnoreWeightless && TryComp<PhysicsComponent>(otherUid, out var physics) &&
-            (physics.BodyStatus == BodyStatus.InAir || _gravity.IsWeightless(otherUid, physics)))
-            return false;
-
         var msg = new StepTriggerAttemptEvent { Source = uid, Tripper = otherUid };
 
-        RaiseLocalEvent(uid, ref msg);
+        RaiseLocalEvent(uid, ref msg, true);
 
         return msg.Continue && !msg.Cancelled;
     }
@@ -163,7 +140,7 @@ public sealed class StepTriggerSystem : EntitySystem
 
         if (component.Colliding.Add(otherUid))
         {
-            Dirty(uid, component);
+            Dirty(component);
         }
     }
 
@@ -175,13 +152,7 @@ public sealed class StepTriggerSystem : EntitySystem
             return;
 
         component.CurrentlySteppedOn.Remove(otherUid);
-        Dirty(uid, component);
-
-        if (component.StepOn)
-        {
-            var evStepOff = new StepTriggeredOffEvent(uid, otherUid);
-            RaiseLocalEvent(uid, ref evStepOff);
-        }
+        Dirty(component);
 
         if (component.Colliding.Count == 0)
         {
@@ -189,8 +160,28 @@ public sealed class StepTriggerSystem : EntitySystem
         }
     }
 
-    private void TriggerHandleState(EntityUid uid, StepTriggerComponent component, ref AfterAutoHandleStateEvent args)
+
+    private void TriggerHandleState(EntityUid uid, StepTriggerComponent component, ref ComponentHandleState args)
     {
+        if (args.Current is not StepTriggerComponentState state)
+            return;
+
+        component.RequiredTriggerSpeed = state.RequiredTriggerSpeed;
+        component.IntersectRatio = state.IntersectRatio;
+        component.Active = state.Active;
+
+        if (!component.CurrentlySteppedOn.SetEquals(state.CurrentlySteppedOn))
+        {
+            component.CurrentlySteppedOn.Clear();
+            component.CurrentlySteppedOn.UnionWith(state.CurrentlySteppedOn);
+        }
+
+        if (!component.Colliding.SetEquals(state.Colliding))
+        {
+            component.Colliding.Clear();
+            component.Colliding.UnionWith(state.Colliding);
+        }
+
         if (component.Colliding.Count > 0)
         {
             EnsureComp<StepTriggerActiveComponent>(uid);
@@ -199,6 +190,16 @@ public sealed class StepTriggerSystem : EntitySystem
         {
             RemCompDeferred<StepTriggerActiveComponent>(uid);
         }
+    }
+
+    private static void TriggerGetState(EntityUid uid, StepTriggerComponent component, ref ComponentGetState args)
+    {
+        args.State = new StepTriggerComponentState(
+            component.IntersectRatio,
+            component.CurrentlySteppedOn,
+            component.Colliding,
+            component.RequiredTriggerSpeed,
+            component.Active);
     }
 
     public void SetIntersectRatio(EntityUid uid, float ratio, StepTriggerComponent? component = null)
@@ -210,7 +211,7 @@ public sealed class StepTriggerSystem : EntitySystem
             return;
 
         component.IntersectRatio = ratio;
-        Dirty(uid, component);
+        Dirty(component);
     }
 
     public void SetRequiredTriggerSpeed(EntityUid uid, float speed, StepTriggerComponent? component = null)
@@ -218,11 +219,11 @@ public sealed class StepTriggerSystem : EntitySystem
         if (!Resolve(uid, ref component))
             return;
 
-        if (MathHelper.CloseToPercent(component.RequiredTriggeredSpeed, speed))
+        if (MathHelper.CloseToPercent(component.RequiredTriggerSpeed, speed))
             return;
 
-        component.RequiredTriggeredSpeed = speed;
-        Dirty(uid, component);
+        component.RequiredTriggerSpeed = speed;
+        Dirty(component);
     }
 
     public void SetActive(EntityUid uid, bool active, StepTriggerComponent? component = null)
@@ -234,7 +235,7 @@ public sealed class StepTriggerSystem : EntitySystem
             return;
 
         component.Active = active;
-        Dirty(uid, component);
+        Dirty(component);
     }
 }
 
@@ -250,14 +251,9 @@ public struct StepTriggerAttemptEvent
     public bool Cancelled;
 }
 
-/// <summary>
-/// Raised when an entity stands on a steptrigger initially (assuming it has both on and off states).
-/// </summary>
 [ByRefEvent]
-public readonly record struct StepTriggeredOnEvent(EntityUid Source, EntityUid Tripper);
-
-/// <summary>
-/// Raised when an entity leaves a steptrigger if it has on and off states OR when an entity intersects a steptrigger.
-/// </summary>
-[ByRefEvent]
-public readonly record struct StepTriggeredOffEvent(EntityUid Source, EntityUid Tripper);
+public struct StepTriggeredEvent
+{
+    public EntityUid Source;
+    public EntityUid Tripper;
+}

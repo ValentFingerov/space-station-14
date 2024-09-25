@@ -7,11 +7,10 @@ namespace Content.Shared.Administration.Logs;
 [Serializable, NetSerializable]
 public sealed class AdminLogsEuiState : EuiStateBase
 {
-    public AdminLogsEuiState(int roundId, Dictionary<Guid, string> players, int roundLogs)
+    public AdminLogsEuiState(int roundId, Dictionary<Guid, string> players)
     {
         RoundId = roundId;
         Players = players;
-        RoundLogs = roundLogs;
     }
 
     public bool IsLoading { get; set; }
@@ -19,8 +18,6 @@ public sealed class AdminLogsEuiState : EuiStateBase
     public int RoundId { get; }
 
     public Dictionary<Guid, string> Players { get; }
-
-    public int RoundLogs { get; }
 }
 
 public static class AdminLogsEuiMsg
@@ -69,6 +66,7 @@ public static class AdminLogsEuiMsg
             Guid[]? anyPlayers,
             Guid[]? allPlayers,
             bool includeNonPlayers,
+            int? lastLogId,
             DateOrder dateOrder)
         {
             RoundId = roundId;
@@ -81,6 +79,7 @@ public static class AdminLogsEuiMsg
             AnyPlayers = anyPlayers is { Length: > 0 } ? anyPlayers : null;
             AllPlayers = allPlayers is { Length: > 0 } ? allPlayers : null;
             IncludeNonPlayers = includeNonPlayers;
+            LastLogId = lastLogId;
             DateOrder = dateOrder;
         }
 
@@ -94,6 +93,7 @@ public static class AdminLogsEuiMsg
         public Guid[]? AnyPlayers { get; set; }
         public Guid[]? AllPlayers { get; set; }
         public bool IncludeNonPlayers { get; set; }
+        public int? LastLogId { get; set; }
         public DateOrder DateOrder { get; set; }
     }
 

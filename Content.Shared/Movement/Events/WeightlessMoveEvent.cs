@@ -4,7 +4,11 @@ namespace Content.Shared.Movement.Events;
 /// Raised on an entity to check if it can move while weightless.
 /// </summary>
 [ByRefEvent]
-public record struct CanWeightlessMoveEvent(EntityUid Uid)
+public struct CanWeightlessMoveEvent
 {
     public bool CanMove = false;
+
+    public CanWeightlessMoveEvent()
+    {
+    }
 }

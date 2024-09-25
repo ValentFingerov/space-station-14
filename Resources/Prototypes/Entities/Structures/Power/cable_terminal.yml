@@ -8,6 +8,7 @@
     - type: Sprite
       sprite: Structures/Power/cable_terminal.rsi
       state: term
+      netsync: false
       drawdepth: BelowFloor
     - type: Clickable
     - type: InteractionOutline
@@ -15,12 +16,8 @@
     - type: Transform
       anchored: true
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
-    - type: RCDDeconstructable
-      cost: 2
-      delay: 0
-      fx: EffectRCDConstruct0
     - type: Destructible
       thresholds:
         - trigger:

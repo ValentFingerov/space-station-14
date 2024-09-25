@@ -16,8 +16,6 @@ public sealed class MsgPlayTime : NetMessage
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer)
     {
         var count = buffer.ReadVariableInt32();
-        Trackers.EnsureCapacity(count);
-
         for (var i = 0; i < count; i++)
         {
             Trackers.Add(buffer.ReadString(), buffer.ReadTimeSpan());

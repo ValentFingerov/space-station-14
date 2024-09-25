@@ -1,101 +1,84 @@
-using Content.Shared.Anomaly;
+﻿using System.Linq;
+using Content.Server.Maps;
 using Content.Shared.Anomaly.Components;
-using Content.Shared.Anomaly.Effects;
 using Content.Shared.Anomaly.Effects.Components;
-using Robust.Shared.Map.Components;
+using Content.Shared.Maps;
+using Content.Shared.Physics;
+using Robust.Shared.Map;
+using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Random;
 
 namespace Content.Server.Anomaly.Effects;
 
-public sealed class EntityAnomalySystem : SharedEntityAnomalySystem
+public sealed class EntityAnomalySystem : EntitySystem
 {
-    [Dependency] private readonly SharedAnomalySystem _anomaly = default!;
+    [Dependency] private readonly IMapManager _map = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
-
-    private EntityQuery<PhysicsComponent> _physicsQuery;
+    [Dependency] private readonly ITileDefinitionManager _tiledef = default!;
+    [Dependency] private readonly TileSystem _tile = default!;
 
     /// <inheritdoc/>
     public override void Initialize()
     {
-        _physicsQuery = GetEntityQuery<PhysicsComponent>();
-
         SubscribeLocalEvent<EntitySpawnAnomalyComponent, AnomalyPulseEvent>(OnPulse);
         SubscribeLocalEvent<EntitySpawnAnomalyComponent, AnomalySupercriticalEvent>(OnSupercritical);
-        SubscribeLocalEvent<EntitySpawnAnomalyComponent, AnomalyStabilityChangedEvent>(OnStabilityChanged);
-        SubscribeLocalEvent<EntitySpawnAnomalyComponent, AnomalySeverityChangedEvent>(OnSeverityChanged);
-        SubscribeLocalEvent<EntitySpawnAnomalyComponent, AnomalyShutdownEvent>(OnShutdown);
     }
 
-    private void OnPulse(Entity<EntitySpawnAnomalyComponent> component, ref AnomalyPulseEvent args)
+    private void OnPulse(EntityUid uid, EntitySpawnAnomalyComponent component, ref AnomalyPulseEvent args)
     {
-        foreach (var entry in component.Comp.Entries)
-        {
-            if (!entry.Settings.SpawnOnPulse)
-                continue;
+        var range = component.SpawnRange * args.Stability;
+        var amount = (int) (component.MaxSpawnAmount * args.Severity + 0.5f);
 
-            SpawnEntities(component, entry, args.Stability, args.Severity, args.PowerModifier);
-        }
+        var xform = Transform(uid);
+        SpawnMonstersOnOpenTiles(component, xform, amount, range);
     }
 
-    private void OnSupercritical(Entity<EntitySpawnAnomalyComponent> component, ref AnomalySupercriticalEvent args)
+    private void OnSupercritical(EntityUid uid, EntitySpawnAnomalyComponent component, ref AnomalySupercriticalEvent args)
     {
-        foreach (var entry in component.Comp.Entries)
-        {
-            if (!entry.Settings.SpawnOnSuperCritical)
-                continue;
-
-            SpawnEntities(component, entry, 1, 1, args.PowerModifier);
-        }
+        var xform = Transform(uid);
+        SpawnMonstersOnOpenTiles(component, xform, component.MaxSpawnAmount, component.SpawnRange);
+        Spawn(component.SupercriticalSpawn, xform.Coordinates);
     }
 
-    private void OnShutdown(Entity<EntitySpawnAnomalyComponent> component, ref AnomalyShutdownEvent args)
+    private void SpawnMonstersOnOpenTiles(EntitySpawnAnomalyComponent component, TransformComponent xform, int amount, float radius)
     {
-        foreach (var entry in component.Comp.Entries)
-        {
-            if (!entry.Settings.SpawnOnShutdown || args.Supercritical)
-                continue;
-
-            SpawnEntities(component, entry, 1, 1, 1);
-        }
-    }
-
-    private void OnStabilityChanged(Entity<EntitySpawnAnomalyComponent> component, ref AnomalyStabilityChangedEvent args)
-    {
-        foreach (var entry in component.Comp.Entries)
-        {
-            if (!entry.Settings.SpawnOnStabilityChanged)
-                continue;
-
-            SpawnEntities(component, entry, args.Stability, args.Severity, 1);
-        }
-    }
-
-    private void OnSeverityChanged(Entity<EntitySpawnAnomalyComponent> component, ref AnomalySeverityChangedEvent args)
-    {
-        foreach (var entry in component.Comp.Entries)
-        {
-            if (!entry.Settings.SpawnOnSeverityChanged)
-                continue;
-
-            SpawnEntities(component, entry, args.Stability, args.Severity, 1);
-        }
-    }
-
-    private void SpawnEntities(Entity<EntitySpawnAnomalyComponent> anomaly, EntitySpawnSettingsEntry entry, float stability, float severity, float powerMod)
-    {
-        var xform = Transform(anomaly);
-        if (!TryComp(xform.GridUid, out MapGridComponent? grid))
+        if (!component.Spawns.Any())
             return;
 
-        var tiles = _anomaly.GetSpawningPoints(anomaly, stability, severity, entry.Settings, powerMod);
-        if (tiles == null)
+        if (!_map.TryGetGrid(xform.GridUid, out var grid))
             return;
 
-        foreach (var tileref in tiles)
+        var localpos = xform.Coordinates.Position;
+        var tilerefs = grid.GetLocalTilesIntersecting(
+            new Box2(localpos + (-radius, -radius), localpos + (radius, radius))).ToArray();
+
+        if (tilerefs.Length == 0)
+            return;
+
+        _random.Shuffle(tilerefs);
+        var physQuery = GetEntityQuery<PhysicsComponent>();
+        var amountCounter = 0;
+        foreach (var tileref in tilerefs)
         {
-            Spawn(_random.Pick(entry.Spawns), _mapSystem.ToCenterCoordinates(tileref, grid));
+            var valid = true;
+            foreach (var ent in grid.GetAnchoredEntities(tileref.GridIndices))
+            {
+                if (!physQuery.TryGetComponent(ent, out var body))
+                    continue;
+                if (body.BodyType != BodyType.Static ||
+                    !body.Hard ||
+                    (body.CollisionLayer & (int) CollisionGroup.Impassable) == 0)
+                    continue;
+                valid = false;
+                break;
+            }
+            if (!valid)
+                continue;
+            amountCounter++;
+            Spawn(_random.Pick(component.Spawns), tileref.GridIndices.ToEntityCoordinates(xform.GridUid.Value, _map));
+            if (amountCounter >= amount)
+                return;
         }
     }
 }

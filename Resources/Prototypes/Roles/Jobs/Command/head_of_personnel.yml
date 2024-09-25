@@ -6,23 +6,18 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Engineering
-      time: 18000 #5 hrs # Corvax-RoleTime
+      time: 18000 # Corvax-RoleTime
     - !type:DepartmentTimeRequirement
       department: Medical
-      time: 18000 #5 hrs # Corvax-RoleTime
+      time: 18000 # Corvax-RoleTime
     - !type:DepartmentTimeRequirement
       department: Security
-      time: 18000 #5 hrs # Corvax-RoleTime
-#    - !type:DepartmentTimeRequirement
-#      department: Command
-#      time: 72000 # 20 hrs
+      time: 18000 # Corvax-RoleTime
     - !type:OverallPlaytimeRequirement
-      time: 180000 #50 hrs # Corvax-RoleTime
-    - !type:AgeRequirement
-      requiredAge: 21
+      time: 180000 # Corvax-RoleTime
   weight: 20
   startingGear: HoPGear
-  icon: "JobIconHeadOfPersonnel"
+  icon: "HeadOfPersonnel"
   requireAdminNotify: true
   supervisors: job-supervisors-captain
   canBeAntag: false
@@ -38,36 +33,31 @@
   - Chapel
   - Hydroponics
   - External
-  - Cryogenics
   # I mean they'll give themselves the rest of the access levels *anyways*.
   # As of 15/03/23 they can't do that so here's MOST of the rest of the access levels.
   # Head level access that isn't their own was deliberately left out, get AA from the captain instead.
   - Chemistry
   - Engineering
+  - Quartermaster
   - Research
   - Detective
   - Salvage
   - Security
   - Brig
-  - Lawyer
   - Cargo
   - Atmospherics
+  - Cargo
   - Medical
-  special:
-  - !type:AddImplantSpecial
-    implants: [ MindShieldImplant ]
-  - !type:AddComponentSpecial
-    components:
-      - type: CommandStaff
 
 - type: startingGear
   id: HoPGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitHoP
+    back: ClothingBackpackHOPFilled
     shoes: ClothingShoesColorBrown
+    head: ClothingHeadHatHopcap
     id: HoPPDA
-    gloves: ClothingHandsGlovesHop
     ears: ClothingHeadsetAltCommand
-    belt: BoxFolderClipboard
-  storage:
-    back:
-    - Flash
+  innerclothingskirt: ClothingUniformJumpskirtHoP
+  satchel: ClothingBackpackSatchelHOPFilled
+  duffelbag: ClothingBackpackDuffelHOPFilled

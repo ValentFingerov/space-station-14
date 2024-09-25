@@ -5,16 +5,15 @@
   description: A pack of thin pieces of paper used to make fine smokeables.
   components:
   - type: Storage
-    grid:
-    - 0,0,3,1
     whitelist:
       tags:
       - RollingPaper
       - CigFilter
+    capacity: 16
   - type: StorageFill
     contents:
       - id: PaperRolling
-        amount: 4
+        amount: 8
   - type: Sprite
     sprite: Objects/Consumable/Smokeables/Cigarettes/paper.rsi
     state: cigpapers
@@ -32,12 +31,13 @@
       tags:
       - RollingPaper
       - CigFilter
+    capacity: 32
   - type: StorageFill
     contents:
       - id: PaperRolling
-        amount: 2
+        amount: 8
       - id: CigaretteFilter
-        amount: 2
+        amount: 8
 
 - type: entity
   id: PaperRolling
@@ -54,7 +54,7 @@
     state: cigpaper
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/paper.rsi
-    size: Tiny
+    size: 2
   - type: Tag
     tags:
     - RollingPaper
@@ -84,7 +84,7 @@
     state: cigfilter
   - type: Item
     sprite: Objects/Consumable/Smokeables/Cigarettes/paper.rsi
-    size: Tiny
+    size: 2
   - type: Tag
     tags:
     - CigFilter

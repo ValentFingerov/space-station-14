@@ -1,30 +1,18 @@
 ﻿- type: entity
   id: ResearchAndDevelopmentServer
-  parent: [ BaseMachinePowered, ConstructibleMachine ]
+  parent: BaseMachinePowered
   name: R&D server
   description: Contains the collective knowledge of the station's scientists. Destroying it would send them back to the stone age. You don't want that do you?
   components:
   - type: Sprite
     sprite: Structures/Machines/server.rsi
-    layers:
-      - state: server
-      - state: variant-research
-      - state: server_o
-        map: ["enum.WiresVisualLayers.MaintenancePanel"]
+    state: server
   - type: ResearchServer
   - type: TechnologyDatabase
-    supportedDisciplines:
-    - Industrial
-    - Arsenal
-    - Experimental
-    - CivilianServices
   - type: ApcPowerReceiver
     powerLoad: 200
+    priority: Low
   - type: ExtensionCableReceiver
-  - type: WiresPanel
-  - type: WiresVisuals
-  - type: Machine
-    board: ResearchAndDevelopmentServerMachineCircuitboard
   - type: Destructible
     thresholds:
     - trigger:
@@ -41,22 +29,17 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
             min: 1
             max: 2
-  - type: Appearance
-  - type: AmbientOnPowered
   - type: AmbientSound
     volume: -9
     range: 5
     sound:
       path: /Audio/Ambience/Objects/server_fans.ogg
-  - type: GuideHelp
-    guides:
-    - Science
 
 - type: entity
   id: BaseResearchAndDevelopmentPointSource
@@ -66,6 +49,7 @@
   components:
   - type: Sprite
     sprite: Structures/Machines/rndpointsource.rsi
+    netsync: false
     layers:
     - state: rndpointsource-off
     - state: rndpointsource
@@ -84,8 +68,8 @@
   - type: ActivatableUIRequiresPower
   - type: UserInterface
     interfaces:
-      enum.ResearchClientUiKey.Key:
-        type: ResearchClientBoundUserInterface
+    - key: enum.ResearchClientUiKey.Key
+      type: ResearchClientBoundUserInterface
   - type: Appearance
   - type: GenericVisualizer
     visuals:
@@ -109,12 +93,9 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
             min: 1
             max: 1
-  - type: GuideHelp
-    guides:
-    - Science

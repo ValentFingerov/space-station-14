@@ -7,28 +7,11 @@
     - type: Clickable
     - type: InteractionOutline
     - type: Sprite
+      netsync: false
       sprite: Objects/Weapons/Guns/Turrets/turrets.rsi
-      drawdepth: Mobs
+      drawdepth: WallMountedItems
       layers:
         - state: syndie_broken
-    - type: Damageable
-      damageContainer: Inorganic
-    - type: Destructible
-      thresholds:
-        - trigger:
-            !type:DamageTrigger
-            damage: 450
-          behaviors:
-            - !type:DoActsBehavior
-              acts: [ "Destruction" ]
-            - !type:PlaySoundBehavior
-              sound:
-                collection: MetalGlassBreak
-            - !type:SpawnEntitiesBehavior
-              spawn:
-                SheetSteel1:
-                  min: 2
-                  max: 4
 
 - type: entity
   parent: BaseStructure
@@ -54,8 +37,9 @@
       containers:
         ballistic-ammo: !type:Container
     - type: Sprite
+      netsync: false
       sprite: Objects/Weapons/Guns/Turrets/turrets.rsi
-      drawdepth: Mobs
+      drawdepth: WallMountedItems
       layers:
         - state: syndie_lethal
     - type: InteractionPopup
@@ -66,7 +50,10 @@
       interactSuccessSound:
         path: /Audio/Effects/double_beep.ogg
     - type: CombatMode
-      toggleMouseRotator: false
+      combatToggleAction:
+        enabled: false
+        autoPopulate: false
+        name: action-name-combat
     - type: Damageable
       damageContainer: Inorganic
     - type: Destructible
@@ -86,7 +73,7 @@
               acts: [ "Destruction" ]
             - !type:PlaySoundBehavior
               sound:
-                collection: MetalGlassBreak
+                path: /Audio/Effects/metalbreak.ogg
             - !type:SpawnEntitiesBehavior
               spawn:
                 SheetSteel1:
@@ -103,86 +90,26 @@
       proto: CartridgeCaselessRifle
       capacity: 500
     - type: HTN
-      rootTask:
-        task: TurretCompound
+      rootTask: TurretCompound
       blackboard:
-        RotateSpeed: !type:Single
-          3.141
         SoundTargetInLOS: !type:SoundPathSpecifier
           path: /Audio/Effects/double_beep.ogg
-    - type: MouseRotator
-      angleTolerance: 5
-      rotationSpeed: 180
-      simple4DirMode: false
-    - type: NoRotateOnInteract
-    - type: NoRotateOnMove
-    - type: Input
-      context: "human"
-
-- type: entity
-  parent: [BaseWeaponTurret, BaseSyndicateContraband]
-  id: WeaponTurretSyndicate
-  suffix: Syndicate
-  components:
-    - type: NpcFactionMember
-      factions:
-        - Syndicate
 
 - type: entity
   parent: BaseWeaponTurret
-  name: disposable ballistic turret
-  id: WeaponTurretSyndicateDisposable
-  suffix: Syndicate, Disposable
+  id: WeaponTurretSyndicate
+  suffix: Syndicate
   components:
-    - type: NpcFactionMember
+    - type: Faction
       factions:
         - Syndicate
-    - type: Destructible
-      thresholds:
-        - trigger:
-            !type:DamageTrigger
-            damage: 600
-          behaviors:
-            - !type:DoActsBehavior
-              acts: [ "Destruction" ]
-        - trigger:
-            !type:DamageTrigger
-            damage: 100
-          behaviors:
-            - !type:DoActsBehavior
-              acts: [ "Destruction" ]
-            - !type:TriggerBehavior
-    - type: Gun
-      fireRate: 2
-      selectedMode: FullAuto
-      availableModes:
-        - FullAuto
-      soundGunshot: /Audio/Weapons/Guns/Gunshots/gun_sentry.ogg
-    - type: BallisticAmmoProvider
-      proto: CartridgePistol
-      capacity: 50
-    - type: Construction
-      deconstructionTarget: null
-      graph: WeaponTurretSyndicateDisposable
-      node: disposableTurret
-    - type: Repairable
-      qualityNeeded: "Anchoring"
-      doAfterDelay: 3
-    - type: TriggerWhenEmpty
-    - type: ExplodeOnTrigger
-    - type: Explosive
-      explosionType: Default
-      maxIntensity: 10
-      intensitySlope: 1.5
-      totalIntensity: 30
-      canCreateVacuum: false
 
 - type: entity
   parent: BaseWeaponTurret
   id: WeaponTurretNanoTrasen
   suffix: NanoTrasen
   components:
-  - type: NpcFactionMember
+  - type: Faction
     factions:
     - NanoTrasen
 
@@ -191,21 +118,22 @@
   id: WeaponTurretHostile
   suffix: Hostile
   components:
-  - type: NpcFactionMember
+  - type: Faction
     factions:
     - SimpleHostile
 
 - type: entity
   name: xeno turret
-  description: Shoots 9mm acid projectiles.
+  description: Shoots 9mm acid projectiles
   parent: BaseWeaponTurret
   id: WeaponTurretXeno
   suffix: Xeno
   components:
-    - type: NpcFactionMember
+    - type: Faction
       factions:
         - Xeno
     - type: Sprite
+      netsync: false
       sprite: Objects/Weapons/Guns/Turrets/xenoturret.rsi
       noRot: true
       layers:
@@ -218,8 +146,7 @@
       selectedMode: FullAuto
       soundGunshot: /Audio/Weapons/Xeno/alien_spitacid.ogg
     - type: HTN
-      rootTask:
-        task: TurretCompound
+      rootTask: TurretCompound
       blackboard:
         SoundTargetInLOS: !type:SoundPathSpecifier
           path: /Audio/Animals/snake_hiss.ogg

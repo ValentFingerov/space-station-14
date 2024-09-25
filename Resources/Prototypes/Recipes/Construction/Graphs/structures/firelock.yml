@@ -1,4 +1,4 @@
-- type: constructionGraph
+﻿- type: constructionGraph
   id: Firelock
   start: start
   graph:
@@ -50,7 +50,7 @@
           steps:
             - tag: FirelockElectronics
               store: board
-              name: firelock electronics
+              name: Firelock Electronics
               icon:
                 sprite: "Objects/Misc/module.rsi"
                 state: "mainboard"
@@ -80,9 +80,7 @@
               doAfter: 0.25
         - to: frame2
           completed:
-            - !type:EmptyAllContainers
-              pickup: true
-              emptyAtUser: true
+            - !type:EmptyAllContainers {}
           conditions:
             - !type:EntityAnchored
               anchored: true
@@ -102,14 +100,6 @@
           steps:
             - tool: Anchoring
               doAfter: 1
-
-        - to: FirelockEdge
-          conditions:
-            - !type:EntityAnchored
-              anchored: true
-          steps:
-            - tool: Welding
-              doAfter: 0.5
 
         - to: FirelockGlassFrame
           conditions:
@@ -138,9 +128,6 @@
           steps:
             - tool: Anchoring
               doAfter: 0.25
-          completed:
-            - !type:SnapToGrid
-              southRotation: true
 
     - node: FirelockGlassFrame
       edges:
@@ -171,17 +158,3 @@
           steps:
             - tool: Anchoring
               doAfter: 1
-          completed:
-            - !type:SnapToGrid
-              southRotation: true
-
-    - node: FirelockEdge
-      entity: FirelockEdge
-      edges:
-        - to: frame4
-          conditions:
-            - !type:DoorWelded
-              welded: true
-          steps:
-            - tool: Anchoring
-              doAfter: 0.25

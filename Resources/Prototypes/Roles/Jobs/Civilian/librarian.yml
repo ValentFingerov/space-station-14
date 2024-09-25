@@ -4,7 +4,7 @@
   description: job-description-librarian
   playTimeTracker: JobLibrarian
   startingGear: LibrarianGear
-  icon: "JobIconLibrarian"
+  icon: "Librarian"
   supervisors: job-supervisors-hop
   access:
   - Service
@@ -13,11 +13,16 @@
 - type: startingGear
   id: LibrarianGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitLibrarian
+    back: ClothingBackpackLibrarianFilled
     shoes: ClothingShoesBootsLaceup
     id: LibrarianPDA
     ears: ClothingHeadsetService
     pocket1: d10Dice
+    belt: BooksBag
     pocket2: HandLabeler # for making named bestsellers
-  storage:
-    back:
-    - BookRandom
+  inhand:
+    right hand: BriefcaseBrownFilled
+  innerclothingskirt: ClothingUniformJumpskirtLibrarian # Corvax-Resprite
+  satchel: ClothingBackpackSatchelLibrarianFilled
+  duffelbag: ClothingBackpackDuffelLibrarianFilled

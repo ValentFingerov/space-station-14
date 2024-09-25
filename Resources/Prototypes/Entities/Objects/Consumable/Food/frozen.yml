@@ -1,4 +1,3 @@
-# When adding new food also add to random spawner located in Resources\Prototypes\Entities\Markers\Spawners\Random\Food_Drinks\food_snack.yml
 # Base
 
 - type: entity
@@ -9,6 +8,7 @@
   - type: Food
   - type: Sprite
     sprite: Objects/Consumable/Food/frozen.rsi
+    netsync: false
   - type: SolutionContainerManager
     solutions:
       food:
@@ -88,8 +88,7 @@
     - state: popsicle
       color: orange
   - type: Food
-    trash: 
-    - FoodFrozenPopsicleTrash
+    trash: FoodFrozenPopsicleTrash
 
 - type: entity
   name: berry creamsicle
@@ -104,11 +103,7 @@
     - state: popsicle
       color: red
   - type: Food
-    trash: 
-    - FoodFrozenPopsicleTrash
-  - type: Tag
-    tags:
-    - Fruit
+    trash: FoodFrozenPopsicleTrash
 
 - type: entity
   name: jumbo ice-cream
@@ -121,8 +116,7 @@
     - state: stick
     - state: jumbo
   - type: Food
-    trash: 
-    - FoodFrozenPopsicleTrash
+    trash: FoodFrozenPopsicleTrash
   - type: SolutionContainerManager
     solutions:
       food:
@@ -152,8 +146,7 @@
         - state: alpha-filling
     #      color: foo
     - type: Food
-      trash: 
-      - FoodFrozenSnowconeTrash
+      trash: FoodFrozenSnowconeTrash
     - type: SolutionContainerManager
       solutions:
         food:
@@ -191,11 +184,7 @@
     - state: cone
     - state: berry
   - type: Food
-    trash: 
-    - FoodFrozenSnowconeTrash
-  - type: Tag
-    tags:
-    - Fruit
+    trash: FoodFrozenSnowconeTrash
 
 - type: entity
   name: fruit salad snowcone
@@ -208,11 +197,7 @@
     - state: cone
     - state: fruitsalad
   - type: Food
-    trash: 
-    - FoodFrozenSnowconeTrash
-  - type: Tag
-    tags:
-    - Fruit
+    trash: FoodFrozenSnowconeTrash
 
 - type: entity
   name: clowncone
@@ -225,8 +210,7 @@
     - state: cone
     - state: clown
   - type: Food
-    trash: 
-    - FoodFrozenSnowconeTrash
+    trash: FoodFrozenSnowconeTrash
 
 - type: entity
   name: mime snowcone
@@ -239,8 +223,7 @@
     - state: cone
     - state: mime
   - type: Food
-    trash: 
-    - FoodFrozenSnowconeTrash
+    trash: FoodFrozenSnowconeTrash
 
 - type: entity
   name: rainbow snowcone
@@ -253,8 +236,7 @@
     - state: cone
     - state: rainbow
   - type: Food
-    trash: 
-    - FoodFrozenSnowconeTrash
+    trash: FoodFrozenSnowconeTrash
 
 # Trash
 
@@ -267,6 +249,7 @@
   - type: Sprite
     sprite: Objects/Consumable/Food/frozen.rsi
     state: cone-trash
+    netsync: false
   - type: Tag
     tags:
     - Trash
@@ -279,6 +262,7 @@
   components:
   - type: Sprite
     sprite: Objects/Consumable/Food/frozen.rsi
+    netsync: false
     layers:
       - state: stick
         map: [ "enum.DamageStateVisualLayers.Base" ]
@@ -286,6 +270,7 @@
     available:
       - enum.DamageStateVisualLayers.Base:
           stick: ""
+      - enum.DamageStateVisualLayers.Base:
           stick2: ""
   - type: Tag
     tags:

@@ -6,9 +6,9 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Science
-      time: 18000 #5 hrs # Corvax-RoleTime
+      time: 18000 # Corvax-RoleTime
   startingGear: ScientistGear
-  icon: "JobIconScientist"
+  icon: "Scientist"
   supervisors: job-supervisors-rd
   access:
   - Research
@@ -17,7 +17,12 @@
 - type: startingGear
   id: ScientistGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitScientist
+    back: ClothingBackpackScienceFilled
+    shoes: ClothingShoesColorWhite
+    outerClothing: ClothingOuterCoatRnd
+    id: SciencePDA
     ears: ClothingHeadsetScience
-  #storage:
-    #back:
-    #- Stuff
+  innerclothingskirt: ClothingUniformJumpskirtScientist
+  satchel: ClothingBackpackSatchelScienceFilled
+  duffelbag: ClothingBackpackDuffelScienceFilled

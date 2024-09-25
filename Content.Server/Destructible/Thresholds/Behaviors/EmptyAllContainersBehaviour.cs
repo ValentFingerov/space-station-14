@@ -6,7 +6,7 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
     ///     Drop all items from all containers
     /// </summary>
     [DataDefinition]
-    public sealed partial class EmptyAllContainersBehaviour : IThresholdBehavior
+    public sealed class EmptyAllContainersBehaviour : IThresholdBehavior
     {
         public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
         {
@@ -15,7 +15,7 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
 
             foreach (var container in containerManager.GetAllContainers())
             {
-                system.ContainerSystem.EmptyContainer(container, true, system.EntityManager.GetComponent<TransformComponent>(owner).Coordinates);
+                container.EmptyContainer(true, system.EntityManager.GetComponent<TransformComponent>(owner).Coordinates);
             }
         }
     }

@@ -1,10 +1,16 @@
+using System;
+using System.Threading.Tasks;
+using Content.Server.Fluids.Components;
 using Content.Server.Fluids.EntitySystems;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Coordinates;
 using Content.Shared.FixedPoint;
 using Content.Shared.Fluids.Components;
+using NUnit.Framework;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
+using Robust.Shared.Timing;
 
 namespace Content.IntegrationTests.Tests.Fluids
 {
@@ -15,12 +21,13 @@ namespace Content.IntegrationTests.Tests.Fluids
         [Test]
         public async Task TilePuddleTest()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{NoClient = true});
+            var server = pairTracker.Pair.Server;
 
-            var testMap = await pair.CreateTestMap();
+            var testMap = await PoolManager.CreateTestMap(pairTracker);
 
-            var spillSystem = server.System<PuddleSystem>();
+            var entitySystemManager = server.ResolveDependency<IEntitySystemManager>();
+            var spillSystem = entitySystemManager.GetEntitySystem<PuddleSystem>();
 
             await server.WaitAssertion(() =>
             {
@@ -29,48 +36,50 @@ namespace Content.IntegrationTests.Tests.Fluids
                 var gridUid = tile.GridUid;
                 var (x, y) = tile.GridIndices;
                 var coordinates = new EntityCoordinates(gridUid, x, y);
+                var puddle = spillSystem.TrySpillAt(coordinates, solution, out _);
 
-                Assert.That(spillSystem.TrySpillAt(coordinates, solution, out _), Is.True);
+                Assert.True(puddle);
             });
-            await pair.RunTicksSync(5);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 5);
 
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
 
         [Test]
         public async Task SpaceNoPuddleTest()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{NoClient = true});
+            var server = pairTracker.Pair.Server;
 
-            var testMap = await pair.CreateTestMap();
-            var grid = testMap.Grid;
+            var testMap = await PoolManager.CreateTestMap(pairTracker);
 
             var entitySystemManager = server.ResolveDependency<IEntitySystemManager>();
-            var spillSystem = server.System<PuddleSystem>();
-            var mapSystem = server.System<SharedMapSystem>();
+            var spillSystem = entitySystemManager.GetEntitySystem<PuddleSystem>();
+
+            MapGridComponent grid = null;
 
             // Remove all tiles
             await server.WaitPost(() =>
             {
-                var tiles = mapSystem.GetAllTiles(grid.Owner, grid.Comp);
-                foreach (var tile in tiles)
+                grid = testMap.MapGrid;
+
+                foreach (var tile in grid.GetAllTiles())
                 {
-                    mapSystem.SetTile(grid, tile.GridIndices, Tile.Empty);
+                    grid.SetTile(tile.GridIndices, Tile.Empty);
                 }
             });
 
-            await pair.RunTicksSync(5);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 5);
 
             await server.WaitAssertion(() =>
             {
-                var coordinates = grid.Owner.ToCoordinates();
+                var coordinates = grid.ToCoordinates();
                 var solution = new Solution("Water", FixedPoint2.New(20));
-
-                Assert.That(spillSystem.TrySpillAt(coordinates, solution, out _), Is.False);
+                var puddle = spillSystem.TrySpillAt(coordinates, solution, out _);
+                Assert.False(puddle);
             });
 
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

@@ -4,11 +4,11 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototy
 namespace Content.Server.Speech.Components
 {
     [Prototype("accent")]
-    public sealed partial class ReplacementAccentPrototype : IPrototype
+    public sealed class ReplacementAccentPrototype : IPrototype
     {
         [ViewVariables]
         [IdDataField]
-        public string ID { get; private set; } = default!;
+        public string ID { get; } = default!;
 
         /// <summary>
         ///     If this array is non-null, the full text of anything said will be randomly replaced with one of these words.
@@ -22,22 +22,15 @@ namespace Content.Server.Speech.Components
         /// </summary>
         [DataField("wordReplacements")]
         public Dictionary<string, string>? WordReplacements;
-
-        /// <summary>
-        /// Allows you to substitute words, not always, but with some chance
-        /// </summary>
-        [DataField]
-        public float ReplacementChance = 1f;
     }
 
     /// <summary>
     /// Replaces full sentences or words within sentences with new strings.
     /// </summary>
     [RegisterComponent]
-    public sealed partial class ReplacementAccentComponent : Component
+    public sealed class ReplacementAccentComponent : Component
     {
         [DataField("accent", customTypeSerializer: typeof(PrototypeIdSerializer<ReplacementAccentPrototype>), required: true)]
         public string Accent = default!;
-
     }
 }

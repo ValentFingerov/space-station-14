@@ -5,14 +5,14 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototy
 namespace Content.Shared.EntityList
 {
     [Prototype("entityList")]
-    public sealed partial class EntityListPrototype : IPrototype
+    public sealed class EntityListPrototype : IPrototype
     {
         [ViewVariables]
         [IdDataField]
-        public string ID { get; private set; } = default!;
+        public string ID { get; } = default!;
 
         [DataField("entities", customTypeSerializer: typeof(PrototypeIdListSerializer<EntityPrototype>))]
-        public ImmutableList<string> EntityIds { get; private set; } = ImmutableList<string>.Empty;
+        public ImmutableList<string> EntityIds { get; } = ImmutableList<string>.Empty;
 
         public IEnumerable<EntityPrototype> Entities(IPrototypeManager? prototypeManager = null)
         {

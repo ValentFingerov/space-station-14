@@ -6,13 +6,7 @@ namespace Content.Server.Speech.EntitySystems;
 
 public sealed class LizardAccentSystem : EntitySystem
 {
-    private static readonly Regex RegexLowerS = new("s+");
-    private static readonly Regex RegexUpperS = new("S+");
-    private static readonly Regex RegexInternalX = new(@"(\w)x");
-    private static readonly Regex RegexLowerEndX = new(@"\bx([\-|r|R]|\b)");
-    private static readonly Regex RegexUpperEndX = new(@"\bX([\-|r|R]|\b)");
-
-    [Dependency] private readonly IRobustRandom _random = default!; // Corvax-Localization
+    [Dependency] private readonly IRobustRandom _random = default!;
 
     public override void Initialize()
     {
@@ -25,15 +19,15 @@ public sealed class LizardAccentSystem : EntitySystem
         var message = args.Message;
 
         // hissss
-        message = RegexLowerS.Replace(message, "sss");
+        message = Regex.Replace(message, "s+", "sss");
         // hiSSS
-        message = RegexUpperS.Replace(message, "SSS");
+        message = Regex.Replace(message, "S+", "SSS");
         // ekssit
-        message = RegexInternalX.Replace(message, "$1kss");
+        message = Regex.Replace(message, @"(\w)x", "$1kss");
         // ecks
-        message = RegexLowerEndX.Replace(message, "ecks$1");
+        message = Regex.Replace(message, @"\bx([\-|r|R]|\b)", "ecks$1");
         // eckS
-        message = RegexUpperEndX.Replace(message, "ECKS$1");
+        message = Regex.Replace(message, @"\bX([\-|r|R]|\b)", "ECKS$1");
 
         // Corvax-Localization-Start
         // c => ссс
@@ -46,7 +40,7 @@ public sealed class LizardAccentSystem : EntitySystem
         message = Regex.Replace(
             message,
             "С+",
-            _random.Pick(new List<string>() { "СС", "ССС" })
+            _random.Pick(new List<string>() { "Сс", "Ссс" })
         );
         // з => ссс
         message = Regex.Replace(
@@ -58,7 +52,7 @@ public sealed class LizardAccentSystem : EntitySystem
         message = Regex.Replace(
             message,
             "З+",
-            _random.Pick(new List<string>() { "СС", "ССС" })
+            _random.Pick(new List<string>() { "Сс", "Ссс" })
         );
         // ш => шшш
         message = Regex.Replace(
@@ -70,7 +64,7 @@ public sealed class LizardAccentSystem : EntitySystem
         message = Regex.Replace(
             message,
             "Ш+",
-            _random.Pick(new List<string>() { "ШШ", "ШШШ" })
+            _random.Pick(new List<string>() { "Шш", "Шшш" })
         );
         // ч => щщщ
         message = Regex.Replace(
@@ -82,7 +76,7 @@ public sealed class LizardAccentSystem : EntitySystem
         message = Regex.Replace(
             message,
             "Ч+",
-            _random.Pick(new List<string>() { "ЩЩ", "ЩЩЩ" })
+            _random.Pick(new List<string>() { "Щщ", "Щщщ" })
         );
         // Corvax-Localization-End
         args.Message = message;

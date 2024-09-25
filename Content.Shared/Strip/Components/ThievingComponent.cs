@@ -4,14 +4,14 @@ namespace Content.Shared.Strip.Components;
 /// Give this to an entity when you want to decrease stripping times
 /// </summary>
 [RegisterComponent]
-public sealed partial class ThievingComponent : Component
+public sealed class ThievingComponent : Component
 {
     /// <summary>
     /// How much the strip time should be shortened by
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
     [DataField("stripTimeReduction")]
-    public TimeSpan StripTimeReduction = TimeSpan.FromSeconds(0.5f);
+    public float StripTimeReduction = 0.5f;
 
     /// <summary>
     /// Should it notify the user if they're stripping a pocket?

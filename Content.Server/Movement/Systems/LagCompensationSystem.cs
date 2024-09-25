@@ -1,7 +1,7 @@
 using Content.Server.Movement.Components;
 using Robust.Server.Player;
 using Robust.Shared.Map;
-using Robust.Shared.Player;
+using Robust.Shared.Players;
 using Robust.Shared.Timing;
 
 namespace Content.Server.Movement.Systems;
@@ -18,10 +18,12 @@ public sealed class LagCompensationSystem : EntitySystem
     // Max ping I've had is 350ms from aus to spain.
     public static readonly TimeSpan BufferTime = TimeSpan.FromMilliseconds(750);
 
+    private ISawmill _sawmill = Logger.GetSawmill("lagcomp");
+
     public override void Initialize()
     {
         base.Initialize();
-        Log.Level = LogLevel.Info;
+        _sawmill.Level = LogLevel.Info;
         SubscribeLocalEvent<LagCompensationComponent, MoveEvent>(OnLagMove);
     }
 
@@ -34,9 +36,7 @@ public sealed class LagCompensationSystem : EntitySystem
 
         // Cull any old ones from active updates
         // Probably fine to include ignored.
-        var query = AllEntityQuery<LagCompensationComponent>();
-
-        while (query.MoveNext(out var comp))
+        foreach (var (_, comp) in EntityQuery<ActiveLagCompensationComponent, LagCompensationComponent>(true))
         {
             while (comp.Positions.TryPeek(out var pos))
             {
@@ -48,6 +48,11 @@ public sealed class LagCompensationSystem : EntitySystem
 
                 break;
             }
+
+            if (comp.Positions.Count == 0)
+            {
+                RemComp<ActiveLagCompensationComponent>(comp.Owner);
+            }
         }
     }
 
@@ -56,6 +61,7 @@ public sealed class LagCompensationSystem : EntitySystem
         if (!args.NewPosition.EntityId.IsValid())
             return; // probably being sent to nullspace for deletion.
 
+        EnsureComp<ActiveLagCompensationComponent>(uid);
         component.Positions.Enqueue((_timing.CurTime, args.NewPosition, args.NewRotation));
     }
 
@@ -85,13 +91,13 @@ public sealed class LagCompensationSystem : EntitySystem
 
         if (coordinates == default)
         {
-            Log.Debug($"No long comp coords found, using {xform.Coordinates}");
+            _sawmill.Debug($"No long comp coords found, using {xform.Coordinates}");
             coordinates = xform.Coordinates;
             angle = xform.LocalRotation;
         }
         else
         {
-            Log.Debug($"Actual coords is {xform.Coordinates} and got {coordinates}");
+            _sawmill.Debug($"Actual coords is {xform.Coordinates} and got {coordinates}");
         }
 
         return (coordinates, angle);

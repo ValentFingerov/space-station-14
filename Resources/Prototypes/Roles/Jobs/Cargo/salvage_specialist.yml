@@ -6,12 +6,10 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Cargo
-      time: 10800 # 3 hrs
-#    - !type:OverallPlaytimeRequirement
-#      time: 36000 #10 hrs
-  icon: "JobIconShaftMiner"
+      time: 10800 # Corvax-RoleTime
+  icon: "ShaftMiner"
   startingGear: SalvageSpecialistGear
-  supervisors: job-supervisors-qm
+  supervisors: job-supervisors-hop-qm
   access:
   - Cargo
   - Salvage
@@ -22,8 +20,9 @@
   id: SalvageSpecialistGear
   equipment:
     jumpsuit: ClothingUniformJumpsuitSalvageSpecialist
+    back: ClothingBackpackSalvageFilled
+    shoes: ClothingShoesBootsSalvage
     id: SalvagePDA
     ears: ClothingHeadsetCargo
-  #storage:
-    #back:
-    #- Stuff
+  satchel: ClothingBackpackSatchelSalvageFilled
+  duffelbag: ClothingBackpackDuffelSalvageFilled

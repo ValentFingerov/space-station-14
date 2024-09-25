@@ -1,4 +1,3 @@
-using Content.Shared.DisplacementMap;
 using Content.Shared.Hands.EntitySystems;
 using Robust.Shared.Containers;
 using Robust.Shared.GameStates;
@@ -6,9 +5,9 @@ using Robust.Shared.Serialization;
 
 namespace Content.Shared.Hands.Components;
 
-[RegisterComponent, NetworkedComponent, AutoGenerateComponentPause]
+[RegisterComponent, NetworkedComponent]
 [Access(typeof(SharedHandsSystem))]
-public sealed partial class HandsComponent : Component
+public sealed class HandsComponent : Component
 {
     /// <summary>
     ///     The currently active hand.
@@ -33,17 +32,11 @@ public sealed partial class HandsComponent : Component
     public List<string> SortedHands = new();
 
     /// <summary>
-    ///     If true, the items in the hands won't be affected by explosions.
+    ///     The amount of throw impulse per distance the player is from the throw target.
     /// </summary>
-    [DataField]
-    public bool DisableExplosionRecursion = false;
-
-    /// <summary>
-    ///     Modifies the speed at which items are thrown.
-    /// </summary>
-    [DataField]
+    [DataField("throwForceMultiplier")]
     [ViewVariables(VVAccess.ReadWrite)]
-    public float BaseThrowspeed { get; set; } = 11f;
+    public float ThrowForceMultiplier { get; set; } = 10f; //should be tuned so that a thrown item lands about under the player's cursor
 
     /// <summary>
     ///     Distance after which longer throw targets stop increasing throw impulse.
@@ -64,22 +57,6 @@ public sealed partial class HandsComponent : Component
     ///     Used by the client.
     /// </summary>
     public readonly Dictionary<HandLocation, HashSet<string>> RevealedLayers = new();
-
-    /// <summary>
-    ///     The time at which throws will be allowed again.
-    /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    [AutoPausedField]
-    public TimeSpan NextThrowTime;
-
-    /// <summary>
-    ///     The minimum time inbetween throws.
-    /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    public TimeSpan ThrowCooldown = TimeSpan.FromSeconds(0.5f);
-
-    [DataField]
-    public DisplacementData? HandDisplacement;
 }
 
 [Serializable, NetSerializable]
@@ -120,9 +97,8 @@ public sealed class HandsComponentState : ComponentState
 
     public HandsComponentState(HandsComponent handComp)
     {
-        // cloning lists because of test networking.
         Hands = new(handComp.Hands.Values);
-        HandNames = new(handComp.SortedHands);
+        HandNames = handComp.SortedHands;
         ActiveHand = handComp.ActiveHand?.Name;
     }
 }
@@ -130,43 +106,9 @@ public sealed class HandsComponentState : ComponentState
 /// <summary>
 ///     What side of the body this hand is on.
 /// </summary>
-/// <seealso cref="HandUILocation"/>
-/// <seealso cref="HandLocationExt"/>
 public enum HandLocation : byte
 {
     Left,
     Middle,
     Right
-}
-
-/// <summary>
-/// What side of the UI a hand is on.
-/// </summary>
-/// <seealso cref="HandLocationExt"/>
-/// <seealso cref="HandLocation"/>
-public enum HandUILocation : byte
-{
-    Left,
-    Right
-}
-
-/// <summary>
-/// Helper functions for working with <see cref="HandLocation"/>.
-/// </summary>
-public static class HandLocationExt
-{
-    /// <summary>
-    /// Convert a <see cref="HandLocation"/> into the appropriate <see cref="HandUILocation"/>.
-    /// This maps "middle" hands to <see cref="HandUILocation.Right"/>.
-    /// </summary>
-    public static HandUILocation GetUILocation(this HandLocation location)
-    {
-        return location switch
-        {
-            HandLocation.Left => HandUILocation.Left,
-            HandLocation.Middle => HandUILocation.Right,
-            HandLocation.Right => HandUILocation.Right,
-            _ => throw new ArgumentOutOfRangeException(nameof(location), location, null)
-        };
-    }
 }

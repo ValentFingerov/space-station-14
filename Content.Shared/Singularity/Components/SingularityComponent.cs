@@ -11,15 +11,15 @@ namespace Content.Shared.Singularity.Components;
 /// Energy management is server-side.
 /// </summary>
 [RegisterComponent, NetworkedComponent]
-public sealed partial class SingularityComponent : Component
+public sealed class SingularityComponent : Component
 {
     /// <summary>
     /// The current level of the singularity.
     /// Used as a scaling factor for things like visual size, event horizon radius, gravity well radius, radiation output, etc.
     /// If you want to set this use <see cref="SharedSingularitySystem.SetLevel"/>().
     /// </summary>
-    [Access(friends: typeof(SharedSingularitySystem), Other = AccessPermissions.Read, Self = AccessPermissions.Read)]
     [DataField("level")]
+    [Access(friends:typeof(SharedSingularitySystem), Other=AccessPermissions.Read, Self=AccessPermissions.Read)]
     public byte Level = 1;
 
     /// <summary>
@@ -27,8 +27,8 @@ public sealed partial class SingularityComponent : Component
     /// Has to be on shared in case someone attaches a RadiationPulseComponent to the singularity.
     /// If you want to set this use <see cref="SharedSingularitySystem.SetRadsPerLevel"/>().
     /// </summary>
-    [Access(friends: typeof(SharedSingularitySystem), Other = AccessPermissions.Read, Self = AccessPermissions.Read)]
     [DataField("radsPerLevel")]
+    [Access(friends:typeof(SharedSingularitySystem), Other=AccessPermissions.Read, Self=AccessPermissions.Read)]
     [ViewVariables(VVAccess.ReadWrite)]
     public float RadsPerLevel = 2f;
 
@@ -61,7 +61,7 @@ public sealed partial class SingularityComponent : Component
     /// The audio stream that plays the sound specified by <see cref="AmbientSound"/> on loop.
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
-    public EntityUid? AmbientSoundStream = null;
+    public IPlayingAudioStream? AmbientSoundStream = null;
 
     /// <summary>
     ///     The sound that the singularity produces when it forms.
@@ -81,4 +81,26 @@ public sealed partial class SingularityComponent : Component
     );
 
     #endregion Audio
+
+    #region Update Timing
+
+    /// <summary>
+    /// The amount of time that should elapse between automated updates to this singularity.
+    /// </summary>
+    [DataField("updatePeriod")]
+    [ViewVariables(VVAccess.ReadOnly)]
+    public TimeSpan TargetUpdatePeriod = TimeSpan.FromSeconds(1.0);
+
+    /// <summary>
+    /// </summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public TimeSpan NextUpdateTime = default!;
+
+    /// <summary>
+    /// The last time this singularity was updated.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public TimeSpan LastUpdateTime = default!;
+
+    #endregion Update Timing
 }

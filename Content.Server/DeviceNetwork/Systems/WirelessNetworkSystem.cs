@@ -6,8 +6,6 @@ namespace Content.Server.DeviceNetwork.Systems
     [UsedImplicitly]
     public sealed class WirelessNetworkSystem : EntitySystem
     {
-        [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
-
         public override void Initialize()
         {
             base.Initialize();
@@ -22,12 +20,9 @@ namespace Content.Server.DeviceNetwork.Systems
             var ownPosition = args.SenderPosition;
             var xform = Transform(uid);
 
-            // not a wireless to wireless connection, just let it happen
-            if (!TryComp<WirelessNetworkComponent>(args.Sender, out var sendingComponent))
-                return;
-
             if (xform.MapID != args.SenderTransform.MapID
-                || (ownPosition - _transformSystem.GetWorldPosition(xform)).Length() > sendingComponent.Range)
+                || !TryComp<WirelessNetworkComponent?>(args.Sender, out var sendingComponent)
+                || (ownPosition - xform.WorldPosition).Length > sendingComponent.Range)
             {
                 args.Cancel();
             }

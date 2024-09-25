@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using NUnit.Framework;
 using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Utility;
@@ -16,9 +19,9 @@ namespace Content.IntegrationTests.Tests.GameObjects.Components
         [Test]
         public async Task PrototypesHaveKnownComponents()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
-            var client = pair.Client;
+            await using var pairTracker = await PoolManager.GetServerClient();
+            var server = pairTracker.Pair.Server;
+            var client = pairTracker.Pair.Client;
 
             var sResourceManager = server.ResolveDependency<IResourceManager>();
             var prototypePath = new ResPath("/Prototypes/");
@@ -93,23 +96,23 @@ namespace Content.IntegrationTests.Tests.GameObjects.Components
 
             if (unknownComponentsClient.Count + unknownComponentsServer.Count == 0)
             {
-                await pair.CleanReturnAsync();
+                await pairTracker.CleanReturnAsync();
                 Assert.Pass($"Validated {entitiesValidated} entities with {componentsValidated} components in {paths.Length} files.");
                 return;
             }
 
             var message = new StringBuilder();
 
-            foreach (var (entityId, component) in unknownComponentsClient)
+            foreach (var unknownComponent in unknownComponentsClient)
             {
                 message.Append(
-                    $"CLIENT: Unknown component {component} in prototype {entityId}\n");
+                    $"CLIENT: Unknown component {unknownComponent.component} in prototype {unknownComponent.entityId}\n");
             }
 
-            foreach (var (entityId, component) in unknownComponentsServer)
+            foreach (var unknownComponent in unknownComponentsServer)
             {
                 message.Append(
-                    $"SERVER: Unknown component {component} in prototype {entityId}\n");
+                    $"SERVER: Unknown component {unknownComponent.component} in prototype {unknownComponent.entityId}\n");
             }
 
             Assert.Fail(message.ToString());
@@ -118,9 +121,9 @@ namespace Content.IntegrationTests.Tests.GameObjects.Components
         [Test]
         public async Task IgnoredComponentsExistInTheCorrectPlaces()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
-            var client = pair.Client;
+            await using var pairTracker = await PoolManager.GetServerClient();
+            var server = pairTracker.Pair.Server;
+            var client = pairTracker.Pair.Client;
             var serverComponents = server.ResolveDependency<IComponentFactory>();
             var ignoredServerNames = Server.Entry.IgnoredComponents.List;
             var clientComponents = client.ResolveDependency<IComponentFactory>();
@@ -137,8 +140,8 @@ namespace Content.IntegrationTests.Tests.GameObjects.Components
                     failureMessages = $"{failureMessages}\nComponent {serverIgnored} was ignored on server, but does not exist on client";
                 }
             }
-            Assert.That(failureMessages, Is.Empty);
-            await pair.CleanReturnAsync();
+            Assert.IsEmpty(failureMessages);
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

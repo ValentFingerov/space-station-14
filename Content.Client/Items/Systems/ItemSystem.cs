@@ -43,8 +43,8 @@ public sealed class ItemSystem : SharedItemSystem
     public override void VisualsChanged(EntityUid uid)
     {
         // if the item is in a container, it might be equipped to hands or inventory slots --> update visuals.
-        if (Container.TryGetContainingContainer((uid, null, null), out var container))
-            RaiseLocalEvent(container.Owner, new VisualsChangedEvent(GetNetEntity(uid), container.ID));
+        if (Container.TryGetContainingContainer(uid, out var container))
+            RaiseLocalEvent(container.Owner, new VisualsChangedEvent(uid, container.ID));
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public sealed class ItemSystem : SharedItemSystem
         else if (TryComp(uid, out SpriteComponent? sprite))
             rsi = sprite.BaseRSI;
 
-        if (rsi == null)
+        if (rsi == null || rsi.Path == null)
             return false;
 
         var state = (item.HeldPrefix == null)

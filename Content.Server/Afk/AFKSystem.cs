@@ -1,10 +1,10 @@
+using System.Linq;
 using Content.Server.Afk.Events;
 using Content.Server.GameTicking;
 using Content.Shared.CCVar;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
-using Robust.Shared.Input;
 using Robust.Shared.Player;
 using Robust.Shared.Timing;
 
@@ -24,20 +24,13 @@ public sealed class AFKSystem : EntitySystem
     private float _checkDelay;
     private TimeSpan _checkTime;
 
-    private readonly HashSet<ICommonSession> _afkPlayers = new();
+    private readonly HashSet<IPlayerSession> _afkPlayers = new();
 
     public override void Initialize()
     {
         base.Initialize();
         _playerManager.PlayerStatusChanged += OnPlayerChange;
-        Subs.CVar(_configManager, CCVars.AfkTime, SetAfkDelay, true);
-
-        SubscribeNetworkEvent<FullInputCmdMessage>(HandleInputCmd);
-    }
-
-    private void HandleInputCmd(FullInputCmdMessage msg, EntitySessionEventArgs args)
-    {
-        _afkManager.PlayerDidAction(args.SenderSession);
+        _configManager.OnValueChanged(CCVars.AfkTime, SetAfkDelay, true);
     }
 
     private void SetAfkDelay(float obj)
@@ -60,6 +53,7 @@ public sealed class AFKSystem : EntitySystem
         base.Shutdown();
         _afkPlayers.Clear();
         _playerManager.PlayerStatusChanged -= OnPlayerChange;
+        _configManager.UnsubValueChanged(CCVars.AfkTime, SetAfkDelay);
     }
 
     public override void Update(float frameTime)
@@ -79,9 +73,11 @@ public sealed class AFKSystem : EntitySystem
 
         _checkTime = _timing.CurTime + TimeSpan.FromSeconds(_checkDelay);
 
-        foreach (var pSession in Filter.GetAllPlayers())
+        foreach (var session in Filter.GetAllPlayers())
         {
-            if (pSession.Status != SessionStatus.InGame) continue;
+            if (session.Status != SessionStatus.InGame) continue;
+
+            var pSession = (IPlayerSession) session;
             var isAfk = _afkManager.IsAfk(pSession);
 
             if (isAfk && _afkPlayers.Add(pSession))

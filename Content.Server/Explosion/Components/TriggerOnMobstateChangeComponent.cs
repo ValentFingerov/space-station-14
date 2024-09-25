@@ -6,14 +6,14 @@ namespace Content.Server.Explosion.Components;
 /// Use where you want something to trigger on mobstate change
 /// </summary>
 [RegisterComponent]
-public sealed partial class TriggerOnMobstateChangeComponent : Component
+public sealed class TriggerOnMobstateChangeComponent : Component
 {
     /// <summary>
     /// What state should trigger this?
     /// </summary>
     [ViewVariables]
     [DataField("mobState", required: true)]
-    public List<MobState> MobState = new();
+    public MobState MobState = MobState.Alive;
 
     /// <summary>
     /// If true, prevents suicide attempts for the trigger to prevent cheese.

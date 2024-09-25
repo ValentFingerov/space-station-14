@@ -1,4 +1,3 @@
-using Content.Server.Discord;
 using Content.Shared.CCVar;
 using Content.Shared.GameTicking;
 
@@ -19,15 +18,13 @@ namespace Content.Server.GameTicking
         public bool DisallowLateJoin { get; private set; } = false;
 
         [ViewVariables]
-        public string? ServerName { get; private set; }
+        public bool StationOffset { get; private set; } = false;
 
         [ViewVariables]
-        private string? DiscordRoundEndRole { get; set; }
-
-        private WebhookIdentifier? _webhookIdentifier;
+        public bool StationRotation { get; private set; } = false;
 
         [ViewVariables]
-        private string? RoundEndSoundCollection { get; set; }
+        public float MaxStationOffset { get; private set; } = 0f;
 
 #if EXCEPTION_TOLERANCE
         [ViewVariables]
@@ -36,7 +33,7 @@ namespace Content.Server.GameTicking
 
         private void InitializeCVars()
         {
-            Subs.CVar(_configurationManager, CCVars.GameLobbyEnabled, value =>
+            _configurationManager.OnValueChanged(CCVars.GameLobbyEnabled, value =>
             {
                 LobbyEnabled = value;
                 foreach (var (userId, status) in _playerGameStatuses)
@@ -47,34 +44,15 @@ namespace Content.Server.GameTicking
                         LobbyEnabled ? PlayerGameStatus.NotReadyToPlay : PlayerGameStatus.ReadyToPlay;
                 }
             }, true);
-            Subs.CVar(_configurationManager, CCVars.GameDummyTicker, value => DummyTicker = value, true);
-            Subs.CVar(_configurationManager, CCVars.GameLobbyDuration, value => LobbyDuration = TimeSpan.FromSeconds(value), true);
-            Subs.CVar(_configurationManager, CCVars.GameDisallowLateJoins,
+            _configurationManager.OnValueChanged(CCVars.GameDummyTicker, value => DummyTicker = value, true);
+            _configurationManager.OnValueChanged(CCVars.GameLobbyDuration, value => LobbyDuration = TimeSpan.FromSeconds(value), true);
+            _configurationManager.OnValueChanged(CCVars.GameDisallowLateJoins,
                 value => { DisallowLateJoin = value; UpdateLateJoinStatus(); }, true);
-            Subs.CVar(_configurationManager, CCVars.AdminLogsServerName, value =>
-            {
-                // TODO why tf is the server name on admin logs
-                ServerName = value;
-            }, true);
-            Subs.CVar(_configurationManager, CCVars.DiscordRoundUpdateWebhook, value =>
-            {
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    _discord.GetWebhook(value, data => _webhookIdentifier = data.ToIdentifier());
-                }
-            }, true);
-            Subs.CVar(_configurationManager, CCVars.DiscordRoundEndRoleWebhook, value =>
-            {
-                DiscordRoundEndRole = value;
-
-                if (value == string.Empty)
-                {
-                    DiscordRoundEndRole = null;
-                }
-            }, true);
-            Subs.CVar(_configurationManager, CCVars.RoundEndSoundCollection, value => RoundEndSoundCollection = value, true);
+            _configurationManager.OnValueChanged(CCVars.StationOffset, value => StationOffset = value, true);
+            _configurationManager.OnValueChanged(CCVars.StationRotation, value => StationRotation = value, true);
+            _configurationManager.OnValueChanged(CCVars.MaxStationOffset, value => MaxStationOffset = value, true);
 #if EXCEPTION_TOLERANCE
-            Subs.CVar(_configurationManager, CCVars.RoundStartFailShutdownCount, value => RoundStartFailShutdownCount = value, true);
+            _configurationManager.OnValueChanged(CCVars.RoundStartFailShutdownCount, value => RoundStartFailShutdownCount = value, true);
 #endif
         }
     }

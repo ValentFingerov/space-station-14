@@ -1,7 +1,12 @@
-using System.Numerics;
+using System;
+using System.Collections.Immutable;
 using Content.Shared.Jittering;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
+using Robust.Shared.Animations;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using Robust.Shared.Maths;
 using Robust.Shared.Random;
 
 namespace Content.Client.Jittering
@@ -9,7 +14,6 @@ namespace Content.Client.Jittering
     public sealed class JitteringSystem : SharedJitteringSystem
     {
         [Dependency] private readonly IRobustRandom _random = default!;
-        [Dependency] private readonly AnimationPlayerSystem _animationPlayer = default!;
 
         private readonly float[] _sign = { -1, 1 };
         private readonly string _jitterAnimationKey = "jittering";
@@ -25,22 +29,21 @@ namespace Content.Client.Jittering
 
         private void OnStartup(EntityUid uid, JitteringComponent jittering, ComponentStartup args)
         {
-            if (!TryComp(uid, out SpriteComponent? sprite))
+            if (!EntityManager.TryGetComponent(uid, out SpriteComponent? sprite))
                 return;
 
-            var animationPlayer = EnsureComp<AnimationPlayerComponent>(uid);
+            var animationPlayer = EntityManager.EnsureComponent<AnimationPlayerComponent>(uid);
 
-            jittering.StartOffset = sprite.Offset;
-            _animationPlayer.Play(uid, animationPlayer, GetAnimation(jittering, sprite), _jitterAnimationKey);
+            animationPlayer.Play(GetAnimation(jittering, sprite), _jitterAnimationKey);
         }
 
         private void OnShutdown(EntityUid uid, JitteringComponent jittering, ComponentShutdown args)
         {
-            if (TryComp(uid, out AnimationPlayerComponent? animationPlayer))
-                _animationPlayer.Stop(uid, animationPlayer, _jitterAnimationKey);
+            if (EntityManager.TryGetComponent(uid, out AnimationPlayerComponent? animationPlayer))
+                animationPlayer.Stop(_jitterAnimationKey);
 
-            if (TryComp(uid, out SpriteComponent? sprite))
-                sprite.Offset = jittering.StartOffset;
+            if (EntityManager.TryGetComponent(uid, out SpriteComponent? sprite))
+                sprite.Offset = Vector2.Zero;
         }
 
         private void OnAnimationCompleted(EntityUid uid, JitteringComponent jittering, AnimationCompletedEvent args)
@@ -48,12 +51,9 @@ namespace Content.Client.Jittering
             if(args.Key != _jitterAnimationKey)
                 return;
 
-            if (!args.Finished)
-                return;
-
-            if (TryComp(uid, out AnimationPlayerComponent? animationPlayer)
-                && TryComp(uid, out SpriteComponent? sprite))
-                _animationPlayer.Play(uid, animationPlayer, GetAnimation(jittering, sprite), _jitterAnimationKey);
+            if(EntityManager.TryGetComponent(uid, out AnimationPlayerComponent? animationPlayer)
+            && EntityManager.TryGetComponent(uid, out SpriteComponent? sprite))
+                animationPlayer.Play(GetAnimation(jittering, sprite), _jitterAnimationKey);
         }
 
         private Animation GetAnimation(JitteringComponent jittering, SpriteComponent sprite)
@@ -76,10 +76,8 @@ namespace Content.Client.Jittering
                     offset.Y *= -1;
             }
 
-            var length = 0f;
-            // avoid dividing by 0 so animations don't try to be infinitely long
-            if (jittering.Frequency > 0)
-                length = 1f / jittering.Frequency;
+            // Animation length shouldn't be too high so we will cap it at 2 seconds...
+            var length = Math.Min((1f/jittering.Frequency), 2f);
 
             jittering.LastJitter = offset;
 
@@ -95,7 +93,7 @@ namespace Content.Client.Jittering
                         KeyFrames =
                         {
                             new AnimationTrackProperty.KeyFrame(sprite.Offset, 0f),
-                            new AnimationTrackProperty.KeyFrame(jittering.StartOffset + offset, length),
+                            new AnimationTrackProperty.KeyFrame(offset, length),
                         }
                     }
                 }

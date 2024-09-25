@@ -1,22 +1,21 @@
 using Robust.Shared.Audio;
-using Robust.Shared.Prototypes;
 
 namespace Content.Server.Wires;
 
 [RegisterComponent]
-public sealed partial class WiresComponent : Component
+public sealed class WiresComponent : Component
 {
     /// <summary>
     ///     The name of this entity's internal board.
     /// </summary>
-    [DataField]
-    public LocId BoardName { get; set; } = "wires-board-name-default";
+    [DataField("BoardName")]
+    public string BoardName { get; set; } = "Wires";
 
     /// <summary>
     ///     The layout ID of this entity's wires.
     /// </summary>
-    [DataField(required: true)]
-    public ProtoId<WireLayoutPrototype> LayoutId { get; set; } = default!;
+    [DataField("LayoutId", required: true)]
+    public string LayoutId { get; set; } = default!;
 
     /// <summary>
     ///     The serial number of this board. Randomly generated upon start,
@@ -48,8 +47,8 @@ public sealed partial class WiresComponent : Component
     ///     If this should follow the layout saved the first time the layout dictated by the
     ///     layout ID is generated, or if a new wire order should be generated every time.
     /// </summary>
-    [DataField]
-    public bool AlwaysRandomize { get; private set; }
+    [DataField("alwaysRandomize")]
+    public bool AlwaysRandomize { get; }
 
     /// <summary>
     ///     Per wire status, keyed by an object.
@@ -65,6 +64,6 @@ public sealed partial class WiresComponent : Component
     [ViewVariables]
     public Dictionary<object, object> StateData { get; } = new();
 
-    [DataField]
+    [DataField("pulseSound")]
     public SoundSpecifier PulseSound = new SoundPathSpecifier("/Audio/Effects/multitool_pulse.ogg");
 }

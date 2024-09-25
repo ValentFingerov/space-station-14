@@ -1,6 +1,6 @@
 - type: entity
   id: DiseaseDiagnoser
-  parent: [ BaseMachinePowered, SmallConstructibleMachine ]
+  parent: [ BaseMachinePowered, ConstructibleMachine ]
   name: Disease Diagnoser Delta Extreme
   description: A machine that analyzes disease samples.
   placement:
@@ -14,6 +14,7 @@
     - state: unlit
       shader: unshaded
       map: ["enum.DiseaseMachineVisualLayers.IsOn"]
+    netsync: false
   - type: Appearance
   - type: Machine
     board: DiagnoserMachineCircuitboard
@@ -26,6 +27,7 @@
   components:
   - type: Sprite
     sprite: Objects/Misc/bureaucracy.rsi
+    netsync: false
     layers:
     - state: paper_receipt
     - state: paper_receipt_words
@@ -43,3 +45,5 @@
     contentMargin: 12.0, 0.0, 12.0, 0.0
     # This is a narrow piece of paper
     maxWritableArea: 128.0, 0.0
+
+

@@ -5,9 +5,7 @@ using Content.Shared.Interaction;
 using Content.Shared.Inventory.Events;
 using Content.Shared.Radiation.Components;
 using Content.Shared.Radiation.Systems;
-using Robust.Server.Audio;
-using Robust.Server.GameObjects;
-using Robust.Server.Player;
+using Robust.Shared.GameStates;
 
 namespace Content.Server.Radiation.Systems;
 
@@ -15,8 +13,6 @@ public sealed class GeigerSystem : SharedGeigerSystem
 {
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly RadiationSystem _radiation = default!;
-    [Dependency] private readonly AudioSystem _audio = default!;
-    [Dependency] private readonly IPlayerManager _player = default!;
 
     private static readonly float ApproxEqual = 0.01f;
 
@@ -31,57 +27,69 @@ public sealed class GeigerSystem : SharedGeigerSystem
         SubscribeLocalEvent<GeigerComponent, GotUnequippedHandEvent>(OnUnequippedHand);
 
         SubscribeLocalEvent<RadiationSystemUpdatedEvent>(OnUpdate);
+        SubscribeLocalEvent<GeigerComponent, ComponentGetState>(OnGetState);
     }
 
-    private void OnActivate(Entity<GeigerComponent> geiger, ref ActivateInWorldEvent args)
+    private void OnActivate(EntityUid uid, GeigerComponent component, ActivateInWorldEvent args)
     {
-        if (args.Handled || !args.Complex || geiger.Comp.AttachedToSuit)
+        if (args.Handled || component.AttachedToSuit)
             return;
         args.Handled = true;
 
-        SetEnabled(geiger, !geiger.Comp.IsEnabled);
+        SetEnabled(uid, component, !component.IsEnabled);
     }
 
-    private void OnEquipped(Entity<GeigerComponent> geiger, ref GotEquippedEvent args)
+    private void OnEquipped(EntityUid uid, GeigerComponent component, GotEquippedEvent args)
     {
-        if (geiger.Comp.AttachedToSuit)
-            SetEnabled(geiger, true);
-        SetUser(geiger, args.Equipee);
+        if (component.AttachedToSuit)
+            SetEnabled(uid, component, true);
+        SetUser(component, args.Equipee);
     }
 
-    private void OnEquippedHand(Entity<GeigerComponent> geiger, ref GotEquippedHandEvent args)
+    private void OnEquippedHand(EntityUid uid, GeigerComponent component, GotEquippedHandEvent args)
     {
-        if (geiger.Comp.AttachedToSuit)
+        if (component.AttachedToSuit)
             return;
 
-        SetUser(geiger, args.User);
+        SetUser(component, args.User);
     }
 
-    private void OnUnequipped(Entity<GeigerComponent> geiger, ref GotUnequippedEvent args)
+    private void OnUnequipped(EntityUid uid, GeigerComponent component, GotUnequippedEvent args)
     {
-        if (geiger.Comp.AttachedToSuit)
-            SetEnabled(geiger, false);
-        SetUser(geiger, null);
+        if (component.AttachedToSuit)
+            SetEnabled(uid, component, false);
+        SetUser(component, null);
     }
 
-    private void OnUnequippedHand(Entity<GeigerComponent> geiger, ref GotUnequippedHandEvent args)
+    private void OnUnequippedHand(EntityUid uid, GeigerComponent component, GotUnequippedHandEvent args)
     {
-        if (geiger.Comp.AttachedToSuit)
+        if (component.AttachedToSuit)
             return;
 
-        SetUser(geiger, null);
+        SetUser(component, null);
     }
 
     private void OnUpdate(RadiationSystemUpdatedEvent ev)
     {
         // update only active geiger counters
         // deactivated shouldn't have rad receiver component
-        var query = EntityQueryEnumerator<GeigerComponent, RadiationReceiverComponent>();
-        while (query.MoveNext(out var uid, out var geiger, out var receiver))
+        var query = EntityQuery<GeigerComponent, RadiationReceiverComponent>();
+        foreach (var (geiger, receiver) in query)
         {
             var rads = receiver.CurrentRadiation;
-            SetCurrentRadiation(uid, geiger, rads);
+            SetCurrentRadiation(geiger.Owner, geiger, rads);
         }
+    }
+
+    private void OnGetState(EntityUid uid, GeigerComponent component, ref ComponentGetState args)
+    {
+        args.State = new GeigerComponentState
+        {
+            CurrentRadiation = component.CurrentRadiation,
+            DangerLevel = component.DangerLevel,
+            IsEnabled = component.IsEnabled,
+            User = component.User
+        };
     }
 
     private void SetCurrentRadiation(EntityUid uid, GeigerComponent component, float rads)
@@ -99,25 +107,22 @@ public sealed class GeigerSystem : SharedGeigerSystem
         if (curLevel != newLevel)
         {
             UpdateAppearance(uid, component);
-            UpdateSound(uid, component);
         }
 
-        Dirty(uid, component);
+        Dirty(component);
     }
 
-    private void SetUser(Entity<GeigerComponent> component, EntityUid? user)
+    private void SetUser(GeigerComponent component, EntityUid? user)
     {
-        if (component.Comp.User == user)
+        if (component.User == user)
             return;
 
-        component.Comp.User = user;
+        component.User = user;
         Dirty(component);
-        UpdateSound(component, component);
     }
 
-    private void SetEnabled(Entity<GeigerComponent> geiger, bool isEnabled)
+    private void SetEnabled(EntityUid uid, GeigerComponent component, bool isEnabled)
     {
-        var component = geiger.Comp;
         if (component.IsEnabled == isEnabled)
             return;
 
@@ -128,11 +133,10 @@ public sealed class GeigerSystem : SharedGeigerSystem
             component.DangerLevel = GeigerDangerLevel.None;
         }
 
-        _radiation.SetCanReceive(geiger, isEnabled);
+        _radiation.SetCanReceive(uid, isEnabled);
 
-        UpdateAppearance(geiger, component);
-        UpdateSound(geiger, component);
-        Dirty(geiger, component);
+        UpdateAppearance(uid, component);
+        Dirty(component);
     }
 
     private void UpdateAppearance(EntityUid uid, GeigerComponent? component = null,
@@ -143,28 +147,6 @@ public sealed class GeigerSystem : SharedGeigerSystem
 
         _appearance.SetData(uid, GeigerVisuals.IsEnabled, component.IsEnabled, appearance);
         _appearance.SetData(uid, GeigerVisuals.DangerLevel, component.DangerLevel, appearance);
-    }
-
-    private void UpdateSound(EntityUid uid, GeigerComponent? component = null)
-    {
-        if (!Resolve(uid, ref component, false))
-            return;
-
-        component.Stream = _audio.Stop(component.Stream);
-
-        if (!component.Sounds.TryGetValue(component.DangerLevel, out var sounds))
-            return;
-
-        if (component.User == null)
-            return;
-
-        if (!_player.TryGetSessionByEntity(component.User.Value, out var session))
-            return;
-
-        var sound = _audio.GetSound(sounds);
-        var param = sounds.Params.WithLoop(true).WithVolume(-4f);
-
-        component.Stream = _audio.PlayGlobal(sound, session, param)?.Entity;
     }
 
     public static GeigerDangerLevel RadsToLevel(float rads)
@@ -179,3 +161,5 @@ public sealed class GeigerSystem : SharedGeigerSystem
         };
     }
 }
+
+

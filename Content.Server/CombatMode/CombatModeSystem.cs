@@ -1,12 +1,20 @@
-using Content.Server.NPC.HTN;
 using Content.Shared.CombatMode;
+using JetBrains.Annotations;
+using Robust.Shared.GameStates;
 
 namespace Content.Server.CombatMode;
 
 public sealed class CombatModeSystem : SharedCombatModeSystem
 {
-    protected override bool IsNpc(EntityUid uid)
+    public override void Initialize()
     {
-        return HasComp<HTNComponent>(uid);
+        base.Initialize();
+
+        SubscribeLocalEvent<CombatModeComponent, ComponentGetState>(OnGetState);
+    }
+
+    private void OnGetState(EntityUid uid, CombatModeComponent component, ref ComponentGetState args)
+    {
+        args.State = new CombatModeComponentState(component.IsInCombatMode, component.ActiveZone);
     }
 }

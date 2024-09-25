@@ -1,12 +1,10 @@
-using Content.Shared.Mind;
-
 namespace Content.Server.Cloning.Components
 {
     [RegisterComponent]
-    public sealed partial class BeingClonedComponent : Component
+    public sealed class BeingClonedComponent : Component
     {
         [ViewVariables]
-        public MindComponent? Mind = default;
+        public Mind.Mind? Mind = default;
 
         [ViewVariables]
         public EntityUid Parent;

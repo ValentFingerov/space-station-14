@@ -1,9 +1,10 @@
 - type: entity
-  id: BaseHumanOrganUnGibbable
+  id: BaseHumanOrgan
   parent: BaseItem
   abstract: true
   components:
   - type: Sprite
+    netsync: false
     sprite: Mobs/Species/Human/organs.rsi
   - type: Organ
   - type: Food
@@ -15,28 +16,10 @@
         reagents:
         - ReagentId: Nutriment
           Quantity: 10
-      food:
-        maxVol: 5
-        reagents:
-        - ReagentId: UncookedAnimalProteins
-          Quantity: 5
-  - type: FlavorProfile
-    flavors:
-      - people
-  - type: Tag
-    tags:
-      - Meat
-
-- type: entity
-  id: BaseHumanOrgan
-  parent: BaseHumanOrganUnGibbable
-  abstract: true
-  components:
-  - type: Gibbable
 
 - type: entity
   id: OrganHumanBrain
-  parent: BaseHumanOrganUnGibbable
+  parent: BaseHumanOrgan
   name: brain
   description: "The source of incredible, unending intelligence. Honk."
   components:
@@ -45,33 +28,9 @@
   - type: Organ
   - type: Input
     context: "ghost"
-  - type: Brain
   - type: InputMover
-  - type: Examiner
-  - type: BlockMovement
-  - type: BadFood
-  - type: Tag
-    tags:
-      - Meat
-  - type: SolutionContainerManager
-    solutions:
-      organ:
-        reagents:
-        - ReagentId: Nutriment
-          Quantity: 10
-      food:
-        maxVol: 5
-        reagents:
-        - ReagentId: GreyMatter
-          Quantity: 5
-  - type: FlavorProfile
-    flavors:
-      - people
-  - type: FoodSequenceElement
-    entries:
-      Burger: Brain
-      Taco: Brain
-  
+  - type: Brain
+
 - type: entity
   id: OrganHumanEyes
   parent: BaseHumanOrgan
@@ -82,6 +41,7 @@
     layers:
       - state: eyeball-l
       - state: eyeball-r
+  - type: Organ
 
 - type: entity
   id: OrganHumanTongue
@@ -91,6 +51,7 @@
   components:
   - type: Sprite
     state: tongue
+  - type: Organ
 
 - type: entity
   id: OrganHumanAppendix
@@ -102,6 +63,7 @@
     - state: appendix
     - state: appendix-inflamed
       visible: false
+  - type: Organ
 
 - type: entity
   id: OrganHumanEars
@@ -111,6 +73,7 @@
   components:
   - type: Sprite
     state: ears
+  - type: Organ
 
 - type: entity
   id: OrganHumanLungs
@@ -122,6 +85,7 @@
     layers:
       - state: lung-l
       - state: lung-r
+  - type: Organ
   - type: Lung
   - type: Metabolizer
     removeEmpty: true
@@ -140,11 +104,6 @@
       Lung:
         maxVol: 100.0
         canReact: false
-      food:
-        maxVol: 5
-        reagents:
-        - ReagentId: UncookedAnimalProteins
-          Quantity: 5
 
 - type: entity
   id: OrganHumanHeart
@@ -154,6 +113,7 @@
   components:
   - type: Sprite
     state: heart-on
+  - type: Organ
   # The heart 'metabolizes' medicines and poisons that aren't filtered out by other organs.
   # This is done because these chemicals need to have some effect even if they aren't being filtered out of your body.
   # You're technically 'immune to poison' without a heart, but.. uhh, you'll have bigger problems on your hands.
@@ -173,15 +133,11 @@
   components:
   - type: Sprite
     state: stomach
+  - type: Organ
   - type: SolutionContainerManager
     solutions:
       stomach:
         maxVol: 50
-      food:
-        maxVol: 5
-        reagents:
-        - ReagentId: UncookedAnimalProteins
-          Quantity: 5
   - type: Stomach
   # The stomach metabolizes stuff like foods and drinks.
   # TODO: Have it work off of the ent's solution container, and move this
@@ -202,6 +158,7 @@
   components:
   - type: Sprite
     state: liver
+  - type: Organ
   - type: Metabolizer # The liver metabolizes certain chemicals only, like alcohol.
     maxReagents: 1
     metabolizerTypes: [Human]
@@ -219,6 +176,7 @@
     layers:
       - state: kidney-l
       - state: kidney-r
+  - type: Organ
   # The kidneys just remove anything that doesn't currently have any metabolisms, as a stopgap.
   - type: Metabolizer
     maxReagents: 5

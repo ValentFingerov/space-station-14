@@ -1,7 +1,7 @@
 - type: entity
   parent: BaseStructureDynamic
   id: CrateGeneric
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: crate
   description: A large container for items.
   components:
@@ -11,19 +11,16 @@
     sprite: Structures/Storage/Crates/generic.rsi
     state: icon
   - type: Sprite
+    netsync: false
     noRot: true
     sprite: Structures/Storage/Crates/generic.rsi
     layers:
     - state: base
-      map: ["enum.StorageVisualLayers.Base"]
     - state: closed
       map: ["enum.StorageVisualLayers.Door"]
     - state: welded
       visible: false
       map: ["enum.WeldableLayers.BaseWelded"]
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: InteractionOutline
   - type: Physics
   - type: Fixtures
@@ -32,16 +29,17 @@
         shape:
           !type:PhysShapeAabb
           bounds: "-0.4,-0.4,0.4,0.29"
-        density: 50
+        density: 190
         mask:
-        - CrateMask #this is so they can go under plastic flaps
+        - SmallMobMask #this is so they can go under plastic flaps
         layer:
         - MachineLayer
   - type: EntityStorage
+    capacity: 500
   - type: PlaceableSurface
     isPlaceable: false # defaults to closed.
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -51,25 +49,11 @@
       behaviors:
       - !type:DoActsBehavior
         acts: ["Destruction"]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
   - type: Appearance
-  - type: EntityStorageVisuals
-    stateDoorOpen: open
-    stateDoorClosed: closed
-  - type: GenericVisualizer
     visuals:
-      enum.PaperLabelVisuals.HasLabel:
-        enum.PaperLabelVisuals.Layer:
-          True: { visible: true }
-          False: { visible: false }
-      enum.PaperLabelVisuals.LabelType:
-        enum.PaperLabelVisuals.Layer:
-          Paper: { state: paper }
-          Bounty: { state: bounty }
-          CaptainsPaper: { state: captains_paper }
-          Invoice: { state: invoice }
+    - type: StorageVisualizer
+      state_open: open
+      state_closed: closed
   - type: PaperLabel
     labelSlot:
       insertVerbText: Attach Label
@@ -77,38 +61,31 @@
       whitelist:
         components:
         - Paper
-      blacklist:
-        tags:
-        - Book
   - type: ContainerContainer
     containers:
       entity_storage: !type:Container
       paper_label: !type:ContainerSlot
   - type: ItemSlots
   - type: StaticPrice
-    price: 75
+    price: 50
   - type: Construction
     graph: CrateGenericSteel
     node: crategenericsteel
     containers:
       - entity_storage
-  - type: RequireProjectileTarget
 
 - type: entity
   parent: CrateGeneric
   id: CrateBaseWeldable
-  categories: [ HideSpawnMenu ]
   components:
   - type: Weldable
   - type: ResistLocker
 
 - type: entity
-  parent: CrateBaseWeldable
+  parent: CrateGeneric
   id: CrateBaseSecure
-  suffix: Secure
   components:
   - type: Lock
-  - type: LockVisuals
   - type: AccessReader
   - type: Icon
     sprite: Structures/Storage/Crates/secure.rsi
@@ -123,15 +100,11 @@
       visible: false
       map: ["enum.WeldableLayers.BaseWelded"]
     - state: locked
-      map: ["enum.LockVisualLayers.Lock"]
+      map: ["enum.StorageVisualLayers.Lock"]
       shader: unshaded
-    - state: paper
-      sprite: Structures/Storage/Crates/labels.rsi
-      offset: "-0.5,0"
-      map: ["enum.PaperLabelVisuals.Layer"]
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallic
+    damageContainer: Inorganic
+    damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -140,16 +113,8 @@
       behaviors:
       - !type:DoActsBehavior
         acts: ["Destruction"]
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
   - type: Construction
     graph: CrateSecure
     node: cratesecure
     containers:
     - entity_storage
-  - type: Reflect
-    reflects:
-    - Energy
-    reflectProb: 0.2
-    spread: 90

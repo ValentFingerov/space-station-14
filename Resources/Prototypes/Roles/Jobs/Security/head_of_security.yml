@@ -6,20 +6,15 @@
   requirements:
     - !type:RoleTimeRequirement
       role: JobWarden
-      time: 36000 #10 hrs # Corvax-RoleTime
-#    - !type:RoleTimeRequirement
-#      role: JobSecurityOfficer
-#      time: 36000 #10 hrs
+      time: 36000 # Corvax-RoleTime
     - !type:DepartmentTimeRequirement
       department: Security
-      time: 108000 #50 hrs # Corvax-RoleTime
+      time: 108000 # Corvax-RoleTime
 #    - !type:OverallPlaytimeRequirement
-#      time: 144000 #40 hrs
-    - !type:AgeRequirement
-      requiredAge: 21
+#      time: 108000
   weight: 10
   startingGear: HoSGear
-  icon: "JobIconHeadOfSecurity"
+  icon: "HeadOfSecurity"
   requireAdminNotify: true
   supervisors: job-supervisors-captain
   canBeAntag: false
@@ -33,23 +28,20 @@
   - Service
   - External
   - Detective
-  - Cryogenics
-  special:
-  - !type:AddImplantSpecial
-    implants: [ MindShieldImplant ]
-  - !type:AddComponentSpecial
-    components:
-      - type: CommandStaff
 
 - type: startingGear
   id: HoSGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitHoS
+    back: ClothingBackpackHOSFilled
+    shoes: ClothingShoesBootsJackSec # Corvax-Resprite
+    outerClothing: ClothingOuterCoatHoSTrench
     eyes: ClothingEyesGlassesSecurity
+    head: ClothingHeadHatBeretHoS
     id: HoSPDA
     gloves: ClothingHandsGlovesCombat
     ears: ClothingHeadsetAltSecurity
-    pocket1: WeaponPistolMk58
-  storage:
-    back:
-    - Flash
-    - MagazinePistol
+    belt: ClothingBeltSecurityFilled
+  innerclothingskirt: ClothingUniformJumpskirtHoS
+  satchel: ClothingBackpackSatchelHOSFilled
+  duffelbag: ClothingBackpackDuffelHOSFilled

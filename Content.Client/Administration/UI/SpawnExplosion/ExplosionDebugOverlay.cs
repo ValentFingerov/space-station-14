@@ -1,12 +1,9 @@
-using System.Linq;
-using System.Numerics;
 using JetBrains.Annotations;
-using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
+using System.Linq;
 
 namespace Content.Client.Administration.UI.SpawnExplosion;
 
@@ -15,6 +12,7 @@ public sealed class ExplosionDebugOverlay : Overlay
 {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IEyeManager _eyeManager = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
 
     public Dictionary<int, List<Vector2i>>? SpaceTiles;
     public Dictionary<EntityUid, Dictionary<int, List<Vector2i>>> Tiles = new();
@@ -25,7 +23,7 @@ public sealed class ExplosionDebugOverlay : Overlay
 
     public override OverlaySpace Space => OverlaySpace.WorldSpace | OverlaySpace.ScreenSpace;
 
-    public Matrix3x2 SpaceMatrix;
+    public Matrix3 SpaceMatrix;
     public MapId Map;
 
     private readonly Font _font;
@@ -62,15 +60,14 @@ public sealed class ExplosionDebugOverlay : Overlay
         var handle = args.ScreenHandle;
         Box2 gridBounds;
         var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
-        var xformSystem = _entityManager.System<TransformSystem>();
 
         foreach (var (gridId, tileSets) in Tiles)
         {
-            if (!_entityManager.TryGetComponent(gridId, out MapGridComponent? grid))
+            if (!_mapManager.TryGetGrid(gridId, out var grid))
                 continue;
 
-            var gridXform = xformQuery.GetComponent(gridId);
-            var (_, _, matrix, invMatrix) = xformSystem.GetWorldPositionRotationMatrixWithInv(gridXform, xformQuery);
+            var gridXform = xformQuery.GetComponent(grid.Owner);
+            var (_, _, matrix, invMatrix) = gridXform.GetWorldPositionRotationMatrixWithInv(xformQuery);
             gridBounds = invMatrix.TransformBox(args.WorldBounds).Enlarged(grid.TileSize * 2);
             DrawText(handle, gridBounds, matrix, tileSets, grid.TileSize);
         }
@@ -78,8 +75,7 @@ public sealed class ExplosionDebugOverlay : Overlay
         if (SpaceTiles == null)
             return;
 
-        Matrix3x2.Invert(SpaceMatrix, out var invSpace);
-        gridBounds = invSpace.TransformBox(args.WorldBounds);
+        gridBounds = Matrix3.Invert(SpaceMatrix).TransformBox(args.WorldBounds);
 
         DrawText(handle, gridBounds, SpaceMatrix, SpaceTiles, SpaceTileSize);
     }
@@ -87,7 +83,7 @@ public sealed class ExplosionDebugOverlay : Overlay
     private void DrawText(
         DrawingHandleScreen handle,
         Box2 gridBounds,
-        Matrix3x2 transform,
+        Matrix3 transform,
         Dictionary<int, List<Vector2i>> tileSets,
         ushort tileSize)
     {
@@ -98,30 +94,30 @@ public sealed class ExplosionDebugOverlay : Overlay
 
             foreach (var tile in tiles)
             {
-                var centre = (tile + Vector2Helpers.Half) * tileSize;
+                var centre = ((Vector2) tile + 0.5f) * tileSize;
 
                 // is the center of this tile visible to the user?
                 if (!gridBounds.Contains(centre))
                     continue;
 
-                var worldCenter = Vector2.Transform(centre, transform);
+                var worldCenter = transform.Transform(centre);
 
                 var screenCenter = _eyeManager.WorldToScreen(worldCenter);
 
                 if (Intensity[i] > 9)
-                    screenCenter += new Vector2(-12, -8);
+                    screenCenter += (-12, -8);
                 else
-                    screenCenter += new Vector2(-8, -8);
+                    screenCenter += (-8, -8);
 
                 handle.DrawString(_font, screenCenter, Intensity[i].ToString("F2"));
             }
         }
 
-        if (tileSets.TryGetValue(0, out var set))
+        if (tileSets.ContainsKey(0))
         {
-            var epicenter = set.First();
-            var worldCenter = Vector2.Transform((epicenter + Vector2Helpers.Half) * tileSize, transform);
-            var screenCenter = _eyeManager.WorldToScreen(worldCenter) + new Vector2(-24, -24);
+            var epicenter = tileSets[0].First();
+            var worldCenter = transform.Transform(((Vector2) epicenter + 0.5f) * tileSize);
+            var screenCenter = _eyeManager.WorldToScreen(worldCenter) + (-24, -24);
             var text = $"{Intensity[0]:F2}\nΣ={TotalIntensity:F1}\nΔ={Slope:F1}";
             handle.DrawString(_font, screenCenter, text);
         }
@@ -132,15 +128,14 @@ public sealed class ExplosionDebugOverlay : Overlay
         var handle = args.WorldHandle;
         Box2 gridBounds;
         var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
-        var xformSystem = _entityManager.System<TransformSystem>();
 
         foreach (var (gridId, tileSets) in Tiles)
         {
-            if (!_entityManager.TryGetComponent(gridId, out MapGridComponent? grid))
+            if (!_mapManager.TryGetGrid(gridId, out var grid))
                 continue;
 
-            var gridXform = xformQuery.GetComponent(gridId);
-            var (_, _, worldMatrix, invWorldMatrix) = xformSystem.GetWorldPositionRotationMatrixWithInv(gridXform, xformQuery);
+            var gridXform = xformQuery.GetComponent(grid.Owner);
+            var (_, _, worldMatrix, invWorldMatrix) = gridXform.GetWorldPositionRotationMatrixWithInv(xformQuery);
             gridBounds = invWorldMatrix.TransformBox(args.WorldBounds).Enlarged(grid.TileSize * 2);
             handle.SetTransform(worldMatrix);
             DrawTiles(handle, gridBounds, tileSets, SpaceTileSize);
@@ -149,12 +144,11 @@ public sealed class ExplosionDebugOverlay : Overlay
         if (SpaceTiles == null)
             return;
 
-        Matrix3x2.Invert(SpaceMatrix, out var invSpace);
-        gridBounds = invSpace.TransformBox(args.WorldBounds).Enlarged(2);
+        gridBounds = Matrix3.Invert(SpaceMatrix).TransformBox(args.WorldBounds).Enlarged(2);
         handle.SetTransform(SpaceMatrix);
 
         DrawTiles(handle, gridBounds, SpaceTiles, SpaceTileSize);
-        handle.SetTransform(Matrix3x2.Identity);
+        handle.SetTransform(Matrix3.Identity);
     }
 
     private void DrawTiles(
@@ -174,7 +168,7 @@ public sealed class ExplosionDebugOverlay : Overlay
 
             foreach (var tile in tiles)
             {
-                var centre = (tile + Vector2Helpers.Half) * tileSize;
+                var centre = ((Vector2) tile + 0.5f) * tileSize;
 
                 // is the center of this tile visible to the user?
                 if (!gridBounds.Contains(centre))

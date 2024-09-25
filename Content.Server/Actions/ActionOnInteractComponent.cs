@@ -1,6 +1,5 @@
+using Content.Shared.Actions.ActionTypes;
 using Content.Shared.Interaction;
-using Robust.Shared.Prototypes;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.List;
 
 namespace Content.Server.Actions;
 
@@ -18,10 +17,14 @@ namespace Content.Server.Actions;
 ///     This component mainly exists as a lazy way to add utility entities that can do things like cast "spells".
 /// </remarks>
 [RegisterComponent]
-public sealed partial class ActionOnInteractComponent : Component
+public sealed class ActionOnInteractComponent : Component
 {
-    [DataField(required:true)]
-    public List<EntProtoId>? Actions;
+    [DataField("activateActions")]
+    public List<InstantAction>? ActivateActions;
 
-    [DataField] public List<EntityUid>? ActionEntities;
+    [DataField("entityActions")]
+    public List<EntityTargetAction>? EntityActions;
+
+    [DataField("worldActions")]
+    public List<WorldTargetAction>? WorldActions;
 }

@@ -1,19 +1,21 @@
 using Content.Shared.Atmos;
 using Content.Shared.Atmos.Piping.Unary.Components;
-using Content.Shared.DeviceLinking;
+using Content.Shared.MachineLinking;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Server.Atmos.Piping.Unary.Components
 {
-    // The world if people documented their shit.
     [RegisterComponent]
-    public sealed partial class GasVentPumpComponent : Component
+    public sealed class GasVentPumpComponent : Component
     {
         [ViewVariables(VVAccess.ReadWrite)]
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; } = true;
 
         [ViewVariables]
         public bool IsDirty { get; set; } = false;
+
+        [ViewVariables(VVAccess.ReadWrite)]
+        public bool Welded { get; set; } = false;
 
         [ViewVariables(VVAccess.ReadWrite)]
         [DataField("inlet")]
@@ -40,7 +42,7 @@ namespace Content.Server.Atmos.Piping.Unary.Components
         /// </summary>
         [ViewVariables(VVAccess.ReadWrite)]
         [DataField("underPressureLockoutThreshold")]
-        public float UnderPressureLockoutThreshold = 80; // this must be tuned in conjunction with atmos.mmos_spacing_speed
+        public float UnderPressureLockoutThreshold = 2;
 
         /// <summary>
         ///     Pressure locked vents still leak a little (leading to eventual pressurization of sealed sections)
@@ -120,12 +122,12 @@ namespace Content.Server.Atmos.Piping.Unary.Components
         ///     Whether or not machine linking is enabled for this component.
         /// </summary>
         [DataField("canLink")]
-        public bool CanLink = false;
+        public readonly bool CanLink = false;
 
-        [DataField("pressurizePort", customTypeSerializer: typeof(PrototypeIdSerializer<SinkPortPrototype>))]
+        [DataField("pressurizePort", customTypeSerializer: typeof(PrototypeIdSerializer<ReceiverPortPrototype>))]
         public string PressurizePort = "Pressurize";
 
-        [DataField("depressurizePort", customTypeSerializer: typeof(PrototypeIdSerializer<SinkPortPrototype>))]
+        [DataField("depressurizePort", customTypeSerializer: typeof(PrototypeIdSerializer<ReceiverPortPrototype>))]
         public string DepressurizePort = "Depressurize";
 
         [ViewVariables(VVAccess.ReadWrite)]
@@ -135,10 +137,6 @@ namespace Content.Server.Atmos.Piping.Unary.Components
         [ViewVariables(VVAccess.ReadWrite)]
         [DataField("depressurizePressure")]
         public float DepressurizePressure = 0;
-
-        // When true, ignore under-pressure lockout. Used to re-fill rooms in air alarm "Fill" mode.
-        [DataField]
-        public bool PressureLockoutOverride = false;
         #endregion
 
         public GasVentPumpData ToAirAlarmData()
@@ -150,8 +148,7 @@ namespace Content.Server.Atmos.Piping.Unary.Components
                 PumpDirection = PumpDirection,
                 PressureChecks = PressureChecks,
                 ExternalPressureBound = ExternalPressureBound,
-                InternalPressureBound = InternalPressureBound,
-                PressureLockoutOverride = PressureLockoutOverride
+                InternalPressureBound = InternalPressureBound
             };
         }
 
@@ -163,7 +160,6 @@ namespace Content.Server.Atmos.Piping.Unary.Components
             PressureChecks = data.PressureChecks;
             ExternalPressureBound = data.ExternalPressureBound;
             InternalPressureBound = data.InternalPressureBound;
-            PressureLockoutOverride = data.PressureLockoutOverride;
         }
     }
 }

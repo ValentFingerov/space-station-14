@@ -7,9 +7,9 @@
     sprite: Objects/Specific/Security/target.rsi
     state: target_stake
     noRot: true
+    netsync: false
   - type: Repairable
   - type: DamagePopup
-    allowTypeChange: true
     damagePopupType: Combined
   - type: Fixtures
     fixtures:
@@ -45,7 +45,7 @@
             max: 5
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
 
@@ -108,6 +108,6 @@
             max: 10
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:DoActsBehavior
         acts: [ "Destruction" ]

@@ -1,50 +1,34 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Content.Server.Administration.Managers;
-using Content.Server.Afk;
-using Content.Server.Database;
-using Content.Server.Discord;
 using Content.Server.GameTicking;
-using Content.Server.Players.RateLimiting;
+using Content.Server.Players;
 using Content.Shared.Administration;
 using Content.Shared.CCVar;
-using Content.Shared.GameTicking;
-using Content.Shared.Mind;
 using JetBrains.Annotations;
 using Robust.Server.Player;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
-using Robust.Shared.Player;
-using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Server.Administration.Systems
 {
     [UsedImplicitly]
-    public sealed partial class BwoinkSystem : SharedBwoinkSystem
+    public sealed class BwoinkSystem : SharedBwoinkSystem
     {
-        private const string RateLimitKey = "AdminHelp";
-
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IAdminManager _adminManager = default!;
         [Dependency] private readonly IConfigurationManager _config = default!;
-        [Dependency] private readonly IGameTiming _timing = default!;
         [Dependency] private readonly IPlayerLocator _playerLocator = default!;
         [Dependency] private readonly GameTicker _gameTicker = default!;
-        [Dependency] private readonly SharedMindSystem _minds = default!;
-        [Dependency] private readonly IAfkManager _afkManager = default!;
-        [Dependency] private readonly IServerDbManager _dbManager = default!;
-        [Dependency] private readonly PlayerRateLimitManager _rateLimit = default!;
-
-        [GeneratedRegex(@"^https://discord\.com/api/webhooks/(\d+)/((?!.*/).*)$")]
-        private static partial Regex DiscordRegex();
 
         private ISawmill _sawmill = default!;
         private readonly HttpClient _httpClient = new();
@@ -53,16 +37,10 @@ namespace Content.Server.Administration.Systems
         private string _footerIconUrl = string.Empty;
         private string _avatarUrl = string.Empty;
         private string _serverName = string.Empty;
-
-        private readonly
-            Dictionary<NetUserId, (string? id, string username, string description, string? characterName, GameRunLevel
-                lastRunLevel)> _relayMessages = new();
-
+        private readonly Dictionary<NetUserId, (string? id, string username, string description, string? characterName, GameRunLevel lastRunLevel)> _relayMessages = new();
         private Dictionary<NetUserId, string> _oldMessageIds = new();
         private readonly Dictionary<NetUserId, Queue<string>> _messageQueues = new();
         private readonly HashSet<NetUserId> _processingChannels = new();
-        private readonly Dictionary<NetUserId, (TimeSpan Timestamp, bool Typing)> _typingUpdateTimestamps = new();
-        private string _overrideClientName = string.Empty;
 
         // Max embed description length is 4096, according to https://discord.com/developers/docs/resources/channel#embed-object-embed-limits
         // Keep small margin, just to be safe
@@ -76,175 +54,27 @@ namespace Content.Server.Administration.Systems
         private const string TooLongText = "... **(too long)**";
 
         private int _maxAdditionalChars;
-        private readonly Dictionary<NetUserId, DateTime> _activeConversations = new();
 
         public override void Initialize()
         {
             base.Initialize();
-            Subs.CVar(_config, CCVars.DiscordAHelpWebhook, OnWebhookChanged, true);
-            Subs.CVar(_config, CCVars.DiscordAHelpFooterIcon, OnFooterIconChanged, true);
-            Subs.CVar(_config, CCVars.DiscordAHelpAvatar, OnAvatarChanged, true);
-            Subs.CVar(_config, CVars.GameHostName, OnServerNameChanged, true);
-            Subs.CVar(_config, CCVars.AdminAhelpOverrideClientName, OnOverrideChanged, true);
+            _config.OnValueChanged(CCVars.DiscordAHelpWebhook, OnWebhookChanged, true);
+            _config.OnValueChanged(CCVars.DiscordAHelpFooterIcon, OnFooterIconChanged, true);
+            _config.OnValueChanged(CCVars.DiscordAHelpAvatar, OnAvatarChanged, true);
+            _config.OnValueChanged(CVars.GameHostName, OnServerNameChanged, true);
             _sawmill = IoCManager.Resolve<ILogManager>().GetSawmill("AHELP");
-            var defaultParams = new AHelpMessageParams(
-                string.Empty,
-                string.Empty,
-                true,
-                _gameTicker.RoundDuration().ToString("hh\\:mm\\:ss"),
-                _gameTicker.RunLevel,
-                playedSound: false
-            );
-            _maxAdditionalChars = GenerateAHelpMessage(defaultParams).Length;
+            _maxAdditionalChars = GenerateAHelpMessage("", "", true).Length;
             _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
 
             SubscribeLocalEvent<GameRunLevelChangedEvent>(OnGameRunLevelChanged);
-            SubscribeNetworkEvent<BwoinkClientTypingUpdated>(OnClientTypingUpdated);
-            SubscribeLocalEvent<RoundRestartCleanupEvent>(_ => _activeConversations.Clear());
-
-        	_rateLimit.Register(
-                RateLimitKey,
-                new RateLimitRegistration
-                {
-                    CVarLimitPeriodLength = CCVars.AhelpRateLimitPeriod,
-                    CVarLimitCount = CCVars.AhelpRateLimitCount,
-                    PlayerLimitedAction = PlayerRateLimitedAction
-                });
         }
 
-        private void PlayerRateLimitedAction(ICommonSession obj)
+        private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e)
         {
-            RaiseNetworkEvent(
-                new BwoinkTextMessage(obj.UserId, default, Loc.GetString("bwoink-system-rate-limited"), playSound: false),
-                obj.Channel);
-        }
-
-        private void OnOverrideChanged(string obj)
-        {
-            _overrideClientName = obj;
-        }
-
-        private async void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e)
-        {
-            if (e.NewStatus == SessionStatus.Disconnected)
-            {
-                if (_activeConversations.TryGetValue(e.Session.UserId, out var lastMessageTime))
-                {
-                    var timeSinceLastMessage = DateTime.Now - lastMessageTime;
-                    if (timeSinceLastMessage > TimeSpan.FromMinutes(5))
-                    {
-                        _activeConversations.Remove(e.Session.UserId);
-                        return; // Do not send disconnect message if timeout exceeded
-                    }
-                }
-
-                // Check if the user has been banned
-                var ban = await _dbManager.GetServerBanAsync(null, e.Session.UserId, null);
-                if (ban != null)
-                {
-                    var banMessage = Loc.GetString("bwoink-system-player-banned", ("banReason", ban.Reason));
-                    NotifyAdmins(e.Session, banMessage, PlayerStatusType.Banned);
-                    _activeConversations.Remove(e.Session.UserId);
-                    return;
-                }
-            }
-
-            // Notify all admins if a player disconnects or reconnects
-            var message = e.NewStatus switch
-            {
-                SessionStatus.Connected => Loc.GetString("bwoink-system-player-reconnecting"),
-                SessionStatus.Disconnected => Loc.GetString("bwoink-system-player-disconnecting"),
-                _ => null
-            };
-
-            if (message != null)
-            {
-                var statusType = e.NewStatus == SessionStatus.Connected
-                    ? PlayerStatusType.Connected
-                    : PlayerStatusType.Disconnected;
-                NotifyAdmins(e.Session, message, statusType);
-            }
-
             if (e.NewStatus != SessionStatus.InGame)
                 return;
 
             RaiseNetworkEvent(new BwoinkDiscordRelayUpdated(!string.IsNullOrWhiteSpace(_webhookUrl)), e.Session);
-        }
-
-        private void NotifyAdmins(ICommonSession session, string message, PlayerStatusType statusType)
-        {
-            if (!_activeConversations.ContainsKey(session.UserId))
-            {
-                // If the user is not part of an active conversation, do not notify admins.
-                return;
-            }
-
-            // Get the current timestamp
-            var timestamp = DateTime.Now.ToString("HH:mm:ss");
-            var roundTime = _gameTicker.RoundDuration().ToString("hh\\:mm\\:ss");
-
-            // Determine the icon based on the status type
-            string icon = statusType switch
-            {
-                PlayerStatusType.Connected => ":green_circle:",
-                PlayerStatusType.Disconnected => ":red_circle:",
-                PlayerStatusType.Banned => ":no_entry:",
-                _ => ":question:"
-            };
-
-            // Create the message parameters for Discord
-            var messageParams = new AHelpMessageParams(
-                session.Name,
-                message,
-                true,
-                roundTime,
-                _gameTicker.RunLevel,
-                playedSound: true,
-                icon: icon
-            );
-
-            // Create the message for in-game with username
-            var color = statusType switch
-            {
-                PlayerStatusType.Connected => Color.Green.ToHex(),
-                PlayerStatusType.Disconnected => Color.Yellow.ToHex(),
-                PlayerStatusType.Banned => Color.Orange.ToHex(),
-                _ => Color.Gray.ToHex(),
-            };
-            var inGameMessage = $"[color={color}]{session.Name} {message}[/color]";
-
-            var bwoinkMessage = new BwoinkTextMessage(
-                userId: session.UserId,
-                trueSender: SystemUserId,
-                text: inGameMessage,
-                sentAt: DateTime.Now,
-                playSound: false
-            );
-
-            var admins = GetTargetAdmins();
-            foreach (var admin in admins)
-            {
-                RaiseNetworkEvent(bwoinkMessage, admin);
-            }
-
-            // Enqueue the message for Discord relay
-            if (_webhookUrl != string.Empty)
-            {
-                // if (!_messageQueues.ContainsKey(session.UserId))
-                //     _messageQueues[session.UserId] = new Queue<string>();
-                //
-                // var escapedText = FormattedMessage.EscapeText(message);
-                // messageParams.Message = escapedText;
-                //
-                // var discordMessage = GenerateAHelpMessage(messageParams);
-                // _messageQueues[session.UserId].Enqueue(discordMessage);
-
-                var queue = _messageQueues.GetOrNew(session.UserId);
-                var escapedText = FormattedMessage.EscapeText(message);
-                messageParams.Message = escapedText;
-                var discordMessage = GenerateAHelpMessage(messageParams);
-                queue.Enqueue(discordMessage);
-            }
         }
 
         private void OnGameRunLevelChanged(GameRunLevelChangedEvent args)
@@ -272,37 +102,20 @@ namespace Content.Server.Administration.Systems
             _relayMessages.Clear();
         }
 
-        private void OnClientTypingUpdated(BwoinkClientTypingUpdated msg, EntitySessionEventArgs args)
-        {
-            if (_typingUpdateTimestamps.TryGetValue(args.SenderSession.UserId, out var tuple) &&
-                tuple.Typing == msg.Typing &&
-                tuple.Timestamp + TimeSpan.FromSeconds(1) > _timing.RealTime)
-            {
-                return;
-            }
-
-            _typingUpdateTimestamps[args.SenderSession.UserId] = (_timing.RealTime, msg.Typing);
-
-            // Non-admins can only ever type on their own ahelp, guard against fake messages
-            var isAdmin = _adminManager.GetAdminData(args.SenderSession)?.HasFlag(AdminFlags.Adminhelp) ?? false;
-            var channel = isAdmin ? msg.Channel : args.SenderSession.UserId;
-            var update = new BwoinkPlayerTypingUpdated(channel, args.SenderSession.Name, msg.Typing);
-
-            foreach (var admin in GetTargetAdmins())
-            {
-                if (admin.UserId == args.SenderSession.UserId)
-                    continue;
-
-                RaiseNetworkEvent(update, admin);
-            }
-        }
-
         private void OnServerNameChanged(string obj)
         {
             _serverName = obj;
         }
 
-        private async void OnWebhookChanged(string url)
+        public override void Shutdown()
+        {
+            base.Shutdown();
+            _config.UnsubValueChanged(CCVars.DiscordAHelpWebhook, OnWebhookChanged);
+            _config.UnsubValueChanged(CCVars.DiscordAHelpFooterIcon, OnFooterIconChanged);
+            _config.UnsubValueChanged(CVars.GameHostName, OnServerNameChanged);
+        }
+
+        private void OnWebhookChanged(string url)
         {
             _webhookUrl = url;
 
@@ -312,18 +125,18 @@ namespace Content.Server.Administration.Systems
                 return;
 
             // Basic sanity check and capturing webhook ID and token
-            var match = DiscordRegex().Match(url);
+            var match = Regex.Match(url, @"^https://discord\.com/api/webhooks/(\d+)/((?!.*/).*)$");
 
             if (!match.Success)
             {
                 // TODO: Ideally, CVar validation during setting should be better integrated
-                Log.Warning("Webhook URL does not appear to be valid. Using anyways...");
+                Logger.Warning("Webhook URL does not appear to be valid. Using anyways...");
                 return;
             }
 
             if (match.Groups.Count <= 2)
             {
-                Log.Error("Could not get webhook ID or token.");
+                Logger.Error("Could not get webhook ID or token.");
                 return;
             }
 
@@ -331,7 +144,7 @@ namespace Content.Server.Administration.Systems
             var webhookToken = match.Groups[2].Value;
 
             // Fire and forget
-            await SetWebhookData(webhookId, webhookToken);
+            _ = SetWebhookData(webhookId, webhookToken);
         }
 
         private async Task SetWebhookData(string id, string token)
@@ -341,8 +154,7 @@ namespace Content.Server.Administration.Systems
             var content = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
-                _sawmill.Log(LogLevel.Error,
-                    $"Discord returned bad status code when trying to get webhook data (perhaps the webhook URL is invalid?): {response.StatusCode}\nResponse: {content}");
+                _sawmill.Log(LogLevel.Error, $"Discord returned bad status code when trying to get webhook data (perhaps the webhook URL is invalid?): {response.StatusCode}\nResponse: {content}");
                 return;
             }
 
@@ -366,7 +178,7 @@ namespace Content.Server.Administration.Systems
 
             // Whether the message will become too long after adding these new messages
             var tooLong = exists && messages.Sum(msg => Math.Min(msg.Length, MessageLengthCap) + "\n".Length)
-                + existingEmbed.description.Length > DescriptionMax;
+                    + existingEmbed.description.Length > DescriptionMax;
 
             // If there is no existing embed, or it is getting too long, we create a new embed
             if (!exists || tooLong)
@@ -375,11 +187,12 @@ namespace Content.Server.Administration.Systems
 
                 if (lookup == null)
                 {
-                    _sawmill.Log(LogLevel.Error,
-                        $"Unable to find player for NetUserId {userId} when sending discord webhook.");
+                    _sawmill.Log(LogLevel.Error, $"Unable to find player for NetUserId {userId} when sending discord webhook.");
                     _relayMessages.Remove(userId);
                     return;
                 }
+
+                var characterName = _playerManager.GetPlayerData(userId).ContentData()?.Mind?.CharacterName;
 
                 var linkToPrevious = string.Empty;
 
@@ -388,17 +201,14 @@ namespace Content.Server.Administration.Systems
                 {
                     if (tooLong && existingEmbed.id != null)
                     {
-                        linkToPrevious =
-                            $"**[Go to previous embed of this round](https://discord.com/channels/{guildId}/{channelId}/{existingEmbed.id})**\n";
+                        linkToPrevious = $"**[Go to previous embed of this round](https://discord.com/channels/{guildId}/{channelId}/{existingEmbed.id})**\n";
                     }
                     else if (_oldMessageIds.TryGetValue(userId, out var id) && !string.IsNullOrEmpty(id))
                     {
-                        linkToPrevious =
-                            $"**[Go to last round's conversation with this player](https://discord.com/channels/{guildId}/{channelId}/{id})**\n";
+                        linkToPrevious = $"**[Go to last round's conversation with this player](https://discord.com/channels/{guildId}/{channelId}/{id})**\n";
                     }
                 }
 
-                var characterName = _minds.GetCharacterName(userId);
                 existingEmbed = (null, lookup.Username, linkToPrevious, characterName, _gameTicker.RunLevel);
             }
 
@@ -410,8 +220,7 @@ namespace Content.Server.Administration.Systems
                     GameRunLevel.PreRoundLobby => "\n\n:arrow_forward: _**Pre-round lobby started**_\n",
                     GameRunLevel.InRound => "\n\n:arrow_forward: _**Round started**_\n",
                     GameRunLevel.PostRound => "\n\n:stop_button: _**Post-round started**_\n",
-                    _ => throw new ArgumentOutOfRangeException(nameof(_gameTicker.RunLevel),
-                        $"{_gameTicker.RunLevel} was not matched."),
+                    _ => throw new ArgumentOutOfRangeException(nameof(_gameTicker.RunLevel), $"{_gameTicker.RunLevel} was not matched."),
                 };
 
                 existingEmbed.lastRunLevel = _gameTicker.RunLevel;
@@ -427,9 +236,7 @@ namespace Content.Server.Administration.Systems
                 existingEmbed.description += $"\n{message}";
             }
 
-            var payload = GeneratePayload(existingEmbed.description,
-                existingEmbed.username,
-                existingEmbed.characterName);
+            var payload = GeneratePayload(existingEmbed.description, existingEmbed.username, existingEmbed.characterName);
 
             // If there is no existing embed, create a new one
             // Otherwise patch (edit) it
@@ -441,8 +248,7 @@ namespace Content.Server.Administration.Systems
                 var content = await request.Content.ReadAsStringAsync();
                 if (!request.IsSuccessStatusCode)
                 {
-                    _sawmill.Log(LogLevel.Error,
-                        $"Discord returned bad status code when posting message (perhaps the message is too long?): {request.StatusCode}\nResponse: {content}");
+                    _sawmill.Log(LogLevel.Error, $"Discord returned bad status code when posting message (perhaps the message is too long?): {request.StatusCode}\nResponse: {content}");
                     _relayMessages.Remove(userId);
                     return;
                 }
@@ -450,8 +256,7 @@ namespace Content.Server.Administration.Systems
                 var id = JsonNode.Parse(content)?["id"];
                 if (id == null)
                 {
-                    _sawmill.Log(LogLevel.Error,
-                        $"Could not find id in json-content returned from discord webhook: {content}");
+                    _sawmill.Log(LogLevel.Error, $"Could not find id in json-content returned from discord webhook: {content}");
                     _relayMessages.Remove(userId);
                     return;
                 }
@@ -466,8 +271,7 @@ namespace Content.Server.Administration.Systems
                 if (!request.IsSuccessStatusCode)
                 {
                     var content = await request.Content.ReadAsStringAsync();
-                    _sawmill.Log(LogLevel.Error,
-                        $"Discord returned bad status code when patching message (perhaps the message is too long?): {request.StatusCode}\nResponse: {content}");
+                    _sawmill.Log(LogLevel.Error, $"Discord returned bad status code when patching message (perhaps the message is too long?): {request.StatusCode}\nResponse: {content}");
                     _relayMessages.Remove(userId);
                     return;
                 }
@@ -485,7 +289,7 @@ namespace Content.Server.Administration.Systems
                 username += $" ({characterName})";
 
             // If no admins are online, set embed color to red. Otherwise green
-            var color = GetNonAfkAdmins().Count > 0 ? 0x41F097 : 0xFF0000;
+            var color = GetTargetAdmins().Count > 0 ? 0x41F097 : 0xFF0000;
 
             // Limit server name to 1500 characters, in case someone tries to be a little funny
             var serverName = _serverName[..Math.Min(_serverName.Length, 1500)];
@@ -497,21 +301,20 @@ namespace Content.Server.Administration.Systems
                     : $"pre-round lobby for round {_gameTicker.RoundId + 1}",
                 GameRunLevel.InRound => $"round {_gameTicker.RoundId}",
                 GameRunLevel.PostRound => $"post-round {_gameTicker.RoundId}",
-                _ => throw new ArgumentOutOfRangeException(nameof(_gameTicker.RunLevel),
-                    $"{_gameTicker.RunLevel} was not matched."),
+                _ => throw new ArgumentOutOfRangeException(nameof(_gameTicker.RunLevel), $"{_gameTicker.RunLevel} was not matched."),
             };
 
             return new WebhookPayload
             {
                 Username = username,
                 AvatarUrl = string.IsNullOrWhiteSpace(_avatarUrl) ? null : _avatarUrl,
-                Embeds = new List<WebhookEmbed>
+                Embeds = new List<Embed>
                 {
                     new()
                     {
                         Description = messages,
                         Color = color,
-                        Footer = new WebhookEmbedFooter
+                        Footer = new EmbedFooter
                         {
                             Text = $"{serverName} ({round})",
                             IconUrl = string.IsNullOrWhiteSpace(_footerIconUrl) ? null : _footerIconUrl
@@ -544,8 +347,7 @@ namespace Content.Server.Administration.Systems
         protected override void OnBwoinkTextMessage(BwoinkTextMessage message, EntitySessionEventArgs eventArgs)
         {
             base.OnBwoinkTextMessage(message, eventArgs);
-            _activeConversations[message.UserId] = DateTime.Now;
-            var senderSession = eventArgs.SenderSession;
+            var senderSession = (IPlayerSession) eventArgs.SenderSession;
 
             // TODO: Sanitize text?
             // Confirm that this person is actually allowed to send a message here.
@@ -559,40 +361,18 @@ namespace Content.Server.Administration.Systems
                 return;
             }
 
-            if (_rateLimit.CountAction(eventArgs.SenderSession, RateLimitKey) != RateLimitStatus.Allowed)
-                return;
-
             var escapedText = FormattedMessage.EscapeText(message.Text);
 
-            string bwoinkText;
-            string adminPrefix = "";
-
-            //Getting an administrator position
-            if (_config.GetCVar(CCVars.AhelpAdminPrefix) && senderAdmin is not null && senderAdmin.Title is not null)
+            var bwoinkText = senderAdmin switch
             {
-                adminPrefix = $"[bold]\\[{senderAdmin.Title}\\][/bold] ";
-            }
+                var x when x is not null && x.Flags == AdminFlags.Adminhelp =>
+                    $"[color=purple]{senderSession.Name}[/color]: {escapedText}",
+                var x when x is not null && x.HasFlag(AdminFlags.Adminhelp) =>
+                    $"[color=red]{senderSession.Name}[/color]: {escapedText}",
+                _ => $"{senderSession.Name}: {escapedText}",
+            };
 
-            if (senderAdmin is not null &&
-                senderAdmin.Flags ==
-                AdminFlags.Adminhelp) // Mentor. Not full admin. That's why it's colored differently.
-            {
-                bwoinkText = $"[color=purple]{adminPrefix}{senderSession.Name}[/color]";
-            }
-            else if (senderAdmin is not null && senderAdmin.HasFlag(AdminFlags.Adminhelp))
-            {
-                bwoinkText = $"[color=red]{adminPrefix}{senderSession.Name}[/color]";
-            }
-            else
-            {
-                bwoinkText = $"{senderSession.Name}";
-            }
-
-            bwoinkText = $"{(message.PlaySound ? "" : "(S) ")}{bwoinkText}: {escapedText}";
-
-            // If it's not an admin / admin chooses to keep the sound then play it.
-            var playSound = !senderAHelpAdmin || message.PlaySound;
-            var msg = new BwoinkTextMessage(message.UserId, senderSession.UserId, bwoinkText, playSound: playSound);
+            var msg = new BwoinkTextMessage(message.UserId, senderSession.UserId, bwoinkText);
 
             LogBwoink(msg);
 
@@ -604,49 +384,11 @@ namespace Content.Server.Administration.Systems
                 RaiseNetworkEvent(msg, channel);
             }
 
-            string adminPrefixWebhook = "";
-
-            if (_config.GetCVar(CCVars.AhelpAdminPrefixWebhook) && senderAdmin is not null && senderAdmin.Title is not null)
-            {
-                adminPrefixWebhook = $"[bold]\\[{senderAdmin.Title}\\][/bold] ";
-            }
-
             // Notify player
             if (_playerManager.TryGetSessionById(message.UserId, out var session))
             {
-                if (!admins.Contains(session.Channel))
-                {
-                    // If _overrideClientName is set, we generate a new message with the override name. The admins name will still be the original name for the webhooks.
-                    if (_overrideClientName != string.Empty)
-                    {
-                        string overrideMsgText;
-                        // Doing the same thing as above, but with the override name. Theres probably a better way to do this.
-                        if (senderAdmin is not null &&
-                            senderAdmin.Flags ==
-                            AdminFlags.Adminhelp) // Mentor. Not full admin. That's why it's colored differently.
-                        {
-                            overrideMsgText = $"[color=purple]{adminPrefixWebhook}{_overrideClientName}[/color]";
-                        }
-                        else if (senderAdmin is not null && senderAdmin.HasFlag(AdminFlags.Adminhelp))
-                        {
-                            overrideMsgText = $"[color=red]{adminPrefixWebhook}{_overrideClientName}[/color]";
-                        }
-                        else
-                        {
-                            overrideMsgText = $"{senderSession.Name}"; // Not an admin, name is not overridden.
-                        }
-
-                        overrideMsgText = $"{(message.PlaySound ? "" : "(S) ")}{overrideMsgText}: {escapedText}";
-
-                        RaiseNetworkEvent(new BwoinkTextMessage(message.UserId,
-                                senderSession.UserId,
-                                overrideMsgText,
-                                playSound: playSound),
-                            session.Channel);
-                    }
-                    else
-                        RaiseNetworkEvent(msg, session.Channel);
-                }
+                if (!admins.Contains(session.ConnectedClient))
+                    RaiseNetworkEvent(msg, session.ConnectedClient);
             }
 
             var sendsWebhook = _webhookUrl != string.Empty;
@@ -662,18 +404,7 @@ namespace Content.Server.Administration.Systems
                 {
                     str = str[..(DescriptionMax - _maxAdditionalChars - unameLength)];
                 }
-
-                var nonAfkAdmins = GetNonAfkAdmins();
-                var messageParams = new AHelpMessageParams(
-                    senderSession.Name,
-                    str,
-                    !personalChannel,
-                    _gameTicker.RoundDuration().ToString("hh\\:mm\\:ss"),
-                    _gameTicker.RunLevel,
-                    playedSound: playSound,
-                    noReceivers: nonAfkAdmins.Count == 0
-                );
-                _messageQueues[msg.UserId].Enqueue(GenerateAHelpMessage(messageParams));
+                _messageQueues[msg.UserId].Enqueue(GenerateAHelpMessage(senderSession.Name, str, !personalChannel, admins.Count == 0));
             }
 
             if (admins.Count != 0 || sendsWebhook)
@@ -682,89 +413,102 @@ namespace Content.Server.Administration.Systems
             // No admin online, let the player know
             var systemText = Loc.GetString("bwoink-system-starmute-message-no-other-users");
             var starMuteMsg = new BwoinkTextMessage(message.UserId, SystemUserId, systemText);
-            RaiseNetworkEvent(starMuteMsg, senderSession.Channel);
+            RaiseNetworkEvent(starMuteMsg, senderSession.ConnectedClient);
         }
 
-        private IList<INetChannel> GetNonAfkAdmins()
-        {
-            return _adminManager.ActiveAdmins
-                .Where(p => (_adminManager.GetAdminData(p)?.HasFlag(AdminFlags.Adminhelp) ?? false) &&
-                            !_afkManager.IsAfk(p))
-                .Select(p => p.Channel)
-                .ToList();
-        }
-
+        // Returns all online admins with AHelp access
         private IList<INetChannel> GetTargetAdmins()
         {
             return _adminManager.ActiveAdmins
-                .Where(p => _adminManager.GetAdminData(p)?.HasFlag(AdminFlags.Adminhelp) ?? false)
-                .Select(p => p.Channel)
-                .ToList();
+               .Where(p => _adminManager.GetAdminData(p)?.HasFlag(AdminFlags.Adminhelp) ?? false)
+               .Select(p => p.ConnectedClient)
+               .ToList();
         }
 
-        private static string GenerateAHelpMessage(AHelpMessageParams parameters)
+        private static string GenerateAHelpMessage(string username, string message, bool admin, bool noReceivers = false)
         {
             var stringbuilder = new StringBuilder();
 
-            if (parameters.Icon != null)
-                stringbuilder.Append(parameters.Icon);
-            else if (parameters.IsAdmin)
+            if (admin)
                 stringbuilder.Append(":outbox_tray:");
-            else if (parameters.NoReceivers)
+            else if (noReceivers)
                 stringbuilder.Append(":sos:");
             else
                 stringbuilder.Append(":inbox_tray:");
 
-            if (parameters.RoundTime != string.Empty && parameters.RoundState == GameRunLevel.InRound)
-                stringbuilder.Append($" **{parameters.RoundTime}**");
-            if (!parameters.PlayedSound)
-                stringbuilder.Append(" **(S)**");
-
-            if (parameters.Icon == null)
-                stringbuilder.Append($" **{parameters.Username}:** ");
-            else
-                stringbuilder.Append($" **{parameters.Username}** ");
-            stringbuilder.Append(parameters.Message);
+            stringbuilder.Append($" **{username}:** ");
+            stringbuilder.Append(message);
             return stringbuilder.ToString();
         }
-    }
 
-    public sealed class AHelpMessageParams
-    {
-        public string Username { get; set; }
-        public string Message { get; set; }
-        public bool IsAdmin { get; set; }
-        public string RoundTime { get; set; }
-        public GameRunLevel RoundState { get; set; }
-        public bool PlayedSound { get; set; }
-        public bool NoReceivers { get; set; }
-        public string? Icon { get; set; }
-
-        public AHelpMessageParams(
-            string username,
-            string message,
-            bool isAdmin,
-            string roundTime,
-            GameRunLevel roundState,
-            bool playedSound,
-            bool noReceivers = false,
-            string? icon = null)
+        // https://discord.com/developers/docs/resources/channel#message-object-message-structure
+        private struct WebhookPayload
         {
-            Username = username;
-            Message = message;
-            IsAdmin = isAdmin;
-            RoundTime = roundTime;
-            RoundState = roundState;
-            PlayedSound = playedSound;
-            NoReceivers = noReceivers;
-            Icon = icon;
+            [JsonPropertyName("username")]
+            public string Username { get; set; } = "";
+
+            [JsonPropertyName("avatar_url")]
+            public string? AvatarUrl { get; set; } = "";
+
+            [JsonPropertyName("embeds")]
+            public List<Embed>? Embeds { get; set; } = null;
+
+            [JsonPropertyName("allowed_mentions")]
+            public Dictionary<string, string[]> AllowedMentions { get; set; } =
+                new()
+                {
+                    { "parse", Array.Empty<string>() },
+                };
+
+            public WebhookPayload()
+            {
+            }
+        }
+
+        // https://discord.com/developers/docs/resources/channel#embed-object-embed-structure
+        private struct Embed
+        {
+            [JsonPropertyName("description")]
+            public string Description { get; set; } = "";
+
+            [JsonPropertyName("color")]
+            public int Color { get; set; } = 0;
+
+            [JsonPropertyName("footer")]
+            public EmbedFooter? Footer { get; set; } = null;
+
+            public Embed()
+            {
+            }
+        }
+
+        // https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
+        private struct EmbedFooter
+        {
+            [JsonPropertyName("text")]
+            public string Text { get; set; } = "";
+
+            [JsonPropertyName("icon_url")]
+            public string? IconUrl { get; set; }
+
+            public EmbedFooter()
+            {
+            }
+        }
+
+        // https://discord.com/developers/docs/resources/webhook#webhook-object-webhook-structure
+        private struct WebhookData
+        {
+            [JsonPropertyName("guild_id")]
+            public string? GuildId { get; set; } = null;
+
+            [JsonPropertyName("channel_id")]
+            public string? ChannelId { get; set; } = null;
+
+            public WebhookData()
+            {
+            }
         }
     }
-
-    public enum PlayerStatusType
-    {
-        Connected,
-        Disconnected,
-        Banned,
-    }
 }
+

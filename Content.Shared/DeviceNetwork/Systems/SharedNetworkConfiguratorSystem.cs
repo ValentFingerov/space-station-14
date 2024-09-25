@@ -1,6 +1,6 @@
 using Content.Shared.Actions;
 using Content.Shared.DeviceNetwork.Components;
-using Content.Shared.UserInterface;
+using Robust.Shared.GameStates;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.DeviceNetwork.Systems;
@@ -10,17 +10,31 @@ public abstract class SharedNetworkConfiguratorSystem : EntitySystem
     public override void Initialize()
     {
         base.Initialize();
-        SubscribeLocalEvent<NetworkConfiguratorComponent, ActivatableUIOpenAttemptEvent>(OnUiOpenAttempt);
+
+        SubscribeLocalEvent<NetworkConfiguratorComponent, ComponentGetState>(GetNetworkConfiguratorState);
+        SubscribeLocalEvent<NetworkConfiguratorComponent, ComponentHandleState>(HandleNetworkConfiguratorState);
     }
 
-    private void OnUiOpenAttempt(EntityUid uid, NetworkConfiguratorComponent configurator, ActivatableUIOpenAttemptEvent args)
+    private void GetNetworkConfiguratorState(EntityUid uid, NetworkConfiguratorComponent comp,
+        ref ComponentGetState args)
     {
-        if (configurator.LinkModeActive)
-            args.Cancel();
+        args.State = new NetworkConfiguratorComponentState(comp.ActiveDeviceList, comp.LinkModeActive);
+    }
+
+    private void HandleNetworkConfiguratorState(EntityUid uid, NetworkConfiguratorComponent comp,
+        ref ComponentHandleState args)
+    {
+        if (args.Current is not NetworkConfiguratorComponentState state)
+        {
+            return;
+        }
+
+        comp.ActiveDeviceList = state.ActiveDeviceList;
+        comp.LinkModeActive = state.LinkModeActive;
     }
 }
 
-public sealed partial class ClearAllOverlaysEvent : InstantActionEvent
+public sealed class ClearAllOverlaysEvent : InstantActionEvent
 {
 }
 

@@ -1,4 +1,7 @@
+using System.Threading.Tasks;
+using NUnit.Framework;
 using Robust.Client.Console;
+using Robust.Shared.IoC;
 using Robust.Shared.Network;
 
 namespace Content.IntegrationTests.Tests.Networking
@@ -9,30 +12,27 @@ namespace Content.IntegrationTests.Tests.Networking
         [Test]
         public async Task Test()
         {
-            await using var pair = await PoolManager.GetServerClient(new PoolSettings { Connected = true });
-            var server = pair.Server;
-            var client = pair.Client;
+            await using var pairTracker = await PoolManager.GetServerClient();
+            var server = pairTracker.Pair.Server;
+            var client = pairTracker.Pair.Client;
 
-            var host = client.ResolveDependency<IClientConsoleHost>();
-            var netManager = client.ResolveDependency<IClientNetManager>();
-
-            await client.WaitPost(() => host.ExecuteCommand("disconnect"));
+            await client.WaitPost(() => IoCManager.Resolve<IClientConsoleHost>().ExecuteCommand("disconnect"));
 
             // Run some ticks for the disconnect to complete and such.
-            await pair.RunTicksSync(5);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 5);
 
             await Task.WhenAll(client.WaitIdleAsync(), server.WaitIdleAsync());
 
             // Reconnect.
             client.SetConnectTarget(server);
 
-            await client.WaitPost(() => netManager.ClientConnect(null, 0, null));
+            await client.WaitPost(() => IoCManager.Resolve<IClientNetManager>().ClientConnect(null, 0, null));
 
             // Run some ticks for the handshake to complete and such.
-            await pair.RunTicksSync(10);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 10);
 
             await Task.WhenAll(client.WaitIdleAsync(), server.WaitIdleAsync());
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

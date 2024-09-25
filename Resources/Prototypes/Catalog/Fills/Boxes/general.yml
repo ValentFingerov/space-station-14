@@ -4,19 +4,8 @@
   id: BoxCardboard
   description: A cardboard box for storing things.
   components:
-  - type: Item
-    size: Large
-    shape:
-    - 0,0,2,2
-  - type: Storage
-    maxItemSize: Small
-    grid:
-    - 0,0,2,2
   - type: Sprite
     state: box
-  - type: Tag
-    tags:
-    - BoxCardboard
 
 - type: entity
   name: mousetrap box
@@ -27,7 +16,7 @@
     - type: StorageFill
       contents:
         - id: Mousetrap
-          amount: 4
+          amount: 6
     - type: Sprite
       layers:
         - state: box
@@ -39,50 +28,70 @@
   id: BoxLightbulb
   description: This box is shaped on the inside so that only light tubes and bulbs fit.
   components:
+  - type: StorageFill
+    contents:
+      - id: LightBulb
+        amount: 12
   - type: Sprite
     layers:
       - state: box
       - state: light
   - type: Storage
-    grid:
-    - 0,0,5,3
+    capacity: 60
     whitelist:
       components:
       - LightBulb
-  - type: StorageFill
-    contents:
-      - id: LightBulb
-        amount: 12
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: lighttube box
-  parent: BoxLightbulb
+  parent: BoxCardboard
   id: BoxLighttube
+  description: This box is shaped on the inside so that only light tubes and bulbs fit.
   components:
+  - type: StorageFill
+    contents:
+      - id: LightTube
+        amount: 12
   - type: Sprite
     layers:
       - state: box
       - state: lighttube
-  - type: StorageFill
-    contents:
-      - id: LightTube
-        amount: 12
+  - type: Storage
+    capacity: 60
+    whitelist:
+      components:
+      - LightBulb
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: mixed lights box
-  parent: BoxLightbulb
+  parent: BoxCardboard
   id: BoxLightMixed
+  description: This box is shaped on the inside so that only light tubes and bulbs fit.
   components:
-  - type: Sprite
-    layers:
-      - state: box
-      - state: lightmixed
   - type: StorageFill
     contents:
       - id: LightTube
         amount: 6
       - id: LightBulb
         amount: 6
+  - type: Sprite
+    layers:
+      - state: box
+      - state: lightmixed
+  - type: Storage
+    capacity: 60
+    whitelist:
+      components:
+      - LightBulb
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: PDA box
@@ -93,11 +102,16 @@
   - type: StorageFill
     contents:
       - id: PassengerPDA
-        amount: 4
+        amount: 6
   - type: Sprite
     layers:
       - state: box
       - state: pda
+  - type: Storage
+    capacity: 60
+    whitelist:
+      components:
+      - PDA
 
 - type: entity
   name: ID card box
@@ -108,11 +122,16 @@
   - type: StorageFill
     contents:
       - id: PassengerIDCard
-        amount: 4
+        amount: 6
   - type: Sprite
     layers:
       - state: box
       - state: id # Corvax-Resprite
+  - type: Storage
+    capacity: 60
+    whitelist:
+      components:
+      - IdCard
 
 - type: entity
   name: headset box
@@ -123,11 +142,16 @@
   - type: StorageFill
     contents:
       - id: ClothingHeadsetGrey
-        amount: 4
+        amount: 6
   - type: Sprite
     layers:
       - state: box
       - state: headset
+  - type: Storage
+    capacity: 60
+    whitelist:
+      components:
+      - Headset
 
 - type: entity
   name: meson box
@@ -162,14 +186,24 @@
       - state: writing
 
 - type: entity
-  parent: BoxHug
+  name: box of hugs
+  parent: BoxCardboard
   id: BoxHugHealing
-  suffix: Medical
+  description: A special box for sensitive people.
   components:
+  - type: Sprite
+    layers:
+      - state: box_hug
+      - state: heart
+  - type: Item
+    heldPrefix: hug
   - type: StorageFill
     contents:
       - id: Brutepack
-        amount: 3
+        amount: 6
+  - type: Tag
+    tags:
+      - BoxHug
 
 - type: entity
   name: inflatable wall box
@@ -187,11 +221,14 @@
     layers:
       - state: box
       - state: inflatable
+  - type: Tag
+    tags:
+      - DroneUsable
 
 
 - type: entity
-  name: hatsune miku day bag
-  parent: ClothingBackpackDuffel
+  name: hatsune miku day box
+  parent: BoxCardboard
   id: BoxPerformer
   description: Happy Hatsune Miku Day!
   components:
@@ -228,9 +265,7 @@
       - id: TrashBag
         amount: 6
   - type: Storage
-    grid:
-    - 0,0,5,3
-    maxItemSize: Large
+    capacity: 800
     whitelist:
       tags:
         - TrashBag
@@ -238,6 +273,9 @@
     layers:
       - state: box
       - state: trashbag
+  - type: Tag
+    tags:
+      - DroneUsable
 
 - type: entity
   name: passenger encryption key box
@@ -248,12 +286,13 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyCommon
-        amount: 4
+        amount: 6
   - type: Sprite
     layers:
       - state: box
       - state: encryptokey
   - type: Storage
+    capacity: 30
     whitelist:
       components:
       - EncryptionKey
@@ -266,7 +305,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyCargo
-        amount: 4
+        amount: 6
 
 - type: entity
   name: engineering encryption key box
@@ -276,7 +315,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyEngineering
-        amount: 4
+        amount: 6
 
 - type: entity
   name: med-sci encryption key box
@@ -286,7 +325,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyMedicalScience
-        amount: 4
+        amount: 6
 
 - type: entity
   name: medical encryption key box
@@ -296,7 +335,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyMedical
-        amount: 4
+        amount: 6
 
 - type: entity
   name: robotech encryption key box
@@ -306,7 +345,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyRobo
-        amount: 4
+        amount: 6
 
 - type: entity
   name: science encryption key box
@@ -316,7 +355,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyScience
-        amount: 4
+        amount: 6
 
 - type: entity
   name: security encryption key box
@@ -326,7 +365,7 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeySecurity
-        amount: 4
+        amount: 6
 
 - type: entity
   name: service encryption key box
@@ -336,113 +375,19 @@
   - type: StorageFill
     contents:
       - id: EncryptionKeyService
-        amount: 4
+        amount: 6
 
 - type: entity
   name: syndicate encryption key box
-  parent: [BoxEncryptionKeyPassenger, BaseSyndicateContraband]
+  parent: BoxEncryptionKeyPassenger
   id: BoxEncryptionKeySyndie
   description: Two syndicate encryption keys for the price of one. Miniaturized for ease of use.
   components:
   - type: Item
-    size: Normal
+    size: 15
   - type: StorageFill
     contents:
       - id: EncryptionKeySyndie
         amount: 2
   - type: Storage
-
-- type: entity
-  name: lead-lined box
-  parent: BoxCardboard
-  suffix: DEBUG
-  id: BoxLeadLined
-  description: This box stymies the transmission of harmful radiation.
-  components:
-  - type: Sprite
-    state: box
-  - type: RadiationBlockingContainer
-    resistance: 2
-
-- type: entity
-  name: candle box
-  parent: BoxCardboard
-  id: BoxCandle
-  description: This box is specifically moulded to only carry candles.
-  components:
-  - type: Sprite
-    layers:
-      - state: box
-      - state: candle
-  - type: Storage
-    grid:
-    - 0,0,5,3
-    whitelist:
-      tags:
-      - Candle
-  - type: StorageFill
-    contents:
-      - id: Candle
-        amount: 4
-      - id: CandleBlue
-        amount: 2
-      - id: CandleRed
-        amount: 2
-      - id: CandleGreen
-        amount: 2
-      - id: CandlePurple
-        amount: 2
-
-- type: entity
-  name: small candle box
-  parent: BoxCandle
-  id: BoxCandleSmall
-  components:
-  - type: StorageFill
-    contents:
-      - id: CandleSmall
-        amount: 8
-      - id: CandleBlueSmall
-        amount: 4
-      - id: CandleRedSmall
-        amount: 4
-      - id: CandleGreenSmall
-        amount: 4
-      - id: CandlePurpleSmall
-        amount: 4
-
-- type: entity
-  name: darts box
-  parent: BoxCardboard
-  id: BoxDarts
-  description: A box filled with colorful darts.
-  components:
-  - type: Sprite
-    layers:
-      - state: box
-      - state: darts
-  - type: StorageFill
-    contents:
-      - id: Dart
-        amount: 2
-      - id: DartBlue
-        amount: 2
-      - id: DartPurple
-        amount: 2
-      - id: DartYellow
-        amount: 2
-
-- type: entity
-  name: envelope box
-  parent: BoxCardboard
-  id: BoxEnvelope
-  description: A box filled with envelopes.
-  components:
-  - type: Sprite
-    layers:
-      - state: box
-      - state: envelope
-  - type: StorageFill
-    contents:
-      - id: Envelope
-        amount: 9
+    capacity: 15

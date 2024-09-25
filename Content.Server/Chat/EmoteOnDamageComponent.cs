@@ -8,8 +8,8 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototy
 /// <summary>
 /// Causes an entity to automatically emote when taking damage.
 /// </summary>
-[RegisterComponent, Access(typeof(EmoteOnDamageSystem)), AutoGenerateComponentPause]
-public sealed partial class EmoteOnDamageComponent : Component
+[RegisterComponent, Access(typeof(EmoteOnDamageSystem))]
+public sealed class EmoteOnDamageComponent : Component
 {
     /// <summary>
     /// Chance of preforming an emote when taking damage and not on cooldown.
@@ -41,7 +41,6 @@ public sealed partial class EmoteOnDamageComponent : Component
     /// The simulation time of the last emote preformed due to taking damage.
     /// </summary>
     [DataField("lastEmoteTime", customTypeSerializer: typeof(TimeOffsetSerializer)), ViewVariables(VVAccess.ReadWrite)]
-    [AutoPausedField]
     public TimeSpan LastEmoteTime = TimeSpan.Zero;
 
     /// <summary>

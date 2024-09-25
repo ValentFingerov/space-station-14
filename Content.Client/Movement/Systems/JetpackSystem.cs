@@ -4,7 +4,6 @@ using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Timing;
 
@@ -13,9 +12,9 @@ namespace Content.Client.Movement.Systems;
 public sealed class JetpackSystem : SharedJetpackSystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly ClothingSystem _clothing = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly SharedMapSystem _mapSystem = default!;
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
 
     public override void Initialize()
     {
@@ -23,7 +22,7 @@ public sealed class JetpackSystem : SharedJetpackSystem
         SubscribeLocalEvent<JetpackComponent, AppearanceChangeEvent>(OnJetpackAppearance);
     }
 
-    protected override bool CanEnable(EntityUid uid, JetpackComponent component)
+    protected override bool CanEnable(JetpackComponent component)
     {
         // No predicted atmos so you'd have to do a lot of funny to get this working.
         return false;
@@ -31,7 +30,7 @@ public sealed class JetpackSystem : SharedJetpackSystem
 
     private void OnJetpackAppearance(EntityUid uid, JetpackComponent component, ref AppearanceChangeEvent args)
     {
-        Appearance.TryGetData<bool>(uid, JetpackVisuals.Enabled, out var enabled, args.Component);
+        _appearance.TryGetData<bool>(uid, JetpackVisuals.Enabled, out var enabled, args.Component);
 
         var state = "icon" + (enabled ? "-on" : "");
         args.Sprite?.LayerSetState(0, state);
@@ -44,51 +43,46 @@ public sealed class JetpackSystem : SharedJetpackSystem
     {
         base.Update(frameTime);
 
-        if (!_timing.IsFirstTimePredicted)
-            return;
+        if (!_timing.IsFirstTimePredicted) return;
 
-        // TODO: Please don't copy-paste this I beg
-        // make a generic particle emitter system / actual particles instead.
-        var query = EntityQueryEnumerator<ActiveJetpackComponent>();
-
-        while (query.MoveNext(out var uid, out var comp))
+        foreach (var comp in EntityQuery<ActiveJetpackComponent>())
         {
             if (_timing.CurTime < comp.TargetTime)
                 continue;
 
             comp.TargetTime = _timing.CurTime + TimeSpan.FromSeconds(comp.EffectCooldown);
 
-            CreateParticles(uid);
+            CreateParticles(comp.Owner);
         }
     }
 
     private void CreateParticles(EntityUid uid)
     {
-        var uidXform = Transform(uid);
         // Don't show particles unless the user is moving.
-        if (Container.TryGetContainingContainer((uid, uidXform, null), out var container) &&
+        if (Container.TryGetContainingContainer(uid, out var container) &&
             TryComp<PhysicsComponent>(container.Owner, out var body) &&
-            body.LinearVelocity.LengthSquared() < 1f)
-        {
+            body.LinearVelocity.LengthSquared < 1f)
             return;
-        }
 
+        var uidXform = Transform(uid);
         var coordinates = uidXform.Coordinates;
-        var gridUid = _transform.GetGrid(coordinates);
+        var gridUid = coordinates.GetGridUid(EntityManager);
 
-        if (TryComp<MapGridComponent>(gridUid, out var grid))
+        if (_mapManager.TryGetGrid(gridUid, out var grid))
         {
-            coordinates = new EntityCoordinates(gridUid.Value, _mapSystem.WorldToLocal(gridUid.Value, grid, _transform.ToMapCoordinates(coordinates).Position));
+            coordinates = new EntityCoordinates(grid.Owner, grid.WorldToLocal(coordinates.ToMapPos(EntityManager)));
         }
         else if (uidXform.MapUid != null)
         {
-            coordinates = new EntityCoordinates(uidXform.MapUid.Value, _transform.GetWorldPosition(uidXform));
+            coordinates = new EntityCoordinates(uidXform.MapUid.Value, uidXform.WorldPosition);
         }
         else
         {
             return;
         }
 
-        Spawn("JetpackEffect", coordinates);
+        var ent = Spawn("JetpackEffect", coordinates);
+        var xform = Transform(ent);
+        xform.Coordinates = coordinates;
     }
 }

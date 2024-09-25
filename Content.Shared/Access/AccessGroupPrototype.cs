@@ -9,11 +9,11 @@ namespace Content.Shared.Access;
 ///     Used by <see cref="AccessComponent"/> to avoid boilerplate.
 /// </summary>
 [Prototype("accessGroup")]
-public sealed partial class AccessGroupPrototype : IPrototype
+public sealed class AccessGroupPrototype : IPrototype
 {
     [IdDataField]
-    public string ID { get; private set; } = default!;
+    public string ID { get; } = default!;
 
-    [DataField("tags", required: true)]
-    public HashSet<ProtoId<AccessLevelPrototype>> Tags = default!;
+    [DataField("tags", required: true, customTypeSerializer:typeof(PrototypeIdHashSetSerializer<AccessLevelPrototype>))]
+    public HashSet<string> Tags = default!;
 }

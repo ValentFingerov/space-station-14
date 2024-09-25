@@ -1,4 +1,3 @@
-using System.Numerics;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.Maps;
@@ -27,13 +26,13 @@ public sealed class GridDragToggleMessage : EntityEventArgs
 [Serializable, NetSerializable]
 public sealed class GridDragRequestPosition : EntityEventArgs
 {
-    public NetEntity Grid;
+    public EntityUid Grid;
     public Vector2 WorldPosition;
 }
 
 [Serializable, NetSerializable]
 public sealed class GridDragVelocityRequest : EntityEventArgs
 {
-    public NetEntity Grid;
+    public EntityUid Grid;
     public Vector2 LinearVelocity;
 }

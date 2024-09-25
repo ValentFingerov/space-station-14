@@ -1,12 +1,13 @@
 using Content.Server.Atmos.Components;
 using Content.Shared.Atmos;
-using Content.Shared.Atmos.Components;
+using Content.Shared.Audio;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Physics;
 using Robust.Shared.Audio;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
+using Robust.Shared.Player;
 using Robust.Shared.Random;
 using Robust.Shared.Utility;
 
@@ -21,46 +22,44 @@ namespace Content.Server.Atmos.EntitySystems
         [ViewVariables(VVAccess.ReadWrite)]
         public string? SpaceWindSound { get; private set; } = "/Audio/Effects/space_wind.ogg";
 
-        private readonly HashSet<Entity<MovedByPressureComponent>> _activePressures = new(8);
+        private HashSet<MovedByPressureComponent> _activePressures = new(8);
 
         private void UpdateHighPressure(float frameTime)
         {
-            var toRemove = new RemQueue<Entity<MovedByPressureComponent>>();
+            var toRemove = new RemQueue<MovedByPressureComponent>();
 
-            foreach (var ent in _activePressures)
+            foreach (var comp in _activePressures)
             {
-                var (uid, comp) = ent;
+                var uid = comp.Owner;
                 MetaDataComponent? metadata = null;
 
                 if (Deleted(uid, metadata))
                 {
-                    toRemove.Add((uid, comp));
+                    toRemove.Add(comp);
                     continue;
                 }
 
-                if (Paused(uid, metadata))
-                    continue;
+                if (Paused(uid, metadata)) continue;
 
                 comp.Accumulator += frameTime;
 
-                if (comp.Accumulator < 2f)
-                    continue;
+                if (comp.Accumulator < 2f) continue;
 
                 // Reset it just for VV reasons even though it doesn't matter
                 comp.Accumulator = 0f;
-                toRemove.Add(ent);
+                toRemove.Add(comp);
 
                 if (HasComp<MobStateComponent>(uid) &&
                     TryComp<PhysicsComponent>(uid, out var body))
                 {
-                    _physics.SetBodyStatus(uid, body, BodyStatus.OnGround);
+                    _physics.SetBodyStatus(body, BodyStatus.OnGround);
                 }
 
                 if (TryComp<FixturesComponent>(uid, out var fixtures))
                 {
-                    foreach (var (id, fixture) in fixtures.Fixtures)
+                    foreach (var fixture in fixtures.Fixtures.Values)
                     {
-                        _physics.AddCollisionMask(uid, id, fixture, (int) CollisionGroup.TableLayer, manager: fixtures);
+                        _physics.AddCollisionMask(uid, fixture, (int) CollisionGroup.TableLayer, manager: fixtures);
                     }
                 }
             }
@@ -71,36 +70,36 @@ namespace Content.Server.Atmos.EntitySystems
             }
         }
 
-        private void AddMobMovedByPressure(EntityUid uid, MovedByPressureComponent component, PhysicsComponent body)
+        private void AddMobMovedByPressure(MovedByPressureComponent component, PhysicsComponent body)
         {
-            if (!TryComp<FixturesComponent>(uid, out var fixtures))
-                return;
+            if (!TryComp<FixturesComponent>(component.Owner, out var fixtures)) return;
 
-            _physics.SetBodyStatus(uid, body, BodyStatus.InAir);
+            _physics.SetBodyStatus(body, BodyStatus.InAir);
 
-            foreach (var (id, fixture) in fixtures.Fixtures)
+            foreach (var fixture in fixtures.Fixtures.Values)
             {
-                _physics.RemoveCollisionMask(uid, id, fixture, (int) CollisionGroup.TableLayer, manager: fixtures);
+                _physics.RemoveCollisionMask(body.Owner, fixture, (int) CollisionGroup.TableLayer, manager: fixtures);
             }
 
             // TODO: Make them dynamic type? Ehh but they still want movement so uhh make it non-predicted like weightless?
             // idk it's hard.
 
             component.Accumulator = 0f;
-            _activePressures.Add((uid, component));
+            _activePressures.Add(component);
         }
 
-        private void HighPressureMovements(Entity<GridAtmosphereComponent> gridAtmosphere, TileAtmosphere tile, EntityQuery<PhysicsComponent> bodies, EntityQuery<TransformComponent> xforms, EntityQuery<MovedByPressureComponent> pressureQuery, EntityQuery<MetaDataComponent> metas)
+        private void HighPressureMovements(GridAtmosphereComponent gridAtmosphere, TileAtmosphere tile, EntityQuery<PhysicsComponent> bodies, EntityQuery<TransformComponent> xforms, EntityQuery<MovedByPressureComponent> pressureQuery, EntityQuery<MetaDataComponent> metas)
         {
             // TODO ATMOS finish this
 
             // Don't play the space wind sound on tiles that are on fire...
-            if (tile.PressureDifference > 15 && !tile.Hotspot.Valid)
+            if(tile.PressureDifference > 15 && !tile.Hotspot.Valid)
             {
-                if (_spaceWindSoundCooldown == 0 && !string.IsNullOrEmpty(SpaceWindSound))
+                if(_spaceWindSoundCooldown == 0 && !string.IsNullOrEmpty(SpaceWindSound))
                 {
-                    var coordinates = _mapSystem.ToCenterCoordinates(tile.GridIndex, tile.GridIndices);
-                    _audio.PlayPvs(SpaceWindSound, coordinates, AudioParams.Default.WithVariation(0.125f).WithVolume(MathHelper.Clamp(tile.PressureDifference / 10, 10, 100)));
+                    var coordinates = tile.GridIndices.ToEntityCoordinates(tile.GridIndex, _mapManager);
+                    SoundSystem.Play(SpaceWindSound, Filter.Pvs(coordinates),
+                        coordinates, AudioHelpers.WithVariation(0.125f).WithVolume(MathHelper.Clamp(tile.PressureDifference / 10, 10, 100)));
                 }
             }
 
@@ -118,7 +117,7 @@ namespace Content.Server.Atmos.EntitySystems
                 return;
 
             // Used by ExperiencePressureDifference to correct push/throw directions from tile-relative to physics world.
-            var gridWorldRotation = xforms.GetComponent(gridAtmosphere).WorldRotation;
+            var gridWorldRotation = xforms.GetComponent(gridAtmosphere.Owner).WorldRotation;
 
             // If we're using monstermos, smooth out the yeet direction to follow the flow
             if (MonstermosEqualization)
@@ -139,10 +138,7 @@ namespace Content.Server.Atmos.EntitySystems
                     tile.PressureSpecificTarget = curTile;
             }
 
-            _entSet.Clear();
-            _lookup.GetLocalEntitiesIntersecting(tile.GridIndex, tile.GridIndices, _entSet, 0f);
-
-            foreach (var entity in _entSet)
+            foreach (var entity in _lookup.GetEntitiesIntersecting(tile.GridIndex, tile.GridIndices))
             {
                 // Ideally containers would have their own EntityQuery internally or something given recursively it may need to slam GetComp<T> anyway.
                 // Also, don't care about static bodies (but also due to collisionwakestate can't query dynamic directly atm).
@@ -154,15 +150,15 @@ namespace Content.Server.Atmos.EntitySystems
                 if (_containers.IsEntityInContainer(entity, metas.GetComponent(entity))) continue;
 
                 var pressureMovements = EnsureComp<MovedByPressureComponent>(entity);
-                if (pressure.LastHighPressureMovementAirCycle < gridAtmosphere.Comp.UpdateCounter)
+                if (pressure.LastHighPressureMovementAirCycle < gridAtmosphere.UpdateCounter)
                 {
                     // tl;dr YEET
                     ExperiencePressureDifference(
-                        (entity, pressureMovements),
-                        gridAtmosphere.Comp.UpdateCounter,
+                        pressureMovements,
+                        gridAtmosphere.UpdateCounter,
                         tile.PressureDifference,
                         tile.PressureDirection, 0,
-                        tile.PressureSpecificTarget != null ? _mapSystem.ToCenterCoordinates(tile.GridIndex, tile.PressureSpecificTarget.GridIndices) : EntityCoordinates.Invalid,
+                        tile.PressureSpecificTarget?.GridIndices.ToEntityCoordinates(tile.GridIndex, _mapManager) ?? EntityCoordinates.Invalid,
                         gridWorldRotation,
                         xforms.GetComponent(entity),
                         body);
@@ -183,7 +179,7 @@ namespace Content.Server.Atmos.EntitySystems
         }
 
         public void ExperiencePressureDifference(
-            Entity<MovedByPressureComponent> ent,
+            MovedByPressureComponent component,
             int cycle,
             float pressureDifference,
             AtmosDirection direction,
@@ -193,12 +189,12 @@ namespace Content.Server.Atmos.EntitySystems
             TransformComponent? xform = null,
             PhysicsComponent? physics = null)
         {
-            var (uid, component) = ent;
+            var uid = component.Owner;
+
             if (!Resolve(uid, ref physics, false))
                 return;
 
-            if (!Resolve(uid, ref xform))
-                return;
+            if (!Resolve(uid, ref xform)) return;
 
             // TODO ATMOS stuns?
 
@@ -218,7 +214,7 @@ namespace Content.Server.Atmos.EntitySystems
             {
                 if (HasComp<MobStateComponent>(uid))
                 {
-                    AddMobMovedByPressure(uid, component, physics);
+                    AddMobMovedByPressure(component, physics);
                 }
 
                 if (maxForce > MovedByPressureComponent.ThrowForce)
@@ -237,7 +233,7 @@ namespace Content.Server.Atmos.EntitySystems
                     // TODO: Technically these directions won't be correct but uhh I'm just here for optimisations buddy not to fix my old bugs.
                     if (throwTarget != EntityCoordinates.Invalid)
                     {
-                        var pos = ((_transformSystem.ToMapCoordinates(throwTarget).Position - _transformSystem.GetWorldPosition(xform)).Normalized() + dirVec).Normalized();
+                        var pos = ((throwTarget.ToMap(EntityManager).Position - xform.WorldPosition).Normalized + dirVec).Normalized;
                         _physics.ApplyLinearImpulse(uid, pos * moveForce, body: physics);
                     }
                     else

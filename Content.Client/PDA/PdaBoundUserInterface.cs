@@ -1,76 +1,78 @@
 using Content.Client.CartridgeLoader;
 using Content.Shared.CartridgeLoader;
+using Content.Shared.CCVar;
 using Content.Shared.Containers.ItemSlots;
+using Content.Shared.CrewManifest;
 using Content.Shared.PDA;
 using JetBrains.Annotations;
+using Robust.Client.GameObjects;
 using Robust.Client.UserInterface;
+using Robust.Shared.Configuration;
 
 namespace Content.Client.PDA
 {
     [UsedImplicitly]
-    public sealed class PdaBoundUserInterface : CartridgeLoaderBoundUserInterface
+    public sealed class PDABoundUserInterface : CartridgeLoaderBoundUserInterface
     {
-        private readonly PdaSystem _pdaSystem;
+        [Dependency] private readonly IEntityManager? _entityManager = default!;
+        [Dependency] private readonly IConfigurationManager _configManager = default!;
 
-        [ViewVariables]
-        private PdaMenu? _menu;
+        private PDAMenu? _menu;
 
-        public PdaBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+        public PDABoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
-            _pdaSystem = EntMan.System<PdaSystem>();
+            IoCManager.InjectDependencies(this);
         }
 
         protected override void Open()
         {
             base.Open();
-
-            if (_menu == null)
-                CreateMenu();
-        }
-
-        private void CreateMenu()
-        {
-            _menu = this.CreateWindow<PdaMenu>();
+            SendMessage(new PDARequestUpdateInterfaceMessage());
+            _menu = new PDAMenu();
             _menu.OpenCenteredLeft();
-
+            _menu.OnClose += Close;
             _menu.FlashLightToggleButton.OnToggled += _ =>
             {
-                SendMessage(new PdaToggleFlashlightMessage());
+                SendMessage(new PDAToggleFlashlightMessage());
             };
+
+            if (_configManager.GetCVar(CCVars.CrewManifestUnsecure))
+            {
+                _menu.CrewManifestButton.Visible = true;
+                _menu.CrewManifestButton.OnPressed += _ =>
+                {
+                    SendMessage(new CrewManifestOpenUiMessage());
+                };
+            }
 
             _menu.EjectIdButton.OnPressed += _ =>
             {
-                SendPredictedMessage(new ItemSlotButtonPressedEvent(PdaComponent.PdaIdSlotId));
+                SendMessage(new ItemSlotButtonPressedEvent(PDAComponent.PDAIdSlotId));
             };
 
             _menu.EjectPenButton.OnPressed += _ =>
             {
-                SendPredictedMessage(new ItemSlotButtonPressedEvent(PdaComponent.PdaPenSlotId));
-            };
-
-            _menu.EjectPaiButton.OnPressed += _ =>
-            {
-                SendPredictedMessage(new ItemSlotButtonPressedEvent(PdaComponent.PdaPaiSlotId));
+                SendMessage(new ItemSlotButtonPressedEvent(PDAComponent.PDAPenSlotId));
             };
 
             _menu.ActivateMusicButton.OnPressed += _ =>
             {
-                SendMessage(new PdaShowMusicMessage());
+                SendMessage(new PDAShowMusicMessage());
             };
 
             _menu.AccessRingtoneButton.OnPressed += _ =>
             {
-                SendMessage(new PdaShowRingtoneMessage());
+                SendMessage(new PDAShowRingtoneMessage());
             };
 
             _menu.ShowUplinkButton.OnPressed += _ =>
             {
-                SendMessage(new PdaShowUplinkMessage());
+                SendMessage(new PDAShowUplinkMessage());
             };
 
             _menu.LockUplinkButton.OnPressed += _ =>
             {
-                SendMessage(new PdaLockUplinkMessage());
+                SendMessage(new PDALockUplinkMessage());
             };
 
             _menu.OnProgramItemPressed += ActivateCartridge;
@@ -91,17 +93,12 @@ namespace Content.Client.PDA
         {
             base.UpdateState(state);
 
-            if (state is not PdaUpdateState updateState)
+            if (state is not PDAUpdateState updateState)
                 return;
 
-            if (_menu == null)
-            {
-                _pdaSystem.Log.Error("PDA state received before menu was created.");
-                return;
-            }
-
-            _menu.UpdateState(updateState);
+            _menu?.UpdateState(updateState);
         }
+
 
         protected override void AttachCartridgeUI(Control cartridgeUIFragment, string? title)
         {
@@ -124,9 +121,18 @@ namespace Content.Client.PDA
             _menu?.UpdateAvailablePrograms(programs);
         }
 
-        private PdaBorderColorComponent? GetBorderColorComponent()
+        protected override void Dispose(bool disposing)
         {
-            return EntMan.GetComponentOrNull<PdaBorderColorComponent>(Owner);
+            base.Dispose(disposing);
+            if (!disposing)
+                return;
+
+            _menu?.Dispose();
+        }
+
+        private PDABorderColorComponent? GetBorderColorComponent()
+        {
+            return _entityManager?.GetComponentOrNull<PDABorderColorComponent>(Owner.Owner);
         }
     }
 }

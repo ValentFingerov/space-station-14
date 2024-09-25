@@ -1,5 +1,7 @@
+using Content.Shared.Actions;
+using Content.Shared.Actions.ActionTypes;
 using Robust.Shared.Containers;
-using Robust.Shared.Prototypes;
+using Robust.Shared.Utility;
 
 namespace Content.Server.Guardian
 {
@@ -7,7 +9,7 @@ namespace Content.Server.Guardian
     /// Given to guardian users upon establishing a guardian link with the entity
     /// </summary>
     [RegisterComponent]
-    public sealed partial class GuardianHostComponent : Component
+    public sealed class GuardianHostComponent : Component
     {
         /// <summary>
         /// Guardian hosted within the component
@@ -15,7 +17,6 @@ namespace Content.Server.Guardian
         /// <remarks>
         /// Can be null if the component is added at any time.
         /// </remarks>
-        [DataField]
         public EntityUid? HostedGuardian;
 
         /// <summary>
@@ -23,9 +24,17 @@ namespace Content.Server.Guardian
         /// </summary>
         [ViewVariables] public ContainerSlot GuardianContainer = default!;
 
-        [DataField]
-        public EntProtoId Action = "ActionToggleGuardian";
-
-        [DataField] public EntityUid? ActionEntity;
+        [DataField("action")]
+        public InstantAction Action = new()
+        {
+            DisplayName = "action-name-guardian",
+            Description = "action-description-guardian",
+            Icon = new SpriteSpecifier.Texture(new ("Interface/Actions/manifest.png")),
+            UseDelay = TimeSpan.FromSeconds(2),
+            CheckCanInteract = false, // allow use while stunned, etc. Gets removed on death anyways.
+            Event =  new GuardianToggleActionEvent(),
+        };
     }
+
+    public sealed class GuardianToggleActionEvent : InstantActionEvent { };
 }

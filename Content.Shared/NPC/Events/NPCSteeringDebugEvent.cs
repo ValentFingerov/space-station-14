@@ -1,4 +1,3 @@
-using System.Numerics;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.NPC.Events;
@@ -19,13 +18,13 @@ public sealed class NPCSteeringDebugEvent : EntityEventArgs
 
 [Serializable, NetSerializable]
 public readonly record struct NPCSteeringDebugData(
-    NetEntity EntityUid,
+    EntityUid EntityUid,
     Vector2 Direction,
     float[] Interest,
     float[] Danger,
     List<Vector2> DangerPoints)
 {
-    public readonly NetEntity EntityUid = EntityUid;
+    public readonly EntityUid EntityUid = EntityUid;
     public readonly Vector2 Direction = Direction;
     public readonly float[] Interest = Interest;
     public readonly float[] Danger = Danger;

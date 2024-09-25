@@ -4,13 +4,15 @@
   abstract: true
   components:
   - type: Item
-    size: Small
+    size: 5
   - type: Clickable
   - type: InteractionOutline
   - type: MovedByPressure
   - type: EmitSoundOnCollide
     sound:
-      collection: WeakHit
+      path: /Audio/Effects/wall_bonk.ogg
+      params:
+        volume: 2
   - type: EmitSoundOnLand
     sound:
       path: /Audio/Effects/drop.ogg
@@ -21,8 +23,10 @@
       types:
         Blunt: 5
     soundHit:
-      collection: MetalThud
+      path: /Audio/Effects/hit_kick.ogg
   - type: CollisionWake
+  - type: TileFrictionModifier
+    modifier: 0.5
   - type: Physics
     bodyType: Dynamic
     fixedRotation: false
@@ -41,7 +45,6 @@
     drawdepth: Items
     noRot: false
   - type: Pullable
-  - type: DamageExaminable
 
 - type: entity
   name: "storage item"
@@ -52,27 +55,13 @@
   - type: Storage
   - type: UserInterface
     interfaces:
-      enum.StorageUiKey.Key:
-        type: StorageBoundUserInterface
+    - key: enum.StorageUiKey.Key
+      type: StorageBoundUserInterface
   - type: ContainerContainer
     containers:
       storagebase: !type:Container
         ents: []
 
-- type: entity
-  id: BaseBagOpenClose
-  abstract: true
-  components:
-  - type: Appearance
-  - type: GenericVisualizer
-    visuals:
-      enum.SharedBagOpenVisuals.BagState: # You don't have to use both of these if its not necessary.
-        closeLayer:
-          Open: { visible: false }
-          Closed: { visible: true }
-        openLayer:
-          Open: { visible: true }
-          Closed: { visible: false }
 
 # PowerCellSlot parents
 - type: entity
@@ -104,18 +93,3 @@
         cell_slot:
           name: power-cell-slot-component-slot-name-default
           startingItem: PowerCellMedium
-
-- type: entity
-  id: PowerCellSlotHighItem
-  abstract: true
-  components:
-    - type: ContainerContainer
-      containers:
-        cell_slot: !type:ContainerSlot { }
-    - type: PowerCellSlot
-      cellSlotId: cell_slot
-    - type: ItemSlots
-      slots:
-        cell_slot:
-          name: power-cell-slot-component-slot-name-default
-          startingItem: PowerCellHigh

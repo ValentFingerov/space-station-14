@@ -1,25 +1,19 @@
 using Content.Shared.Administration.Logs;
 using Content.Shared.Database;
 using Content.Shared.Inventory;
-using Robust.Shared.Network;
-using Content.Shared.Movement.Components;
-using Content.Shared.Movement.Systems;
-using Content.Shared.Popups;
 using Content.Shared.StatusEffect;
 using Content.Shared.StepTrigger.Systems;
 using Content.Shared.Stunnable;
-using Content.Shared.Throwing;
 using JetBrains.Annotations;
-using Robust.Shared.Audio.Systems;
+using Robust.Shared.Audio;
 using Robust.Shared.Containers;
+using Robust.Shared.GameStates;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
-using Robust.Shared.Physics.Events;
-using Robust.Shared.Utility;
 
 namespace Content.Shared.Slippery;
 
-[UsedImplicitly] 
+[UsedImplicitly]
 public sealed class SlipperySystem : EntitySystem
 {
     [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
@@ -28,25 +22,35 @@ public sealed class SlipperySystem : EntitySystem
     [Dependency] private readonly StatusEffectsSystem _statusEffects = default!;
     [Dependency] private readonly SharedContainerSystem _container = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-    [Dependency] private readonly SpeedModifierContactsSystem _speedModifier = default!;
 
     public override void Initialize()
     {
         base.Initialize();
 
         SubscribeLocalEvent<SlipperyComponent, StepTriggerAttemptEvent>(HandleAttemptCollide);
-        SubscribeLocalEvent<SlipperyComponent, StepTriggeredOffEvent>(HandleStepTrigger);
+        SubscribeLocalEvent<SlipperyComponent, StepTriggeredEvent>(HandleStepTrigger);
         SubscribeLocalEvent<NoSlipComponent, SlipAttemptEvent>(OnNoSlipAttempt);
-        SubscribeLocalEvent<SlowedOverSlipperyComponent, SlipAttemptEvent>(OnSlowedOverSlipAttempt);
-        SubscribeLocalEvent<ThrownItemComponent, SlipCausingAttemptEvent>(OnThrownSlipAttempt);
         // as long as slip-resistant mice are never added, this should be fine (otherwise a mouse-hat will transfer it's power to the wearer).
         SubscribeLocalEvent<NoSlipComponent, InventoryRelayedEvent<SlipAttemptEvent>>((e, c, ev) => OnNoSlipAttempt(e, c, ev.Args));
-        SubscribeLocalEvent<SlowedOverSlipperyComponent, InventoryRelayedEvent<SlipAttemptEvent>>((e, c, ev) => OnSlowedOverSlipAttempt(e, c, ev.Args));
-        SubscribeLocalEvent<SlowedOverSlipperyComponent, InventoryRelayedEvent<GetSlowedOverSlipperyModifierEvent>>(OnGetSlowedOverSlipperyModifier);
-        SubscribeLocalEvent<SlipperyComponent, EndCollideEvent>(OnEntityExit);
+        SubscribeLocalEvent<SlipperyComponent, ComponentGetState>(OnSlipperyGetState);
+        SubscribeLocalEvent<SlipperyComponent, ComponentHandleState>(OnSlipperyHandleState);
     }
 
-    private void HandleStepTrigger(EntityUid uid, SlipperyComponent component, ref StepTriggeredOffEvent args)
+    private void OnSlipperyHandleState(EntityUid uid, SlipperyComponent component, ref ComponentHandleState args)
+    {
+        if (args.Current is not SlipperyComponentState state) return;
+
+        component.ParalyzeTime = state.ParalyzeTime;
+        component.LaunchForwardsMultiplier = state.LaunchForwardsMultiplier;
+        component.SlipSound = new SoundPathSpecifier(state.SlipSound);
+    }
+
+    private void OnSlipperyGetState(EntityUid uid, SlipperyComponent component, ref ComponentGetState args)
+    {
+        args.State = new SlipperyComponentState(component.ParalyzeTime, component.LaunchForwardsMultiplier, _audio.GetSound(component.SlipSound));
+    }
+
+    private void HandleStepTrigger(EntityUid uid, SlipperyComponent component, ref StepTriggeredEvent args)
     {
         TrySlip(uid, component, args.Tripper);
     }
@@ -61,29 +65,8 @@ public sealed class SlipperySystem : EntitySystem
 
     private static void OnNoSlipAttempt(EntityUid uid, NoSlipComponent component, SlipAttemptEvent args)
     {
-        args.NoSlip = true;
+        args.Cancel();
     }
-
-    private void OnSlowedOverSlipAttempt(EntityUid uid, SlowedOverSlipperyComponent component, SlipAttemptEvent args)
-    {
-        args.SlowOverSlippery = true;
-    }
-
-    private void OnThrownSlipAttempt(EntityUid uid, ThrownItemComponent comp, ref SlipCausingAttemptEvent args)
-    {
-        args.Cancelled = true;
-    }
-
-    private void OnGetSlowedOverSlipperyModifier(EntityUid uid, SlowedOverSlipperyComponent comp, ref InventoryRelayedEvent<GetSlowedOverSlipperyModifierEvent> args)
-    {
-        args.Args.SlowdownModifier *= comp.SlowdownModifier;
-    }
-
-    private void OnEntityExit(EntityUid uid, SlipperyComponent component, ref EndCollideEvent args)
-    {
-        if (HasComp<SpeedModifiedByContactComponent>(args.OtherEntity))
-            _speedModifier.AddModifiedEntity(args.OtherEntity);
-    } 
 
     private bool CanSlip(EntityUid uid, EntityUid toSlip)
     {
@@ -91,38 +74,21 @@ public sealed class SlipperySystem : EntitySystem
                 && _statusEffects.CanApplyEffect(toSlip, "Stun"); //Should be KnockedDown instead?
     }
 
-    public void TrySlip(EntityUid uid, SlipperyComponent component, EntityUid other, bool requiresContact = true)
+    private void TrySlip(EntityUid uid, SlipperyComponent component, EntityUid other)
     {
-        if (HasComp<KnockedDownComponent>(other) && !component.SuperSlippery)
+        if (HasComp<KnockedDownComponent>(other))
             return;
 
         var attemptEv = new SlipAttemptEvent();
         RaiseLocalEvent(other, attemptEv);
-        if (attemptEv.SlowOverSlippery)
-            _speedModifier.AddModifiedEntity(other);
-
-        if (attemptEv.NoSlip)
-            return;
-
-        var attemptCausingEv = new SlipCausingAttemptEvent();
-        RaiseLocalEvent(uid, ref attemptCausingEv);
-        if (attemptCausingEv.Cancelled)
+        if (attemptEv.Cancelled)
             return;
 
         var ev = new SlipEvent(other);
         RaiseLocalEvent(uid, ref ev);
 
-        if (TryComp(other, out PhysicsComponent? physics) && !HasComp<SlidingComponent>(other))
-        {
+        if (TryComp(other, out PhysicsComponent? physics))
             _physics.SetLinearVelocity(other, physics.LinearVelocity * component.LaunchForwardsMultiplier, body: physics);
-
-            if (component.SuperSlippery && requiresContact)
-            {
-                var sliding = EnsureComp<SlidingComponent>(other);
-                sliding.CollidingEntities.Add(uid);
-                DebugTools.Assert(_physics.GetContactingEntities(other, physics).Contains(uid));
-            }
-        }
 
         var playSound = !_statusEffects.HasStatusEffect(other, "KnockedDown");
 
@@ -137,28 +103,26 @@ public sealed class SlipperySystem : EntitySystem
         _adminLogger.Add(LogType.Slip, LogImpact.Low,
             $"{ToPrettyString(other):mob} slipped on collision with {ToPrettyString(uid):entity}");
     }
+
+    public void CopyConstruct(EntityUid destUid, SlipperyComponent srcSlip)
+    {
+        var destEvaporation = EntityManager.EnsureComponent<SlipperyComponent>(destUid);
+        destEvaporation.SlipSound = srcSlip.SlipSound;
+        destEvaporation.ParalyzeTime = srcSlip.ParalyzeTime;
+        destEvaporation.LaunchForwardsMultiplier = srcSlip.LaunchForwardsMultiplier;
+    }
 }
 
 /// <summary>
 ///     Raised on an entity to determine if it can slip or not.
 /// </summary>
-public sealed class SlipAttemptEvent : EntityEventArgs, IInventoryRelayEvent
+public sealed class SlipAttemptEvent : CancellableEntityEventArgs, IInventoryRelayEvent
 {
-    public bool NoSlip;
-
-    public bool SlowOverSlippery;
-
     public SlotFlags TargetSlots { get; } = SlotFlags.FEET;
 }
 
 /// <summary>
-/// Raised on an entity that is causing the slip event (e.g, the banana peel), to determine if the slip attempt should be cancelled.
+///     This event is raised directed at an entity that CAUSED some other entity to slip (e.g., the banana peel).
 /// </summary>
-/// <param name="Cancelled">If the slip should be cancelled</param>
-[ByRefEvent]
-public record struct SlipCausingAttemptEvent (bool Cancelled);
-
-/// Raised on an entity that CAUSED some other entity to slip (e.g., the banana peel).
-/// <param name="Slipped">The entity being slipped</param>
 [ByRefEvent]
 public readonly record struct SlipEvent(EntityUid Slipped);

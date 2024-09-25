@@ -11,10 +11,6 @@
   path: /Fonts/NotoSans/NotoSans-Bold.ttf
 
 - type: font
-  id: DefaultBoldItalic
-  path: /Fonts/NotoSans/NotoSans-BoldItalic.ttf
-
-- type: font
   id: NotoSansDisplay
   path: /Fonts/NotoSansDisplay/NotoSansDisplay-Regular.ttf
 
@@ -37,11 +33,3 @@
 - type: font
   id: AnimalSilence
   path: /Fonts/Animal Silence.otf
-
-- type: font
-  id: Monospace
-  path: /EngineFonts/NotoSans/NotoSansMono-Regular.ttf
-
-- type: font
-  id: Emoji
-  path: /Fonts/NotoEmoji.ttf

@@ -1,15 +1,17 @@
-using Content.Shared.Ame.Components;
+﻿using Content.Shared.Chemistry.Dispenser;
 using JetBrains.Annotations;
-using Robust.Client.UserInterface;
+using Robust.Client.GameObjects;
+using Robust.Shared.GameObjects;
+using static Content.Shared.AME.SharedAMEControllerComponent;
 
-namespace Content.Client.Ame.UI
+namespace Content.Client.AME.UI
 {
     [UsedImplicitly]
-    public sealed class AmeControllerBoundUserInterface : BoundUserInterface
+    public sealed class AMEControllerBoundUserInterface : BoundUserInterface
     {
-        private AmeWindow? _window;
+        private AMEWindow? _window;
 
-        public AmeControllerBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+        public AMEControllerBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
         }
 
@@ -17,8 +19,9 @@ namespace Content.Client.Ame.UI
         {
             base.Open();
 
-            _window = this.CreateWindow<AmeWindow>();
-            _window.OnAmeButton += ButtonPressed;
+            _window = new AMEWindow(this);
+            _window.OnClose += Close;
+            _window.OpenCentered();
         }
 
         /// <summary>
@@ -32,13 +35,23 @@ namespace Content.Client.Ame.UI
         {
             base.UpdateState(state);
 
-            var castState = (AmeControllerBoundUserInterfaceState) state;
+            var castState = (AMEControllerBoundUserInterfaceState) state;
             _window?.UpdateState(castState); //Update window state
         }
 
-        public void ButtonPressed(UiButton button)
+        public void ButtonPressed(UiButton button, int dispenseIndex = -1)
         {
             SendMessage(new UiButtonPressedMessage(button));
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                _window?.Dispose();
+            }
         }
     }
 }

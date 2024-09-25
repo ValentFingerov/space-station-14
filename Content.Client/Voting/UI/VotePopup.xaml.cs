@@ -8,7 +8,6 @@ using Robust.Shared.IoC;
 using Robust.Shared.Localization;
 using Robust.Shared.Maths;
 using Robust.Shared.Timing;
-using Robust.Shared.Utility;
 
 namespace Content.Client.Voting.UI
 {
@@ -49,7 +48,7 @@ namespace Content.Client.Voting.UI
 
         public void UpdateData()
         {
-            VoteTitle.SetMessage(FormattedMessage.FromUnformatted(_vote.Title));
+            VoteTitle.Text = _vote.Title;
             VoteCaller.Text = Loc.GetString("ui-vote-created", ("initiator", _vote.Initiator));
 
             for (var i = 0; i < _voteButtons.Length; i++)

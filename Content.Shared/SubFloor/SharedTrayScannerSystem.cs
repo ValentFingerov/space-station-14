@@ -26,11 +26,7 @@ public abstract class SharedTrayScannerSystem : EntitySystem
 
     private void OnTrayScannerActivate(EntityUid uid, TrayScannerComponent scanner, ActivateInWorldEvent args)
     {
-        if (args.Handled || !args.Complex)
-            return;
-
         SetScannerEnabled(uid, !scanner.Enabled, scanner);
-        args.Handled = true;
     }
 
     private void SetScannerEnabled(EntityUid uid, bool enabled, TrayScannerComponent? scanner = null)
@@ -39,7 +35,7 @@ public abstract class SharedTrayScannerSystem : EntitySystem
             return;
 
         scanner.Enabled = enabled;
-        Dirty(uid, scanner);
+        Dirty(scanner);
 
         // We don't remove from _activeScanners on disabled, because the update function will handle that, as well as
         // managing the revealed subfloor entities
@@ -52,7 +48,7 @@ public abstract class SharedTrayScannerSystem : EntitySystem
 
     private void OnTrayScannerGetState(EntityUid uid, TrayScannerComponent scanner, ref ComponentGetState args)
     {
-        args.State = new TrayScannerState(scanner.Enabled, scanner.Range);
+        args.State = new TrayScannerState(scanner.Enabled);
     }
 
     private void OnTrayScannerHandleState(EntityUid uid, TrayScannerComponent scanner, ref ComponentHandleState args)
@@ -60,7 +56,6 @@ public abstract class SharedTrayScannerSystem : EntitySystem
         if (args.Current is not TrayScannerState state)
             return;
 
-        scanner.Range = state.Range;
         SetScannerEnabled(uid, state.Enabled, scanner);
     }
 }

@@ -10,10 +10,10 @@ namespace Content.Server.NPC.Queries;
 /// These results are then run through the considerations.
 /// </summary>
 [Prototype("utilityQuery")]
-public sealed partial class UtilityQueryPrototype : IPrototype
+public sealed class UtilityQueryPrototype : IPrototype
 {
     [IdDataField]
-    public string ID { get; private set; } = default!;
+    public string ID { get; } = default!;
 
     [ViewVariables(VVAccess.ReadWrite), DataField("query")]
     public List<UtilityQuery> Query = new();

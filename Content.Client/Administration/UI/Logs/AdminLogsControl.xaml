@@ -1,6 +1,10 @@
 ﻿<Control xmlns="https://spacestation14.io"
-         xmlns:aui="clr-namespace:Content.Client.Administration.UI.CustomControls">
-    <PanelContainer StyleClasses="BackgroundDark">
+         xmlns:aui="clr-namespace:Content.Client.Administration.UI.CustomControls"
+         xmlns:gfx="clr-namespace:Robust.Client.Graphics;assembly=Robust.Client">
+    <PanelContainer>
+        <PanelContainer.PanelOverride>
+            <gfx:StyleBoxFlat BackgroundColor="#25252A"/>
+        </PanelContainer.PanelOverride>
         <BoxContainer Orientation="Horizontal">
             <BoxContainer Orientation="Vertical">
                 <BoxContainer Orientation="Horizontal" MinWidth="400">

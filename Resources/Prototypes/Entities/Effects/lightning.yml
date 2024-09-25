@@ -6,6 +6,7 @@
   - type: Sprite
     sprite: /Textures/Effects/lightning.rsi
     drawdepth: Effects
+    netsync: false
     layers:
     - state: "lightning_1"
       shader: unshaded
@@ -33,7 +34,7 @@
   name: lightning
   id: Lightning
   parent: BaseLightning
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Lightning
       canArc: true
@@ -42,7 +43,7 @@
   name: spooky lightning
   id: LightningRevenant
   parent: BaseLightning
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: /Textures/Effects/lightning.rsi
@@ -66,7 +67,7 @@
   name: charged lightning
   id: ChargedLightning
   parent: BaseLightning
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: /Textures/Effects/lightning.rsi
@@ -82,37 +83,10 @@
       lightningPrototype: ChargedLightning
 
 - type: entity
-  name: lightning
-  id: Spark
-  parent: BaseLightning
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Sprite
-    sprite: /Textures/Effects/lightning.rsi
-    drawdepth: Effects
-    layers:
-    - state: "lightning_1"
-      shader: unshaded
-  - type: Electrified
-    shockDamage: 0
-  - type: Lightning
-    lightningPrototype: Spark
-  - type: PointLight
-    radius: 0.2
-    softness: .4
-  - type: Beam
-    sound: /Audio/Effects/sparks4.ogg
-  - type: TimedDespawn
-    lifetime: .3
-  - type: Tag
-    tags:
-      - HideContextMenu
-
-- type: entity
   name: supercharged lightning
   id: SuperchargedLightning
   parent: ChargedLightning
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: /Textures/Effects/lightning.rsi
@@ -138,7 +112,7 @@
   name: hypercharged lightning
   id: HyperchargedLightning
   parent: ChargedLightning
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: /Textures/Effects/lightning.rsi

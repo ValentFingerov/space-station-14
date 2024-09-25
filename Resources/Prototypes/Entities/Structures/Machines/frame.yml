@@ -8,6 +8,7 @@
   components:
     - type: Transform
       anchored: true
+      noRot: true
     - type: Physics
       bodyType: Static
     - type: Fixtures
@@ -27,9 +28,6 @@
     - type: Rotatable
     - type: Pullable
     - type: Construction
-      containers:
-        - machine_board
-        - machine_parts
       graph: Machine
       node: missingWires
     - type: ContainerContainer
@@ -37,7 +35,7 @@
         machine_board: !type:Container
         machine_parts: !type:Container
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
     - type: Destructible
       thresholds:
@@ -45,9 +43,6 @@
           !type:DamageTrigger
           damage: 100
         behaviors:
-        - !type:PlaySoundBehavior
-          sound:
-            collection: MetalBreak
         - !type:ChangeConstructionNodeBehavior
           node: start
         - !type:DoActsBehavior
@@ -55,7 +50,6 @@
     - type: Sprite
       sprite: Structures/Machines/parts.rsi
       state: box_0
-      snapCardinals: true
 
 - type: entity
   id: MachineFrame
@@ -66,6 +60,7 @@
   components:
     - type: Transform
       anchored: true
+      noRot: true
     - type: Physics
       bodyType: Static
     - type: Fixtures
@@ -88,11 +83,8 @@
       graph: Machine
       node: machineFrame
       defaultTarget: machine
-      containers:
-        - machine_board
-        - machine_parts
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
     - type: Destructible
       thresholds:
@@ -100,9 +92,6 @@
           !type:DamageTrigger
           damage: 100
         behaviors:
-        - !type:PlaySoundBehavior
-          sound:
-            collection: MetalBreak
         - !type:ChangeConstructionNodeBehavior
           node: missingWires
         - !type:DoActsBehavior
@@ -113,9 +102,9 @@
         machine_board: !type:Container
         machine_parts: !type:Container
     - type: Sprite
+      netsync: false
       sprite: Structures/Machines/parts.rsi
       state: box_1
-      snapCardinals: true
     - type: Appearance
     - type: ItemMapper
       mapLayers:
@@ -141,7 +130,7 @@
       graph: Machine
       node: destroyedMachineFrame
     - type: Damageable
-      damageContainer: StructuralInorganic
+      damageContainer: Inorganic
       damageModifierSet: Metallic
     - type: Destructible
       thresholds:
@@ -157,5 +146,6 @@
         - !type:DoActsBehavior
           acts: ["Destruction"]
     - type: Sprite
+      netsync: false
       sprite: Structures/Machines/parts.rsi
       state: destroyed

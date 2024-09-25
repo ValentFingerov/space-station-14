@@ -1,8 +1,7 @@
 using Content.Server.Chat.Systems;
 using Content.Server.Speech;
 using Content.Server.Speech.Components;
-using Content.Shared.Whitelist;
-using Robust.Shared.Player;
+using Robust.Server.GameObjects;
 using static Content.Server.Chat.Systems.ChatSystem;
 
 namespace Content.Server.SurveillanceCamera;
@@ -10,17 +9,17 @@ namespace Content.Server.SurveillanceCamera;
 public sealed class SurveillanceCameraMicrophoneSystem : EntitySystem
 {
     [Dependency] private readonly SharedTransformSystem _xforms = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
+
     public override void Initialize()
     {
         base.Initialize();
         SubscribeLocalEvent<SurveillanceCameraMicrophoneComponent, ComponentInit>(OnInit);
         SubscribeLocalEvent<SurveillanceCameraMicrophoneComponent, ListenEvent>(RelayEntityMessage);
         SubscribeLocalEvent<SurveillanceCameraMicrophoneComponent, ListenAttemptEvent>(CanListen);
-        SubscribeLocalEvent<ExpandICChatRecipientsEvent>(OnExpandRecipients);
+        SubscribeLocalEvent<ExpandICChatRecipientstEvent>(OnExpandRecipients);
     }
 
-    private void OnExpandRecipients(ExpandICChatRecipientsEvent ev)
+    private void OnExpandRecipients(ExpandICChatRecipientstEvent ev)
     {
         var xformQuery = GetEntityQuery<TransformComponent>();
         var sourceXform = Transform(ev.Source);
@@ -35,7 +34,7 @@ public sealed class SurveillanceCameraMicrophoneSystem : EntitySystem
             // get range to camera. This way wispers will still appear as obfuscated if they are too far from the camera's microphone
             var range = (xform.MapID != sourceXform.MapID)
                 ? -1
-                : (sourcePos - _xforms.GetWorldPosition(xform, xformQuery)).Length();
+                : (sourcePos - _xforms.GetWorldPosition(xform, xformQuery)).Length;
 
             if (range < 0 || range > ev.VoiceRange)
                 continue;
@@ -61,7 +60,7 @@ public sealed class SurveillanceCameraMicrophoneSystem : EntitySystem
     public void CanListen(EntityUid uid, SurveillanceCameraMicrophoneComponent microphone, ListenAttemptEvent args)
     {
         // TODO maybe just make this a part of ActiveListenerComponent?
-        if (_whitelistSystem.IsBlacklistPass(microphone.Blacklist, args.Source))
+        if (microphone.Blacklist.IsValid(args.Source))
             args.Cancel();
     }
 

@@ -2,33 +2,30 @@ using Content.Server.Administration.UI;
 using Content.Server.EUI;
 using Content.Server.Hands.Systems;
 using Content.Server.Preferences.Managers;
-using Content.Shared.Access.Components;
 using Content.Shared.Administration;
-using Content.Shared.Clothing;
 using Content.Shared.Hands.Components;
-using Content.Shared.Humanoid;
 using Content.Shared.Inventory;
 using Content.Shared.PDA;
 using Content.Shared.Preferences;
-using Content.Shared.Preferences.Loadouts;
 using Content.Shared.Roles;
-using Content.Shared.Station;
+using Robust.Server.GameObjects;
+using Robust.Server.Player;
 using Robust.Shared.Console;
-using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server.Administration.Commands
 {
     [AdminCommand(AdminFlags.Admin)]
-    public sealed class SetOutfitCommand : IConsoleCommand
+    sealed class SetOutfitCommand : IConsoleCommand
     {
         [Dependency] private readonly IEntityManager _entities = default!;
+        [Dependency] private readonly IPrototypeManager _prototypes = default!;
 
         public string Command => "setoutfit";
 
         public string Description => Loc.GetString("set-outfit-command-description", ("requiredComponent", nameof(InventoryComponent)));
 
-        public string Help => Loc.GetString("set-outfit-command-help-text", ("command", Command));
+        public string Help => Loc.GetString("set-outfit-command-help-text", ("command",Command));
 
         public void Execute(IConsoleShell shell, string argStr, string[] args)
         {
@@ -38,47 +35,47 @@ namespace Content.Server.Administration.Commands
                 return;
             }
 
-            if (!int.TryParse(args[0], out var entInt))
+            if (!int.TryParse(args[0], out var entityUid))
             {
                 shell.WriteLine(Loc.GetString("shell-entity-uid-must-be-number"));
                 return;
             }
 
-            var nent = new NetEntity(entInt);
+            var target = new EntityUid(entityUid);
 
-            if (!_entities.TryGetEntity(nent, out var target))
+            if (!target.IsValid() || !_entities.EntityExists(target))
             {
                 shell.WriteLine(Loc.GetString("shell-invalid-entity-id"));
                 return;
             }
 
-            if (!_entities.HasComponent<InventoryComponent>(target))
+            if (!_entities.HasComponent<InventoryComponent?>(target))
             {
-                shell.WriteLine(Loc.GetString("shell-target-entity-does-not-have-message", ("missing", "inventory")));
+                shell.WriteLine(Loc.GetString("shell-target-entity-does-not-have-message",("missing", "inventory")));
                 return;
             }
 
             if (args.Length == 1)
             {
-                if (shell.Player is not { } player)
+                if (shell.Player is not IPlayerSession player)
                 {
                     shell.WriteError(Loc.GetString("set-outfit-command-is-not-player-error"));
                     return;
                 }
 
                 var eui = IoCManager.Resolve<EuiManager>();
-                var ui = new SetOutfitEui(nent);
+                var ui = new SetOutfitEui(target);
                 eui.OpenEui(ui, player);
                 return;
             }
 
-            if (!SetOutfit(target.Value, args[1], _entities))
+            if (!SetOutfit(target, args[1], _entities))
                 shell.WriteLine(Loc.GetString("set-outfit-command-invalid-outfit-id-error"));
         }
 
         public static bool SetOutfit(EntityUid target, string gear, IEntityManager entityManager, Action<EntityUid, EntityUid>? onEquipped = null)
         {
-            if (!entityManager.TryGetComponent(target, out InventoryComponent? inventoryComponent))
+            if (!entityManager.TryGetComponent<InventoryComponent?>(target, out var inventoryComponent))
                 return false;
 
             var prototypeManager = IoCManager.Resolve<IPrototypeManager>();
@@ -86,11 +83,9 @@ namespace Content.Server.Administration.Commands
                 return false;
 
             HumanoidCharacterProfile? profile = null;
-            ICommonSession? session = null;
             // Check if we are setting the outfit of a player to respect the preferences
-            if (entityManager.TryGetComponent(target, out ActorComponent? actorComponent))
+            if (entityManager.TryGetComponent<ActorComponent?>(target, out var actorComponent))
             {
-                session = actorComponent.PlayerSession;
                 var userId = actorComponent.PlayerSession.UserId;
                 var preferencesManager = IoCManager.Resolve<IServerPreferencesManager>();
                 var prefs = preferencesManager.GetPreferences(userId);
@@ -98,23 +93,22 @@ namespace Content.Server.Administration.Commands
             }
 
             var invSystem = entityManager.System<InventorySystem>();
-            if (invSystem.TryGetSlots(target, out var slots))
+            if (invSystem.TryGetSlots(target, out var slotDefinitions, inventoryComponent))
             {
-                foreach (var slot in slots)
+                foreach (var slot in slotDefinitions)
                 {
                     invSystem.TryUnequip(target, slot.Name, true, true, false, inventoryComponent);
-                    var gearStr = ((IEquipmentLoadout) startingGear).GetGear(slot.Name);
+                    var gearStr = startingGear.GetGear(slot.Name, profile);
                     if (gearStr == string.Empty)
                     {
                         continue;
                     }
-
                     var equipmentEntity = entityManager.SpawnEntity(gearStr, entityManager.GetComponent<TransformComponent>(target).Coordinates);
                     if (slot.Name == "id" &&
-                        entityManager.TryGetComponent(equipmentEntity, out PdaComponent? pdaComponent) &&
-                        entityManager.TryGetComponent<IdCardComponent>(pdaComponent.ContainedId, out var id))
+                        entityManager.TryGetComponent<PDAComponent?>(equipmentEntity, out var pdaComponent) &&
+                        pdaComponent.ContainedID != null)
                     {
-                        id.FullName = entityManager.GetComponent<MetaDataComponent>(target).EntityName;
+                        pdaComponent.ContainedID.FullName = entityManager.GetComponent<MetaDataComponent>(target).EntityName;
                     }
 
                     invSystem.TryEquip(target, equipmentEntity, slot.Name, silent: true, force: true, inventory: inventoryComponent);
@@ -127,41 +121,11 @@ namespace Content.Server.Administration.Commands
             {
                 var handsSystem = entityManager.System<HandsSystem>();
                 var coords = entityManager.GetComponent<TransformComponent>(target).Coordinates;
-                foreach (var prototype in startingGear.Inhand)
+                foreach (var (hand, prototype) in startingGear.Inhand)
                 {
                     var inhandEntity = entityManager.SpawnEntity(prototype, coords);
-                    handsSystem.TryPickup(target, inhandEntity, checkActionBlocker: false, handsComp: handsComponent);
+                    handsSystem.TryPickup(target, inhandEntity, hand, checkActionBlocker: false, handsComp: handsComponent);
                 }
-            }
-
-            // See if this starting gear is associated with a job
-            var jobs = prototypeManager.EnumeratePrototypes<JobPrototype>();
-            foreach (var job in jobs)
-            {
-                if (job.StartingGear != gear)
-                    continue;
-
-                var jobProtoId = LoadoutSystem.GetJobPrototype(job.ID);
-                if (!prototypeManager.TryIndex<RoleLoadoutPrototype>(jobProtoId, out var jobProto))
-                    break;
-
-                // Don't require a player, so this works on Urists
-                profile ??= entityManager.TryGetComponent<HumanoidAppearanceComponent>(target, out var comp)
-                    ? HumanoidCharacterProfile.DefaultWithSpecies(comp.Species)
-                    : new HumanoidCharacterProfile();
-                // Try to get the user's existing loadout for the role
-                profile.Loadouts.TryGetValue(jobProtoId, out var roleLoadout);
-
-                if (roleLoadout == null)
-                {
-                    // If they don't have a loadout for the role, make a default one
-                    roleLoadout = new RoleLoadout(jobProtoId);
-                    roleLoadout.SetDefault(profile, session, prototypeManager);
-                }
-
-                // Equip the target with the job loadout
-                var stationSpawning = entityManager.System<SharedStationSpawningSystem>();
-                stationSpawning.EquipRoleLoadout(target, roleLoadout, jobProto);
             }
 
             return true;

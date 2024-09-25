@@ -1,4 +1,6 @@
+using System.Threading.Tasks;
 using Content.IntegrationTests.Tests.Interaction;
+using NUnit.Framework;
 
 namespace Content.IntegrationTests.Tests.Construction.Interaction;
 
@@ -11,8 +13,8 @@ public sealed class WindowConstruction : InteractionTest
     public async Task ConstructWindow()
     {
         await StartConstruction(Window);
-        await InteractUsing(Glass, 5);
-        ClientAssertPrototype(Window, Target);
+        await Interact(Glass, 5);
+        AssertPrototype(Window);
     }
 
     [Test]
@@ -28,8 +30,8 @@ public sealed class WindowConstruction : InteractionTest
     public async Task ConstructReinforcedWindow()
     {
         await StartConstruction(RWindow);
-        await InteractUsing(RGlass, 5);
-        ClientAssertPrototype(RWindow, Target);
+        await Interact(RGlass, 5);
+        AssertPrototype(RWindow);
     }
 
     [Test]

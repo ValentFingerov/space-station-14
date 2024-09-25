@@ -1,9 +1,8 @@
 ﻿using Content.Client.Atmos.EntitySystems;
 using Content.Shared.Atmos;
 using Content.Shared.Atmos.Piping.Trinary.Components;
-using Content.Shared.Localizations;
 using JetBrains.Annotations;
-using Robust.Client.UserInterface;
+using Robust.Client.GameObjects;
 
 namespace Content.Client.Atmos.UI
 {
@@ -13,13 +12,11 @@ namespace Content.Client.Atmos.UI
     [UsedImplicitly]
     public sealed class GasFilterBoundUserInterface : BoundUserInterface
     {
-        [ViewVariables]
+
+        private GasFilterWindow? _window;
         private const float MaxTransferRate = Atmospherics.MaxTransferRate;
 
-        [ViewVariables]
-        private GasFilterWindow? _window;
-
-        public GasFilterBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+        public GasFilterBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
         }
 
@@ -27,10 +24,16 @@ namespace Content.Client.Atmos.UI
         {
             base.Open();
 
-            var atmosSystem = EntMan.System<AtmosphereSystem>();
+            var atmosSystem = IoCManager.Resolve<IEntitySystemManager>().GetEntitySystem<AtmosphereSystem>();
 
-            _window = this.CreateWindow<GasFilterWindow>();
-            _window.PopulateGasList(atmosSystem.Gases);
+            _window = new GasFilterWindow(atmosSystem.Gases);
+
+            if(State != null)
+                UpdateState(State);
+
+            _window.OpenCentered();
+
+            _window.OnClose += Close;
 
             _window.ToggleStatusButtonPressed += OnToggleStatusButtonPressed;
             _window.FilterTransferRateChanged += OnFilterTransferRatePressed;
@@ -45,7 +48,8 @@ namespace Content.Client.Atmos.UI
 
         private void OnFilterTransferRatePressed(string value)
         {
-            var rate = UserInputParser.TryFloat(value, out var parsed) ? parsed : 0f;
+            float rate = float.TryParse(value, out var parsed) ? parsed : 0f;
+            if (rate > MaxTransferRate) rate = MaxTransferRate;
 
             SendMessage(new GasFilterChangeRateMessage(rate));
         }
@@ -79,7 +83,7 @@ namespace Content.Client.Atmos.UI
             _window.SetTransferRate(cast.TransferRate);
             if (cast.FilteredGas is not null)
             {
-                var atmos = EntMan.System<AtmosphereSystem>();
+                var atmos = IoCManager.Resolve<IEntitySystemManager>().GetEntitySystem<AtmosphereSystem>();
                 var gas = atmos.GetGas((Gas) cast.FilteredGas);
                 var gasName = Loc.GetString(gas.Name);
                 _window.SetGasFiltered(gas.ID, gasName);

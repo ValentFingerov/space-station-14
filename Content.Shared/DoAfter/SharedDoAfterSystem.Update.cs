@@ -1,8 +1,4 @@
-using Content.Shared.Gravity;
 using Content.Shared.Hands.Components;
-using Content.Shared.Hands.EntitySystems;
-using Content.Shared.Interaction;
-using Content.Shared.Physics;
 using Robust.Shared.Utility;
 
 namespace Content.Shared.DoAfter;
@@ -10,11 +6,6 @@ namespace Content.Shared.DoAfter;
 public abstract partial class SharedDoAfterSystem : EntitySystem
 {
     [Dependency] private readonly IDynamicTypeFactory _factory = default!;
-    [Dependency] private readonly SharedGravitySystem _gravity = default!;
-    [Dependency] private readonly SharedInteractionSystem _interaction = default!;
-    [Dependency] private readonly SharedHandsSystem _hands = default!;
-
-    private DoAfter[] _doAfters = Array.Empty<DoAfter>();
 
     public override void Update(float frameTime)
     {
@@ -41,15 +32,8 @@ public abstract partial class SharedDoAfterSystem : EntitySystem
     {
         var dirty = false;
 
-        var values = comp.DoAfters.Values;
-        var count = values.Count;
-        if (_doAfters.Length < count)
-            _doAfters = new DoAfter[count];
-
-        values.CopyTo(_doAfters, 0);
-        for (var i = 0; i < count; i++)
+        foreach (var doAfter in comp.DoAfters.Values)
         {
-            var doAfter = _doAfters[i];
             if (doAfter.CancelledTime != null)
             {
                 if (time - doAfter.CancelledTime.Value > ExcessTime)
@@ -85,7 +69,7 @@ public abstract partial class SharedDoAfterSystem : EntitySystem
         }
 
         if (dirty)
-            Dirty(uid, comp);
+            Dirty(comp);
 
         if (comp.DoAfters.Count == 0)
             RemCompDeferred(uid, active);
@@ -103,10 +87,9 @@ public abstract partial class SharedDoAfterSystem : EntitySystem
             // I feel like this is somewhat cursed, but its the only way I can think of without having to just send
             // redundant data over the network and increasing DoAfter boilerplate.
             var evType = typeof(DoAfterAttemptEvent<>).MakeGenericType(args.Event.GetType());
-            doAfter.AttemptEvent = _factory.CreateInstance(evType, new object[] { doAfter, args.Event });
+            doAfter.AttemptEvent = _factory.CreateInstance(evType, new object[] { doAfter, args.Event }, inject: false);
         }
 
-        args.Event.DoAfter = doAfter;
         if (args.EventTarget != null)
             RaiseLocalEvent(args.EventTarget.Value, doAfter.AttemptEvent, args.Broadcast);
         else
@@ -168,78 +151,55 @@ public abstract partial class SharedDoAfterSystem : EntitySystem
         if (args.Used is { } @using && !xformQuery.TryGetComponent(@using, out usedXform))
             return true;
 
+        // TODO: Handle Inertia in space
         // TODO: Re-use existing xform query for these calculations.
-        if (args.BreakOnMove && !(!args.BreakOnWeightlessMove && _gravity.IsWeightless(args.User, xform: userXform)))
+        if (args.BreakOnUserMove && !userXform.Coordinates
+                .InRange(EntityManager, _transform, doAfter.UserPosition, args.MovementThreshold))
+            return true;
+
+        if (args.BreakOnTargetMove)
         {
-            // Whether the user has moved too much from their original position.
-            if (!_transform.InRange(userXform.Coordinates, doAfter.UserPosition, args.MovementThreshold))
+            DebugTools.Assert(targetXform != null, "Break on move is true, but no target specified?");
+            if (targetXform != null && !targetXform.Coordinates.InRange(EntityManager, _transform,
+                    doAfter.TargetPosition, args.MovementThreshold))
                 return true;
-
-            // Whether the distance between the user and target(if any) has changed too much.
-            if (targetXform != null &&
-                targetXform.Coordinates.TryDistance(EntityManager, userXform.Coordinates, out var distance))
-            {
-                if (Math.Abs(distance - doAfter.TargetDistance) > args.MovementThreshold)
-                    return true;
-            }
-        }
-
-        // Whether the user and the target are too far apart.
-        if (args.Target != null)
-        {
-            if (args.DistanceThreshold != null)
-            {
-                if (!_interaction.InRangeUnobstructed(args.User, args.Target.Value, args.DistanceThreshold.Value))
-                    return true;
-            }
-            else
-            {
-                if (!_interaction.InRangeUnobstructed(args.User, args.Target.Value))
-                    return true;
-            }
-        }
-
-        // Whether the distance between the tool and the user has grown too much.
-        if (args.Used != null)
-        {
-            if (args.DistanceThreshold != null)
-            {
-                if (!_interaction.InRangeUnobstructed(args.User,
-                        args.Used.Value,
-                        args.DistanceThreshold.Value))
-                    return true;
-            }
-            else
-            {
-                if (!_interaction.InRangeUnobstructed(args.User,args.Used.Value))
-                    return true;
-            }
         }
 
         if (args.AttemptFrequency == AttemptFrequency.EveryTick && !TryAttemptEvent(doAfter))
             return true;
 
-        // Check if the do-after requires hands to perform at first
-        // For example, you need hands to strip clothes off of someone
-        // This does not mean their hand needs to be empty.
         if (args.NeedHand)
         {
             if (!handsQuery.TryGetComponent(args.User, out var hands) || hands.Count == 0)
                 return true;
 
-            // If an item was in the user's hand to begin with,
-            // check if the user is no longer holding the item.
-            if (args.BreakOnDropItem && doAfter.InitialItem != null && !_hands.IsHolding((args.User, hands), doAfter.InitialItem))
-                    return true;
-
-            // If the user changes which hand is active at all, interrupt the do-after
-            if (args.BreakOnHandChange && hands.ActiveHand?.Name != doAfter.InitialHand)
+            if (args.BreakOnHandChange && (hands.ActiveHand?.Name != doAfter.InitialHand
+                                           || hands.ActiveHandEntity != doAfter.InitialItem))
+            {
                 return true;
+            }
         }
 
         if (args.RequireCanInteract && !_actionBlocker.CanInteract(args.User, args.Target))
             return true;
 
+        if (args.DistanceThreshold != null)
+        {
+            if (targetXform != null
+                && !args.User.Equals(args.Target)
+                && !userXform.Coordinates.InRange(EntityManager, _transform, targetXform.Coordinates,
+                    args.DistanceThreshold.Value))
+            {
+                return true;
+            }
+
+            if (usedXform != null
+                && !userXform.Coordinates.InRange(EntityManager, _transform, usedXform.Coordinates,
+                    args.DistanceThreshold.Value))
+            {
+                return true;
+            }
+        }
 
         return false;
     }

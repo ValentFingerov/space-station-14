@@ -1,21 +1,11 @@
-using System.Numerics;
-using Content.Shared.Administration.Managers;
 using Content.Shared.Database;
 using Content.Shared.Follower.Components;
 using Content.Shared.Ghost;
-using Content.Shared.Hands;
 using Content.Shared.Movement.Events;
-using Content.Shared.Movement.Pulling.Events;
-using Content.Shared.Tag;
+using Content.Shared.Movement.Systems;
 using Content.Shared.Verbs;
-using Robust.Shared.Containers;
-using Robust.Shared.GameStates;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Events;
-using Robust.Shared.Network;
-using Robust.Shared.Physics;
-using Robust.Shared.Physics.Systems;
-using Robust.Shared.Player;
 using Robust.Shared.Utility;
 
 namespace Content.Shared.Follower;
@@ -23,12 +13,6 @@ namespace Content.Shared.Follower;
 public sealed class FollowerSystem : EntitySystem
 {
     [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly TagSystem _tagSystem = default!;
-    [Dependency] private readonly SharedContainerSystem _containerSystem = default!;
-    [Dependency] private readonly SharedJointSystem _jointSystem = default!;
-    [Dependency] private readonly SharedPhysicsSystem _physicsSystem = default!;
-    [Dependency] private readonly INetManager _netMan = default!;
-    [Dependency] private readonly ISharedAdminManager _adminManager = default!;
 
     public override void Initialize()
     {
@@ -36,28 +20,8 @@ public sealed class FollowerSystem : EntitySystem
 
         SubscribeLocalEvent<GetVerbsEvent<AlternativeVerb>>(OnGetAlternativeVerbs);
         SubscribeLocalEvent<FollowerComponent, MoveInputEvent>(OnFollowerMove);
-        SubscribeLocalEvent<FollowerComponent, PullStartedMessage>(OnPullStarted);
-        SubscribeLocalEvent<FollowerComponent, EntityTerminatingEvent>(OnFollowerTerminating);
-
-        SubscribeLocalEvent<FollowedComponent, ComponentGetStateAttemptEvent>(OnFollowedAttempt);
-        SubscribeLocalEvent<FollowerComponent, GotEquippedHandEvent>(OnGotEquippedHand);
         SubscribeLocalEvent<FollowedComponent, EntityTerminatingEvent>(OnFollowedTerminating);
         SubscribeLocalEvent<BeforeSaveEvent>(OnBeforeSave);
-    }
-
-    private void OnFollowedAttempt(Entity<FollowedComponent> ent, ref ComponentGetStateAttemptEvent args)
-    {
-        if (args.Cancelled)
-            return;
-
-        // Clientside VV stay losing
-        var playerEnt = args.Player?.AttachedEntity;
-
-        if (playerEnt == null ||
-            !ent.Comp.Following.Contains(playerEnt.Value) && !HasComp<GhostComponent>(playerEnt.Value))
-        {
-            args.Cancelled = true;
-        }
     }
 
     private void OnBeforeSave(BeforeSaveEvent ev)
@@ -80,59 +44,30 @@ public sealed class FollowerSystem : EntitySystem
 
     private void OnGetAlternativeVerbs(GetVerbsEvent<AlternativeVerb> ev)
     {
-        if (ev.User == ev.Target || IsClientSide(ev.Target))
+        if (!HasComp<SharedGhostComponent>(ev.User))
             return;
 
-        if (HasComp<GhostComponent>(ev.User))
+        if (ev.User == ev.Target || ev.Target.IsClientSide())
+            return;
+
+        var verb = new AlternativeVerb
         {
-            var verb = new AlternativeVerb()
+            Priority = 10,
+            Act = (() =>
             {
-                Priority = 10,
-                Act = () => StartFollowingEntity(ev.User, ev.Target),
-                Impact = LogImpact.Low,
-                Text = Loc.GetString("verb-follow-text"),
-                Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/open.svg.192dpi.png"))
-            };
-            ev.Verbs.Add(verb);
-        }
+                StartFollowingEntity(ev.User, ev.Target);
+            }),
+            Impact = LogImpact.Low,
+            Text = Loc.GetString("verb-follow-text"),
+            Icon = new SpriteSpecifier.Texture(new("/Textures/Interface/VerbIcons/open.svg.192dpi.png")),
+        };
 
-        if (_tagSystem.HasTag(ev.Target, "ForceableFollow"))
-        {
-            if (!ev.CanAccess || !ev.CanInteract)
-                return;
-
-            var verb = new AlternativeVerb
-            {
-                Priority = 10,
-                Act = () => StartFollowingEntity(ev.Target, ev.User),
-                Impact = LogImpact.Low,
-                Text = Loc.GetString("verb-follow-me-text"),
-                Icon = new SpriteSpecifier.Texture(new ("/Textures/Interface/VerbIcons/close.svg.192dpi.png")),
-            };
-
-            ev.Verbs.Add(verb);
-        }
+        ev.Verbs.Add(verb);
     }
 
     private void OnFollowerMove(EntityUid uid, FollowerComponent component, ref MoveInputEvent args)
     {
-        if (args.HasDirectionalMovement)
-            StopFollowingEntity(uid, component.Following);
-    }
-
-    private void OnPullStarted(EntityUid uid, FollowerComponent component, PullStartedMessage args)
-    {
         StopFollowingEntity(uid, component.Following);
-    }
-
-    private void OnGotEquippedHand(EntityUid uid, FollowerComponent component, GotEquippedHandEvent args)
-    {
-        StopFollowingEntity(uid, component.Following, deparent:false);
-    }
-
-    private void OnFollowerTerminating(EntityUid uid, FollowerComponent component, ref EntityTerminatingEvent args)
-    {
-        StopFollowingEntity(uid, component.Following, deparent: false);
     }
 
     // Since we parent our observer to the followed entity, we need to detach
@@ -159,20 +94,7 @@ public sealed class FollowerSystem : EntitySystem
             targetXform = Transform(targetXform.ParentUid);
         }
 
-        // Cleanup old following.
-        if (TryComp<FollowerComponent>(follower, out var followerComp))
-        {
-            // Already following you goob
-            if (followerComp.Following == entity)
-                return;
-
-            StopFollowingEntity(follower, followerComp.Following, deparent: false, removeComp: false);
-        }
-        else
-        {
-            followerComp = AddComp<FollowerComponent>(follower);
-        }
-
+        var followerComp = EnsureComp<FollowerComponent>(follower);
         followerComp.Following = entity;
 
         var followedComp = EnsureComp<FollowedComponent>(entity);
@@ -180,35 +102,24 @@ public sealed class FollowerSystem : EntitySystem
         if (!followedComp.Following.Add(follower))
             return;
 
-        if (TryComp<JointComponent>(follower, out var joints))
-            _jointSystem.ClearJoints(follower, joints);
-
         var xform = Transform(follower);
-        _containerSystem.AttachParentToContainerOrGrid((follower, xform));
-
-        // If we didn't get to parent's container.
-        if (xform.ParentUid != Transform(xform.ParentUid).ParentUid)
-        {
-            _transform.SetCoordinates(follower, xform, new EntityCoordinates(entity, Vector2.Zero), rotation: Angle.Zero);
-        }
-
-        _physicsSystem.SetLinearVelocity(follower, Vector2.Zero);
+        _transform.SetCoordinates(follower, xform, new EntityCoordinates(entity, Vector2.Zero), Angle.Zero);
 
         EnsureComp<OrbitVisualsComponent>(follower);
 
         var followerEv = new StartedFollowingEntityEvent(entity, follower);
         var entityEv = new EntityStartedFollowingEvent(entity, follower);
 
-        RaiseLocalEvent(follower, followerEv);
-        RaiseLocalEvent(entity, entityEv);
-        Dirty(entity, followedComp);
+        RaiseLocalEvent(follower, followerEv, true);
+        RaiseLocalEvent(entity, entityEv, false);
+        Dirty(followedComp);
     }
 
     /// <summary>
     ///     Forces an entity to stop following another entity, if it is doing so.
     /// </summary>
-    /// <param name="deparent">Should the entity deparent itself</param>
-    public void StopFollowingEntity(EntityUid uid, EntityUid target, FollowedComponent? followed = null, bool deparent = true, bool removeComp = true)
+    public void StopFollowingEntity(EntityUid uid, EntityUid target,
+        FollowedComponent? followed=null)
     {
         if (!Resolve(target, ref followed, false))
             return;
@@ -219,37 +130,24 @@ public sealed class FollowerSystem : EntitySystem
         followed.Following.Remove(uid);
         if (followed.Following.Count == 0)
             RemComp<FollowedComponent>(target);
+        RemComp<FollowerComponent>(uid);
 
-        if (removeComp)
+        var xform = Transform(uid);
+        _transform.AttachToGridOrMap(uid, xform);
+        if (xform.MapID == MapId.Nullspace)
         {
-            RemComp<FollowerComponent>(uid);
-            RemComp<OrbitVisualsComponent>(uid);
+            QueueDel(uid);
+            return;
         }
+
+        RemComp<OrbitVisualsComponent>(uid);
 
         var uidEv = new StoppedFollowingEntityEvent(target, uid);
         var targetEv = new EntityStoppedFollowingEvent(target, uid);
 
         RaiseLocalEvent(uid, uidEv, true);
         RaiseLocalEvent(target, targetEv, false);
-        Dirty(target, followed);
-        RaiseLocalEvent(uid, uidEv);
-        RaiseLocalEvent(target, targetEv);
-
-        if (!deparent || !TryComp(uid, out TransformComponent? xform))
-            return;
-
-        _transform.AttachToGridOrMap(uid, xform);
-        if (xform.MapUid != null)
-            return;
-
-        if (_netMan.IsClient)
-        {
-            _transform.DetachEntity(uid, xform);
-            return;
-        }
-
-        Log.Warning($"A follower has been detached to null-space and will be deleted. Follower: {ToPrettyString(uid)}. Followed: {ToPrettyString(target)}");
-        QueueDel(uid);
+        Dirty(followed);
     }
 
     /// <summary>
@@ -265,40 +163,6 @@ public sealed class FollowerSystem : EntitySystem
         {
             StopFollowingEntity(player, uid, followed);
         }
-    }
-
-    /// <summary>
-    /// Gets the entity with the most non-admin ghosts following it.
-    /// </summary>
-    public EntityUid? GetMostGhostFollowed()
-    {
-        EntityUid? picked = null;
-        var most = 0;
-
-        // Keep a tally of how many ghosts are following each entity
-        var followedEnts = new Dictionary<EntityUid, int>();
-
-        // Look for followers that are ghosts and are player controlled
-        var query = EntityQueryEnumerator<FollowerComponent, GhostComponent, ActorComponent>();
-        while (query.MoveNext(out _, out var follower, out _, out var actor))
-        {
-            // Exclude admins
-            if (_adminManager.IsAdmin(actor.PlayerSession))
-                continue;
-
-            var followed = follower.Following;
-            // Add new entry or increment existing
-            followedEnts.TryGetValue(followed, out var currentValue);
-            followedEnts[followed] = currentValue + 1;
-
-            if (followedEnts[followed] > most)
-            {
-                picked = followed;
-                most = followedEnts[followed];
-            }
-        }
-
-        return picked;
     }
 }
 

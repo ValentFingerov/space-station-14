@@ -1,8 +1,6 @@
 - type: entity
   id: CrateNPCBee
   parent: CrateLivestock
-  name: crate of bees
-  description: A crate containing a swarm of eight bees.
   components:
   - type: StorageFill
     contents:
@@ -12,8 +10,6 @@
 - type: entity
   id: CrateNPCButterflies
   parent: CrateLivestock
-  name: crate of butterflies
-  description: A crate containing five butterflies.
   components:
   - type: StorageFill
     contents:
@@ -23,8 +19,6 @@
 - type: entity
   id: CrateNPCCat
   parent: CrateLivestock
-  name: cat crate
-  description: A crate containing a single cat.
   components:
   - type: StorageFill
     contents:
@@ -37,9 +31,6 @@
       - id: MobCatCaracal
         prob: 0.5
         orGroup: MobCat
-      - id: MobCatKitten
-        prob: 0.25
-        orGroup: MobCat
       - id: MobBingus
         prob: 0.005
         orGroup: MobCat
@@ -47,8 +38,6 @@
 - type: entity
   id: CrateNPCChicken
   parent: CrateLivestock
-  name: chicken crate
-  description: A crate containing four fully grown chickens.
   components:
   - type: StorageFill
     contents:
@@ -58,8 +47,6 @@
 - type: entity
   id: CrateNPCCrab
   parent: CrateLivestock
-  name: crab crate
-  description: A crate containing three huge crabs.
   components:
   - type: StorageFill
     contents:
@@ -69,43 +56,27 @@
 - type: entity
   id: CrateNPCDuck
   parent: CrateLivestock
-  name: duck crate
-  description: A crate containing six fully grown ducks.
   components:
   - type: StorageFill
     contents:
       - id: MobDuckMallard
-        amount: 1
-      - id: MobDuckBrown
-        amount: 1
+        amount: 2
       - id: MobDuckWhite
+        amount: 2
+      - id: MobDuckBrown
         amount: 2
 
 - type: entity
   id: CrateNPCCorgi
   parent: CrateLivestock
-  name: corgi crate
-  description: A crate containing a single corgi.
   components:
   - type: StorageFill
     contents:
       - id: MobCorgi
 
 - type: entity
-  id: CrateNPCPuppyCorgi
-  parent: CrateLivestock
-  name: puppy corgi crate
-  description: A crate containing a single puppy corgi. Awww.
-  components:
-  - type: StorageFill
-    contents:
-    - id: MobCorgiPuppy
-
-- type: entity
   id: CrateNPCCow
   parent: CrateLivestock
-  name: cow crate
-  description: A crate containing a single cow.
   components:
   - type: StorageFill
     contents:
@@ -114,8 +85,6 @@
 - type: entity
   id: CrateNPCGoat
   parent: CrateLivestock
-  name: goat crate
-  description: A crate containing a single goat.
   components:
   - type: StorageFill
     contents:
@@ -124,8 +93,6 @@
 - type: entity
   id: CrateNPCGoose
   parent: CrateLivestock
-  name: goose crate
-  description: A crate containing two geese.
   components:
   - type: StorageFill
     contents:
@@ -135,8 +102,6 @@
 - type: entity
   id: CrateNPCGorilla
   parent: CrateLivestock
-  name: gorilla crate
-  description: A crate containing a single gorilla.
   components:
   - type: StorageFill
     contents:
@@ -145,28 +110,14 @@
 - type: entity
   id: CrateNPCMonkeyCube
   parent: CrateGenericSteel
-  name: monkey cube crate
-  description: A crate containing single box of monkey cubes.
   components:
   - type: StorageFill
     contents:
       - id: MonkeyCubeBox
 
 - type: entity
-  id: CrateNPCKoboldCube
-  parent: CrateGenericSteel
-  name: kobold cube crate
-  description: A crate containing single box of kobold cubes.
-  components:
-  - type: StorageFill
-    contents:
-      - id: KoboldCubeBox
-
-- type: entity
   id: CrateNPCMouse
   parent: CrateLivestock
-  name: mice crate
-  description: A crate containing five mice.
   components:
   - type: StorageFill
     contents:
@@ -176,8 +127,6 @@
 - type: entity
   id: CrateNPCParrot
   parent: CrateLivestock
-  name: parrot crate
-  description: A crate containing three parrots.
   components:
   - type: StorageFill
     contents:
@@ -187,8 +136,6 @@
 - type: entity
   id: CrateNPCPenguin
   parent: CrateLivestock
-  name: penguin crate
-  description: A crate containing two penguins.
   components:
   - type: StorageFill
     contents:
@@ -198,8 +145,6 @@
 - type: entity
   id: CrateNPCPig
   parent: CrateLivestock
-  name: pig crate
-  description: A crate containing a single pig.
   components:
   - type: StorageFill
     contents:
@@ -208,8 +153,6 @@
 - type: entity
   id: CrateNPCSnake
   parent: CrateLivestock
-  name: snake crate
-  description: A crate containing three snakes.
   components:
   - type: StorageFill
     contents:
@@ -237,8 +180,6 @@
 - type: entity
   id: CrateNPCLizard
   parent: CrateLivestock
-  name: lizard crate
-  description: A crate containing a lizard.
   components:
     - type: StorageFill
       contents:
@@ -247,20 +188,7 @@
 - type: entity
   id: CrateNPCKangaroo
   parent: CrateLivestock
-  name: kangaroo crate
-  description: A crate containing a kangaroo.
   components:
   - type: StorageFill
     contents:
       - id: MobKangaroo
-
-- type: entity
-  id: CrateNPCMothroach
-  parent: CrateLivestock
-  name: crate of mothroaches
-  description: A crate containing four mothroaches.
-  components:
-  - type: StorageFill
-    contents:
-      - id: MobMothroach
-        amount: 4

@@ -22,7 +22,7 @@
   - type: StorageFill
     contents:
       - id: PillCanister
-        amount: 9
+        amount: 6
   - type: Sprite
     layers:
       - state: box_medical # Corvax-Resprite
@@ -52,7 +52,7 @@
   - type: StorageFill
     contents:
       - id: ClothingMaskSterile
-        amount: 4
+        amount: 6
   - type: Sprite
     layers:
       - state: box_medical # Corvax-Resprite
@@ -72,7 +72,7 @@
     layers:
       - state: box_medical # Corvax-Resprite
       - state: latex
-
+      
 - type: entity
   name: nitrile gloves box
   parent: BoxCardboard
@@ -89,6 +89,20 @@
       - state: nitrile
 
 - type: entity
+  name: sterile swab box
+  parent: BoxCardboard
+  id: BoxMouthSwab
+  components:
+  - type: StorageFill
+    contents:
+      - id: DiseaseSwab
+        amount: 30
+  - type: Sprite
+    layers:
+      - state: box
+      - state: swab
+
+- type: entity
   name: body bag box
   parent: BoxCardboard
   id: BoxBodyBag
@@ -96,8 +110,8 @@
   components:
   - type: StorageFill
     contents:
-      - id: BodyBagFolded
-        amount: 4
+      - id: BodyBag_Folded
+        amount: 5
   - type: Sprite
     layers:
       - state: box_medical # Corvax-Resprite
@@ -105,21 +119,3 @@
     whitelist:
       tags:
         - BodyBag
-
-- type: entity
-  name: vial box
-  parent: BoxCardboard
-  id: BoxVial
-  description: A box full of vials.
-  components:
-  - type: Storage
-    grid:
-    - 0,0,2,1
-  - type: StorageFill
-    contents:
-      - id: BaseChemistryEmptyVial
-        amount: 6
-  - type: Sprite
-    layers:
-      - state: box
-      - state: vials

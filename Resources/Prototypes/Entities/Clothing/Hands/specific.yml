@@ -1,5 +1,5 @@
-- type: entity
-  parent: ClothingHandsButcherable
+﻿- type: entity
+  parent: ClothingHandsBase
   id: ClothingHandsChameleon # doesn't protect from electricity or heat
   name: black gloves
   description: Regular black gloves that do not keep you from frying.
@@ -9,6 +9,7 @@
       tags: [] # ignore "WhitelistChameleon" tag
     - type: Sprite
       sprite: Clothing/Hands/Gloves/Color/black.rsi
+      netsync: false
     - type: Clothing
       sprite: Clothing/Hands/Gloves/Color/black.rsi
     - type: ChameleonClothing
@@ -19,57 +20,5 @@
     - type: FingerprintMask
     - type: UserInterface
       interfaces:
-        enum.ChameleonUiKey.Key:
+        - key: enum.ChameleonUiKey.Key
           type: ChameleonBoundUserInterface
-# Corvax-HiddenDesc-Start
-    - type: HiddenDescription
-      entries:
-      - label: corvax-hidden-desc-Chameleon-syndicate
-        whitelistMind:
-          components:
-            - TraitorRole
-            - NukeOperative
-      - label: corvax-hidden-desc-Chameleon-research
-        jobRequired:
-          - ResearchAssistant
-          - ResearchDirector
-          - Scientist
-          - Borg
-# Corvax-HiddenDesc-End
-
-- type: entity
-  parent: ClothingHandsChameleon
-  id: ClothingHandsChameleonThief
-  suffix: Chameleon, Thieving
-  components:
-  - type: Thieving
-    stripTimeReduction: 2
-    stealthy: true
-# Corvax-HiddenDesc-Start
-  - type: HiddenDescription
-    entries:
-    - label: corvax-hidden-desc-Chameleon-syndicate
-      whitelistMind:
-        components:
-          - TraitorRole
-          - NukeOperative
-    - label: corvax-hidden-desc-ThievingGloves-syndicate
-      whitelistMind:
-        components:
-          - TraitorRole
-          - NukeOperative
-    - label: corvax-hidden-desc-Chameleon-thief
-      whitelistMind:
-        components:
-          - ThiefRole
-    - label: corvax-hidden-desc-ThievingGloves-thief
-      whitelistMind:
-        components:
-          - ThiefRole
-    - label: corvax-hidden-desc-Chameleon-research
-      jobRequired:
-        - ResearchAssistant
-        - ResearchDirector
-        - Scientist
-        - Borg
-# Corvax-HiddenDesc-End

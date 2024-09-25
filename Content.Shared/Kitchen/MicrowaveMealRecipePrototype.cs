@@ -10,38 +10,31 @@ namespace Content.Shared.Kitchen
     ///    A recipe for space microwaves.
     /// </summary>
     [Prototype("microwaveMealRecipe")]
-    public sealed partial class FoodRecipePrototype : IPrototype
+    public sealed class FoodRecipePrototype : IPrototype
     {
         [ViewVariables]
         [IdDataField]
-        public string ID { get; private set; } = default!;
+        public string ID { get; } = default!;
 
         [DataField("name")]
         private string _name = string.Empty;
 
         [DataField("reagents", customTypeSerializer:typeof(PrototypeIdDictionarySerializer<FixedPoint2, ReagentPrototype>))]
-        private Dictionary<string, FixedPoint2> _ingsReagents = new();
+        private readonly Dictionary<string, FixedPoint2> _ingsReagents = new();
 
         [DataField("solids", customTypeSerializer: typeof(PrototypeIdDictionarySerializer<FixedPoint2, EntityPrototype>))]
-        private Dictionary<string, FixedPoint2> _ingsSolids = new ();
+        private readonly Dictionary<string, FixedPoint2> _ingsSolids = new ();
 
         [DataField("result", customTypeSerializer: typeof(PrototypeIdSerializer<EntityPrototype>))]
-        public string Result { get; private set; } = string.Empty;
+        public string Result { get; } = string.Empty;
 
         [DataField("time")]
-        public uint CookTime { get; private set; } = 5;
+        public uint CookTime { get; } = 5;
 
         public string Name => Loc.GetString(_name);
 
-        // TODO Turn this into a ReagentQuantity[]
         public IReadOnlyDictionary<string, FixedPoint2> IngredientsReagents => _ingsReagents;
         public IReadOnlyDictionary<string, FixedPoint2> IngredientsSolids => _ingsSolids;
-
-        /// <summary>
-        /// Is this recipe unavailable in normal circumstances?
-        /// </summary>
-        [DataField]
-        public bool SecretRecipe = false;
 
         /// <summary>
         ///    Count the number of ingredients in a recipe for sorting the recipe list.

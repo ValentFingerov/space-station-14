@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-using System.Threading;
-using Content.Shared.DoAfter;
+﻿using System.Threading;
 using Robust.Shared.Audio;
 using Robust.Shared.Containers;
 
@@ -11,7 +9,7 @@ namespace Content.Server.Mech.Equipment.Components;
 /// inside of a container so large objects can be moved.
 /// </summary>
 [RegisterComponent]
-public sealed partial class MechGrabberComponent : Component
+public sealed class MechGrabberComponent : Component
 {
     /// <summary>
     /// The change in energy after each grab.
@@ -44,11 +42,8 @@ public sealed partial class MechGrabberComponent : Component
     [DataField("grabSound")]
     public SoundSpecifier GrabSound = new SoundPathSpecifier("/Audio/Mecha/sound_mecha_hydraulic.ogg");
 
-    public EntityUid? AudioStream;
+    public IPlayingAudioStream? AudioStream;
 
     [ViewVariables(VVAccess.ReadWrite)]
     public Container ItemContainer = default!;
-
-    [DataField, ViewVariables(VVAccess.ReadOnly)]
-    public DoAfterId? DoAfter;
 }

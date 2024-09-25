@@ -1,49 +1,38 @@
 using Content.Server.Body.Components;
-using Content.Shared.Chemistry.EntitySystems;
+using Content.Server.Chemistry.Components.SolutionManager;
+using Content.Server.Chemistry.EntitySystems;
 using Content.Shared.Body.Organ;
 using Content.Shared.Chemistry.Components;
-using Content.Shared.Chemistry.Components.SolutionManager;
-using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Server.Body.Systems
 {
     public sealed class StomachSystem : EntitySystem
     {
-        [Dependency] private readonly IGameTiming _gameTiming = default!;
-        [Dependency] private readonly SharedSolutionContainerSystem _solutionContainerSystem = default!;
+        [Dependency] private readonly BodySystem _bodySystem = default!;
+        [Dependency] private readonly SolutionContainerSystem _solutionContainerSystem = default!;
 
         public const string DefaultSolutionName = "stomach";
 
         public override void Initialize()
         {
-            SubscribeLocalEvent<StomachComponent, MapInitEvent>(OnMapInit);
-            SubscribeLocalEvent<StomachComponent, EntityUnpausedEvent>(OnUnpaused);
             SubscribeLocalEvent<StomachComponent, ApplyMetabolicMultiplierEvent>(OnApplyMetabolicMultiplier);
-        }
-
-        private void OnMapInit(Entity<StomachComponent> ent, ref MapInitEvent args)
-        {
-            ent.Comp.NextUpdate = _gameTiming.CurTime + ent.Comp.UpdateInterval;
-        }
-
-        private void OnUnpaused(Entity<StomachComponent> ent, ref EntityUnpausedEvent args)
-        {
-            ent.Comp.NextUpdate += args.PausedTime;
         }
 
         public override void Update(float frameTime)
         {
-            var query = EntityQueryEnumerator<StomachComponent, OrganComponent, SolutionContainerManagerComponent>();
-            while (query.MoveNext(out var uid, out var stomach, out var organ, out var sol))
+            foreach (var (stomach, organ, sol)in EntityManager.EntityQuery<StomachComponent, OrganComponent, SolutionContainerManagerComponent>())
             {
-                if (_gameTiming.CurTime < stomach.NextUpdate)
+                stomach.AccumulatedFrameTime += frameTime;
+
+                if (stomach.AccumulatedFrameTime < stomach.UpdateInterval)
                     continue;
 
-                stomach.NextUpdate += stomach.UpdateInterval;
+                stomach.AccumulatedFrameTime -= stomach.UpdateInterval;
 
                 // Get our solutions
-                if (!_solutionContainerSystem.ResolveSolution((uid, sol), DefaultSolutionName, ref stomach.Solution, out var stomachSolution))
+                if (!_solutionContainerSystem.TryGetSolution(stomach.Owner, DefaultSolutionName,
+                        out var stomachSolution, sol))
                     continue;
 
                 if (organ.Body is not { } body || !_solutionContainerSystem.TryGetSolution(body, stomach.BodySolutionName, out var bodySolution))
@@ -57,13 +46,14 @@ namespace Content.Server.Body.Systems
                     delta.Increment(stomach.UpdateInterval);
                     if (delta.Lifetime > stomach.DigestionDelay)
                     {
-                        if (stomachSolution.TryGetReagent(delta.ReagentQuantity.Reagent, out var reagent))
+                        if (stomachSolution.TryGetReagent(delta.ReagentId, out var quant))
                         {
-                            if (reagent.Quantity > delta.ReagentQuantity.Quantity)
-                                reagent = new(reagent.Reagent, delta.ReagentQuantity.Quantity);
+                            if (quant > delta.Quantity)
+                                quant = delta.Quantity;
 
-                            stomachSolution.RemoveReagent(reagent);
-                            transferSolution.AddReagent(reagent);
+                            _solutionContainerSystem.TryRemoveReagent((stomach).Owner, stomachSolution,
+                                delta.ReagentId, quant);
+                            transferSolution.AddReagent(delta.ReagentId, quant);
                         }
 
                         queue.Add(delta);
@@ -75,57 +65,59 @@ namespace Content.Server.Body.Systems
                     stomach.ReagentDeltas.Remove(item);
                 }
 
-                _solutionContainerSystem.UpdateChemicals(stomach.Solution.Value);
-
                 // Transfer everything to the body solution!
-                _solutionContainerSystem.TryAddSolution(bodySolution.Value, transferSolution);
+                _solutionContainerSystem.TryAddSolution(body, bodySolution, transferSolution);
             }
         }
 
-        private void OnApplyMetabolicMultiplier(
-            Entity<StomachComponent> ent,
-            ref ApplyMetabolicMultiplierEvent args)
+        private void OnApplyMetabolicMultiplier(EntityUid uid, StomachComponent component,
+            ApplyMetabolicMultiplierEvent args)
         {
             if (args.Apply)
             {
-                ent.Comp.UpdateInterval *= args.Multiplier;
+                component.UpdateInterval *= args.Multiplier;
                 return;
             }
 
             // This way we don't have to worry about it breaking if the stasis bed component is destroyed
-            ent.Comp.UpdateInterval /= args.Multiplier;
+            component.UpdateInterval /= args.Multiplier;
+            // Reset the accumulator properly
+            if (component.AccumulatedFrameTime >= component.UpdateInterval)
+                component.AccumulatedFrameTime = component.UpdateInterval;
         }
 
-        public bool CanTransferSolution(
-            EntityUid uid,
-            Solution solution,
-            StomachComponent? stomach = null,
+        public bool CanTransferSolution(EntityUid uid, Solution solution,
             SolutionContainerManagerComponent? solutions = null)
         {
-            return Resolve(uid, ref stomach, ref solutions, logMissing: false)
-                && _solutionContainerSystem.ResolveSolution((uid, solutions), DefaultSolutionName, ref stomach.Solution, out var stomachSolution)
-                // TODO: For now no partial transfers. Potentially change by design
-                && stomachSolution.CanAddSolution(solution);
-        }
-
-        public bool TryTransferSolution(
-            EntityUid uid,
-            Solution solution,
-            StomachComponent? stomach = null,
-            SolutionContainerManagerComponent? solutions = null)
-        {
-            if (!Resolve(uid, ref stomach, ref solutions, logMissing: false)
-                || !_solutionContainerSystem.ResolveSolution((uid, solutions), DefaultSolutionName, ref stomach.Solution)
-                || !CanTransferSolution(uid, solution, stomach, solutions))
-            {
+            if (!Resolve(uid, ref solutions, false))
                 return false;
-            }
 
-            _solutionContainerSystem.TryAddSolution(stomach.Solution.Value, solution);
+            if (!_solutionContainerSystem.TryGetSolution(uid, DefaultSolutionName, out var stomachSolution, solutions))
+                return false;
+
+            // TODO: For now no partial transfers. Potentially change by design
+            if (!stomachSolution.CanAddSolution(solution))
+                return false;
+
+            return true;
+        }
+
+        public bool TryTransferSolution(EntityUid uid, Solution solution,
+            StomachComponent? stomach = null,
+            SolutionContainerManagerComponent? solutions = null)
+        {
+            if (!Resolve(uid, ref stomach, ref solutions, false))
+                return false;
+
+            if (!_solutionContainerSystem.TryGetSolution(uid, DefaultSolutionName, out var stomachSolution, solutions)
+                || !CanTransferSolution(uid, solution, solutions))
+                return false;
+
+            _solutionContainerSystem.TryAddSolution(uid, stomachSolution, solution);
             // Add each reagent to ReagentDeltas. Used to track how long each reagent has been in the stomach
             foreach (var reagent in solution.Contents)
             {
-                stomach.ReagentDeltas.Add(new StomachComponent.ReagentDelta(reagent));
+                stomach.ReagentDeltas.Add(new StomachComponent.ReagentDelta(reagent.ReagentId, reagent.Quantity));
             }
 
             return true;

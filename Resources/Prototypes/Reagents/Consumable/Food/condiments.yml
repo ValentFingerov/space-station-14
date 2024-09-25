@@ -6,7 +6,6 @@
   physicalDesc: reagent-physical-desc-sugary
   flavor: sweet
   color: aquamarine
-  recognizable: true
 
 - type: reagent
   id: BbqSauce
@@ -16,7 +15,6 @@
   physicalDesc: reagent-physical-desc-gloopy
   flavor: sweet
   color: darkred
-  recognizable: true
 
 - type: reagent
   id: Cornoil
@@ -26,7 +24,6 @@
   physicalDesc: reagent-physical-desc-oily
   flavor: oily
   color: yellow
-  recognizable: true
 
 - type: reagent
   id: Frostoil
@@ -45,7 +42,6 @@
   physicalDesc: reagent-physical-desc-overpowering
   flavor: spicy
   color: gray
-  recognizable: true
 
 - type: reagent
   id: Hotsauce
@@ -55,7 +51,6 @@
   physicalDesc: reagent-physical-desc-spicy
   flavor: spicy
   color: red
-  recognizable: true
 
 - type: reagent
   id: Ketchup
@@ -65,7 +60,6 @@
   physicalDesc: reagent-physical-desc-tangy
   flavor: tomato
   color: red
-  recognizable: true
 
 - type: reagent
   id: Ketchunaise
@@ -73,19 +67,8 @@
   group: Foods
   desc: reagent-desc-ketchunaise
   physicalDesc: reagent-physical-desc-saucey
-  flavor: ketchunaise
+  flavor: piquant
   color: "#fba399"
-  recognizable: true
-
-- type: reagent
-  id: LaughinSyrup
-  name: reagent-name-laughin-syrup
-  group: Foods
-  desc: reagent-desc-laughin-syrup
-  physicalDesc: reagent-physical-desc-funny
-  flavor: sweet
-  color: "#803280"
-  recognizable: true
 
 - type: reagent
   id: Mayo
@@ -93,19 +76,8 @@
   group: Foods
   desc: reagent-desc-mayo
   physicalDesc: reagent-physical-desc-thick
-  flavor: mayonnaise
+  flavor: sour
   color: "#f9f5e5"
-  recognizable: true
-
-- type: reagent
-  id: Mustard
-  name: reagent-name-mustard
-  group: Foods
-  desc: reagent-desc-mustard
-  physicalDesc: reagent-physical-desc-thick
-  flavor: mustard
-  color: "#ffdb58"
-  recognizable: true
 
 - type: reagent
   id: Vinaigrette
@@ -115,7 +87,6 @@
   physicalDesc: reagent-physical-desc-sour
   flavor: sour
   color: "#efdaae"
-  recognizable: true
 
 - type: reagent
   id: Soysauce
@@ -125,7 +96,6 @@
   physicalDesc: reagent-physical-desc-salty
   flavor: salty
   color: saddlebrown
-  recognizable: true
   metabolisms:
     Food:
       effects:
@@ -141,8 +111,7 @@
   desc: reagent-desc-table-salt
   physicalDesc: reagent-physical-desc-grainy
   flavor: salty
-  color: "#cfd1d0"
-  recognizable: true
+  color: "#a1000b"
   boilingPoint: 1465.0
   meltingPoint: 800.7
   plantMetabolism:
@@ -162,29 +131,7 @@
     Food:
       effects:
       # eating salt on its own kinda sucks, kids
+      - !type:SatiateHunger
+        factor: 0.5
       - !type:SatiateThirst
         factor: -0.5
-
-- type: reagent
-  id: Syrup
-  name: reagent-name-syrup
-  group: Foods
-  desc: reagent-desc-syrup
-  flavor: sweet
-  color: "#fb7125"
-  recognizable: true
-  physicalDesc: reagent-physical-desc-sticky
-  slippery: false
-  viscosity: 0.55 #Start using syrup to attach your remote recievers to your microwaves!
-  tileReactions:
-    - !type:SpillTileReaction
-  metabolisms:
-    Food:
-      # 12 diona blood for 1 unit of syrup, this stuff better be worthwhile.
-      effects:
-      - !type:SatiateHunger
-        factor: 6.0 #Stronger than cookedramen
-  footstepSound:
-    collection: FootstepBlood
-    params:
-      volume: 6

@@ -9,7 +9,6 @@ namespace Content.Shared.Weapons.Ranged.Events;
 [Serializable, NetSerializable]
 public sealed class RequestShootEvent : EntityEventArgs
 {
-    public NetEntity Gun;
-    public NetCoordinates Coordinates;
-    public NetEntity? Target;
+    public EntityUid Gun;
+    public EntityCoordinates Coordinates;
 }

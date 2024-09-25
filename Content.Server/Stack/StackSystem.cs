@@ -33,7 +33,7 @@ namespace Content.Server.Stack
             base.SetCount(uid, amount, component);
 
             // Queue delete stack if count reaches zero.
-            if (component.Count <= 0 && !component.Lingering)
+            if (component.Count <= 0)
                 QueueDel(uid);
         }
 
@@ -45,14 +45,17 @@ namespace Content.Server.Stack
             if (!Resolve(uid, ref stack))
                 return null;
 
-            // Try to remove the amount of things we want to split from the original stack...
-            if (!Use(uid, amount, stack))
+            if (stack.StackTypeId == null)
                 return null;
 
             // Get a prototype ID to spawn the new entity. Null is also valid, although it should rarely be picked...
             var prototype = _prototypeManager.TryIndex<StackPrototype>(stack.StackTypeId, out var stackType)
-                ? stackType.Spawn.ToString()
-                : Prototype(uid)?.ID;
+                ? stackType.Spawn
+                : Prototype(stack.Owner)?.ID;
+
+            // Try to remove the amount of things we want to split from the original stack...
+            if (!Use(uid, amount, stack))
+                return null;
 
             // Set the output parameter in the event instance to the newly split stack.
             var entity = Spawn(prototype, spawnPosition);
@@ -65,19 +68,7 @@ namespace Content.Server.Stack
                 stackComp.Unlimited = false;
             }
 
-            var ev = new StackSplitEvent(entity);
-            RaiseLocalEvent(uid, ref ev);
-
             return entity;
-        }
-
-        /// <summary>
-        ///     Spawns a stack of a certain stack type. See <see cref="StackPrototype"/>.
-        /// </summary>
-        public EntityUid Spawn(int amount, ProtoId<StackPrototype> id, EntityCoordinates spawnPosition)
-        {
-            var proto = _prototypeManager.Index(id);
-            return Spawn(amount, proto, spawnPosition);
         }
 
         /// <summary>
@@ -100,60 +91,24 @@ namespace Content.Server.Stack
         /// </summary>
         public List<EntityUid> SpawnMultiple(string entityPrototype, int amount, EntityCoordinates spawnPosition)
         {
-            var spawns = CalculateSpawns(entityPrototype, amount);
-
-            var spawnedEnts = new List<EntityUid>();
-            foreach (var count in spawns)
-            {
-                var entity = SpawnAtPosition(entityPrototype, spawnPosition);
-                spawnedEnts.Add(entity);
-                SetCount(entity, count);
-            }
-
-            return spawnedEnts;
-        }
-
-        /// <inheritdoc cref="SpawnMultiple(string,int,EntityCoordinates)"/>
-        public List<EntityUid> SpawnMultiple(string entityPrototype, int amount, EntityUid target)
-        {
-            var spawns = CalculateSpawns(entityPrototype, amount);
-
-            var spawnedEnts = new List<EntityUid>();
-            foreach (var count in spawns)
-            {
-                var entity = SpawnNextToOrDrop(entityPrototype, target);
-                spawnedEnts.Add(entity);
-                SetCount(entity, count);
-            }
-
-            return spawnedEnts;
-        }
-
-        /// <summary>
-        /// Calculates how many stacks to spawn that total up to <paramref name="amount"/>.
-        /// </summary>
-        /// <param name="entityPrototype">The stack to spawn.</param>
-        /// <param name="amount">The amount of pieces across all stacks.</param>
-        /// <returns>The list of stack counts per entity.</returns>
-        private List<int> CalculateSpawns(string entityPrototype, int amount)
-        {
             var proto = _prototypeManager.Index<EntityPrototype>(entityPrototype);
-            proto.TryGetComponent<StackComponent>(out var stack, EntityManager.ComponentFactory);
+            proto.TryGetComponent<StackComponent>(out var stack);
             var maxCountPerStack = GetMaxCount(stack);
-            var amounts = new List<int>();
+            var spawnedEnts = new List<EntityUid>();
             while (amount > 0)
             {
+                var entity = Spawn(entityPrototype, spawnPosition);
+                spawnedEnts.Add(entity);
                 var countAmount = Math.Min(maxCountPerStack, amount);
+                SetCount(entity, countAmount);
                 amount -= countAmount;
-                amounts.Add(countAmount);
             }
-
-            return amounts;
+            return spawnedEnts;
         }
 
         private void OnStackAlternativeInteract(EntityUid uid, StackComponent stack, GetVerbsEvent<AlternativeVerb> args)
         {
-            if (!args.CanAccess || !args.CanInteract || args.Hands == null || stack.Count == 1)
+            if (!args.CanAccess || !args.CanInteract || args.Hands == null)
                 return;
 
             AlternativeVerb halve = new()
@@ -198,16 +153,16 @@ namespace Content.Server.Stack
 
             if (amount <= 0)
             {
-                Popup.PopupCursor(Loc.GetString("comp-stack-split-too-small"), userUid, PopupType.Medium);
+                PopupSystem.PopupCursor(Loc.GetString("comp-stack-split-too-small"), userUid, PopupType.Medium);
                 return;
             }
 
             if (Split(uid, amount, userTransform.Coordinates, stack) is not {} split)
                 return;
 
-            Hands.PickupOrDrop(userUid, split);
+            HandsSystem.PickupOrDrop(userUid, split);
 
-            Popup.PopupCursor(Loc.GetString("comp-stack-split"), userUid);
+            PopupSystem.PopupCursor(Loc.GetString("comp-stack-split"), userUid);
         }
     }
 }

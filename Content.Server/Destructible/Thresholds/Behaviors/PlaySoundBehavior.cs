@@ -1,13 +1,12 @@
 using Content.Shared.Audio;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Player;
 
 namespace Content.Server.Destructible.Thresholds.Behaviors
 {
     [Serializable]
     [DataDefinition]
-    public sealed partial class PlaySoundBehavior : IThresholdBehavior
+    public sealed class PlaySoundBehavior : IThresholdBehavior
     {
         /// <summary>
         ///     Sound played upon destruction.

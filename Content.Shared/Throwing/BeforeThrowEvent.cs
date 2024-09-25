@@ -1,22 +1,18 @@
-using System.Numerics;
-
-namespace Content.Shared.Throwing;
-
-[ByRefEvent]
-public struct BeforeThrowEvent
+namespace Content.Shared.Throwing
 {
-    public BeforeThrowEvent(EntityUid itemUid, Vector2 direction, float throwSpeed,  EntityUid playerUid)
+    public sealed class BeforeThrowEvent : HandledEntityEventArgs
     {
-        ItemUid = itemUid;
-        Direction = direction;
-        ThrowSpeed = throwSpeed;
-        PlayerUid = playerUid;
+        public BeforeThrowEvent(EntityUid itemUid, Vector2 direction, float throwStrength,  EntityUid playerUid)
+        {
+           ItemUid = itemUid;
+           Direction = direction;
+           ThrowStrength = throwStrength;
+           PlayerUid = playerUid;
+        }
+
+        public EntityUid ItemUid { get; set; }
+        public Vector2 Direction { get; }
+        public float ThrowStrength { get; set;}
+        public EntityUid PlayerUid { get; }
     }
-
-    public EntityUid ItemUid { get; set; }
-    public Vector2 Direction { get; }
-    public float ThrowSpeed { get; set;}
-    public EntityUid PlayerUid { get; }
-
-    public bool Cancelled = false;
 }

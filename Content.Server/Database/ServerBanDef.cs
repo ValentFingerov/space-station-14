@@ -1,7 +1,6 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Net;
 using Content.Shared.CCVar;
-using Content.Shared.Database;
 using Robust.Shared.Configuration;
 using Robust.Shared.Network;
 
@@ -17,27 +16,20 @@ namespace Content.Server.Database
 
         public DateTimeOffset BanTime { get; }
         public DateTimeOffset? ExpirationTime { get; }
-        public int? RoundId { get; }
-        public TimeSpan PlaytimeAtNote { get; }
         public string Reason { get; }
-        public NoteSeverity Severity { get; set; }
         public NetUserId? BanningAdmin { get; }
         public ServerUnbanDef? Unban { get; }
-        public ServerBanExemptFlags ExemptFlags { get; }
 
-        public ServerBanDef(int? id,
+        public ServerBanDef(
+            int? id,
             NetUserId? userId,
             (IPAddress, int)? address,
             ImmutableArray<byte>? hwId,
             DateTimeOffset banTime,
             DateTimeOffset? expirationTime,
-            int? roundId,
-            TimeSpan playtimeAtNote,
             string reason,
-            NoteSeverity severity,
             NetUserId? banningAdmin,
-            ServerUnbanDef? unban,
-            ServerBanExemptFlags exemptFlags = default)
+            ServerUnbanDef? unban)
         {
             if (userId == null && address == null && hwId ==  null)
             {
@@ -57,13 +49,9 @@ namespace Content.Server.Database
             HWId = hwId;
             BanTime = banTime;
             ExpirationTime = expirationTime;
-            RoundId = roundId;
-            PlaytimeAtNote = playtimeAtNote;
             Reason = reason;
-            Severity = severity;
             BanningAdmin = banningAdmin;
             Unban = unban;
-            ExemptFlags = exemptFlags;
         }
 
         public string FormatBanMessage(IConfigurationManager cfg, ILocalizationManager loc)
@@ -78,9 +66,10 @@ namespace Content.Server.Database
             else
             {
                 var appeal = cfg.GetCVar(CCVars.InfoLinksAppeal);
-                expires = !string.IsNullOrWhiteSpace(appeal)
-                    ? loc.GetString("ban-banned-permanent-appeal", ("link", appeal))
-                    : loc.GetString("ban-banned-permanent");
+                if (!string.IsNullOrWhiteSpace(appeal))
+                    expires = loc.GetString("ban-banned-permanent-appeal", ("link", appeal));
+                else
+                    expires = loc.GetString("ban-banned-permanent");
             }
 
             return $"""

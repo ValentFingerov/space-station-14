@@ -1,5 +1,4 @@
 using Content.Shared.Audio;
-using Content.Shared.Explosion;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Maps;
 using JetBrains.Annotations;
@@ -15,6 +14,7 @@ namespace Content.Shared.SubFloor
     [UsedImplicitly]
     public abstract class SharedSubFloorHideSystem : EntitySystem
     {
+        [Dependency] protected readonly IMapManager MapManager = default!;
         [Dependency] private readonly ITileDefinitionManager _tileDefinitionManager = default!;
         [Dependency] private readonly SharedAmbientSoundSystem _ambientSoundSystem = default!;
         [Dependency] protected readonly SharedAppearanceSystem Appearance = default!;
@@ -23,6 +23,7 @@ namespace Content.Shared.SubFloor
         {
             base.Initialize();
 
+            SubscribeLocalEvent<GridModifiedEvent>(OnGridChanged);
             SubscribeLocalEvent<TileChangedEvent>(OnTileChanged);
             SubscribeLocalEvent<SubFloorHideComponent, ComponentStartup>(OnSubFloorStarted);
             SubscribeLocalEvent<SubFloorHideComponent, ComponentShutdown>(OnSubFloorTerminating);
@@ -30,13 +31,6 @@ namespace Content.Shared.SubFloor
             SubscribeLocalEvent<SubFloorHideComponent, AnchorStateChangedEvent>(HandleAnchorChanged);
             SubscribeLocalEvent<SubFloorHideComponent, GettingInteractedWithAttemptEvent>(OnInteractionAttempt);
             SubscribeLocalEvent<SubFloorHideComponent, GettingAttackedAttemptEvent>(OnAttackAttempt);
-            SubscribeLocalEvent<SubFloorHideComponent, GetExplosionResistanceEvent>(OnGetExplosionResistance);
-        }
-
-        private void OnGetExplosionResistance(EntityUid uid, SubFloorHideComponent component, ref GetExplosionResistanceEvent args)
-        {
-            if (component.BlockInteractions && component.IsUnderCover)
-                args.DamageCoefficient = 0;
         }
 
         private void OnAttackAttempt(EntityUid uid, SubFloorHideComponent component, ref GettingAttackedAttemptEvent args)
@@ -45,11 +39,11 @@ namespace Content.Shared.SubFloor
                 args.Cancelled = true;
         }
 
-        private void OnInteractionAttempt(EntityUid uid, SubFloorHideComponent component, ref GettingInteractedWithAttemptEvent args)
+        private void OnInteractionAttempt(EntityUid uid, SubFloorHideComponent component, GettingInteractedWithAttemptEvent args)
         {
             // No interactions with entities hidden under floor tiles.
             if (component.BlockInteractions && component.IsUnderCover)
-                args.Cancelled = true;
+                args.Cancel();
         }
 
         private void OnSubFloorStarted(EntityUid uid, SubFloorHideComponent component, ComponentStartup _)
@@ -92,7 +86,15 @@ namespace Content.Shared.SubFloor
             if (args.NewTile.Tile.IsEmpty)
                 return; // Anything that was here will be unanchored anyways.
 
-            UpdateTile(Comp<MapGridComponent>(args.NewTile.GridUid), args.NewTile.GridIndices);
+            UpdateTile(MapManager.GetGrid(args.NewTile.GridUid), args.NewTile.GridIndices);
+        }
+
+        private void OnGridChanged(GridModifiedEvent args)
+        {
+            foreach (var modified in args.Modified)
+            {
+                UpdateTile(args.Grid, modified.position);
+            }
         }
 
         /// <summary>
@@ -103,7 +105,7 @@ namespace Content.Shared.SubFloor
             if (!Resolve(uid, ref component, ref xform))
                 return;
 
-            if (xform.Anchored && TryComp<MapGridComponent>(xform.GridUid, out var grid))
+            if (xform.Anchored && MapManager.TryGetGrid(xform.GridUid, out var grid))
                 component.IsUnderCover = HasFloorCover(grid, grid.TileIndicesFor(xform.Coordinates));
             else
                 component.IsUnderCover = false;

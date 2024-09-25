@@ -1,46 +1,62 @@
 using Content.Shared.Medical.CrewMonitoring;
-using Robust.Client.UserInterface;
+using JetBrains.Annotations;
+using Robust.Client.GameObjects;
+using Robust.Shared.GameObjects;
 
-namespace Content.Client.Medical.CrewMonitoring;
-
-public sealed class CrewMonitoringBoundUserInterface : BoundUserInterface
+namespace Content.Client.Medical.CrewMonitoring
 {
-    [ViewVariables]
-    private CrewMonitoringWindow? _menu;
-
-    public CrewMonitoringBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    public sealed class CrewMonitoringBoundUserInterface : BoundUserInterface
     {
-    }
+        private readonly IEntityManager _entManager;
+        private CrewMonitoringWindow? _menu;
 
-    protected override void Open()
-    {
-        EntityUid? gridUid = null;
-        var stationName = string.Empty;
-
-        if (EntMan.TryGetComponent<TransformComponent>(Owner, out var xform))
+        public CrewMonitoringBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
-            gridUid = xform.GridUid;
+            _entManager = IoCManager.Resolve<IEntityManager>();
+        }
 
-            if (EntMan.TryGetComponent<MetaDataComponent>(gridUid, out var metaData))
+        protected override void Open()
+        {
+            EntityUid? gridUid = null;
+
+            if (_entManager.TryGetComponent<TransformComponent>(Owner.Owner, out var xform))
             {
-                stationName = metaData.EntityName;
+                gridUid = xform.GridUid;
+            }
+
+            _menu = new CrewMonitoringWindow(gridUid);
+
+            _menu.OpenCentered();
+            _menu.OnClose += Close;
+        }
+
+        protected override void UpdateState(BoundUserInterfaceState state)
+        {
+            base.UpdateState(state);
+
+            switch (state)
+            {
+                case CrewMonitoringState st:
+                    _entManager.TryGetComponent<TransformComponent>(Owner.Owner, out var xform);
+                    Vector2 localPosition = Vector2.Zero;
+
+                    if (_entManager.TryGetComponent<TransformComponent>(xform?.GridUid, out var gridXform))
+                    {
+                        localPosition = gridXform.InvWorldMatrix.Transform(xform.WorldPosition);
+                    }
+
+                    _menu?.ShowSensors(st.Sensors, localPosition, st.Snap, st.Precision);
+                    break;
             }
         }
 
-        _menu = this.CreateWindow<CrewMonitoringWindow>();
-        _menu.Set(stationName, gridUid);
-    }
-
-    protected override void UpdateState(BoundUserInterfaceState state)
-    {
-        base.UpdateState(state);
-
-        switch (state)
+        protected override void Dispose(bool disposing)
         {
-            case CrewMonitoringState st:
-                EntMan.TryGetComponent<TransformComponent>(Owner, out var xform);
-                _menu?.ShowSensors(st.Sensors, Owner, xform?.Coordinates);
-                break;
+            base.Dispose(disposing);
+            if (!disposing)
+                return;
+
+            _menu?.Dispose();
         }
     }
 }

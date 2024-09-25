@@ -1,10 +1,4 @@
-using System.Linq;
-using Content.Server.Body.Systems;
 using Content.Shared.Alert;
-using Content.Shared.Body.Part;
-using Content.Shared.CombatMode.Pacification;
-using Content.Shared.Damage.Components;
-using Content.Shared.Damage.Systems;
 using Content.Shared.DoAfter;
 using Content.Shared.Ensnaring;
 using Content.Shared.Ensnaring.Components;
@@ -18,40 +12,13 @@ public sealed partial class EnsnareableSystem
 {
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly AlertsSystem _alerts = default!;
-    [Dependency] private readonly BodySystem _body = default!;
-    [Dependency] private readonly StaminaSystem _stamina = default!;
 
     public void InitializeEnsnaring()
     {
         SubscribeLocalEvent<EnsnaringComponent, ComponentRemove>(OnComponentRemove);
         SubscribeLocalEvent<EnsnaringComponent, StepTriggerAttemptEvent>(AttemptStepTrigger);
-        SubscribeLocalEvent<EnsnaringComponent, StepTriggeredOffEvent>(OnStepTrigger);
+        SubscribeLocalEvent<EnsnaringComponent, StepTriggeredEvent>(OnStepTrigger);
         SubscribeLocalEvent<EnsnaringComponent, ThrowDoHitEvent>(OnThrowHit);
-        SubscribeLocalEvent<EnsnaringComponent, AttemptPacifiedThrowEvent>(OnAttemptPacifiedThrow);
-        SubscribeLocalEvent<EnsnareableComponent, RemoveEnsnareAlertEvent>(OnRemoveEnsnareAlert);
-    }
-
-    private void OnAttemptPacifiedThrow(Entity<EnsnaringComponent> ent, ref AttemptPacifiedThrowEvent args)
-    {
-        args.Cancel("pacified-cannot-throw-snare");
-    }
-
-    private void OnRemoveEnsnareAlert(Entity<EnsnareableComponent> ent, ref RemoveEnsnareAlertEvent args)
-    {
-        if (args.Handled)
-            return;
-
-        foreach (var ensnare in ent.Comp.Container.ContainedEntities)
-        {
-            if (!TryComp<EnsnaringComponent>(ensnare, out var ensnaringComponent))
-                return;
-
-            TryFree(ent, ent, ensnare, ensnaringComponent);
-
-            args.Handled = true;
-            // Only one snare at a time.
-            break;
-        }
     }
 
     private void OnComponentRemove(EntityUid uid, EnsnaringComponent component, ComponentRemove args)
@@ -68,7 +35,7 @@ public sealed partial class EnsnareableSystem
         args.Continue = true;
     }
 
-    private void OnStepTrigger(EntityUid uid, EnsnaringComponent component, ref StepTriggeredOffEvent args)
+    private void OnStepTrigger(EntityUid uid, EnsnaringComponent component, ref StepTriggeredEvent args)
     {
         TryEnsnare(args.Tripper, uid, component);
     }
@@ -93,28 +60,12 @@ public sealed partial class EnsnareableSystem
         if (!TryComp<EnsnareableComponent>(target, out var ensnareable))
             return;
 
-        var legs = _body.GetBodyChildrenOfType(target, BodyPartType.Leg).Count();
-        var ensnaredLegs = (2 * ensnareable.Container.ContainedEntities.Count);
-        var freeLegs = legs - ensnaredLegs;
-
-        if (freeLegs <= 0)
-            return;
-
-        // Apply stamina damage to target if they weren't ensnared before.
-        if (ensnareable.IsEnsnared != true)
-        {
-            if (TryComp<StaminaComponent>(target, out var stamina))
-            {
-                _stamina.TakeStaminaDamage(target, component.StaminaDamage, with: ensnare);
-            }
-        }
-
         component.Ensnared = target;
-        _container.Insert(ensnare, ensnareable.Container);
+        ensnareable.Container.Insert(ensnare);
         ensnareable.IsEnsnared = true;
-        Dirty(target, ensnareable);
+        Dirty(ensnareable);
 
-        UpdateAlert(target, ensnareable);
+        UpdateAlert(ensnare, ensnareable);
         var ev = new EnsnareEvent(component.WalkSpeed, component.SprintSpeed);
         RaiseLocalEvent(target, ev);
     }
@@ -126,21 +77,22 @@ public sealed partial class EnsnareableSystem
     /// <param name="user">The entity that is freeing the target</param>
     /// <param name="ensnare">The entity used to ensnare</param>
     /// <param name="component">The ensnaring component</param>
-    public void TryFree(EntityUid target, EntityUid user, EntityUid ensnare, EnsnaringComponent component)
+    public void TryFree(EntityUid target,  EntityUid user, EntityUid ensnare, EnsnaringComponent component)
     {
-        // Don't do anything if they don't have the ensnareable component.
+        //Don't do anything if they don't have the ensnareable component.
         if (!HasComp<EnsnareableComponent>(target))
             return;
 
         var freeTime = user == target ? component.BreakoutTime : component.FreeTime;
-        var breakOnMove = !component.CanMoveBreakout;
+        var breakOnMove = user != target || !component.CanMoveBreakout;
 
-        var doAfterEventArgs = new DoAfterArgs(EntityManager, user, freeTime, new EnsnareableDoAfterEvent(), target, target: target, used: ensnare)
+        var doAfterEventArgs = new DoAfterArgs(user, freeTime, new EnsnareableDoAfterEvent(), target, target: target, used: ensnare)
         {
-            BreakOnMove = breakOnMove,
+            BreakOnUserMove = breakOnMove,
+            BreakOnTargetMove = breakOnMove,
             BreakOnDamage = false,
             NeedHand = true,
-            BreakOnDropItem = false,
+            BlockDuplicate = true,
         };
 
         if (!_doAfter.TryStartDoAfter(doAfterEventArgs))
@@ -157,33 +109,24 @@ public sealed partial class EnsnareableSystem
     /// </summary>
     public void ForceFree(EntityUid ensnare, EnsnaringComponent component)
     {
-        if (component.Ensnared == null)
-            return;
-
         if (!TryComp<EnsnareableComponent>(component.Ensnared, out var ensnareable))
             return;
 
-        var target = component.Ensnared.Value;
-
-        _container.Remove(ensnare, ensnareable.Container, force: true);
-        ensnareable.IsEnsnared = ensnareable.Container.ContainedEntities.Count > 0;
-        Dirty(component.Ensnared.Value, ensnareable);
+        ensnareable.Container.ForceRemove(ensnare);
+        ensnareable.IsEnsnared = false;
+        Dirty(ensnareable);
         component.Ensnared = null;
 
-        UpdateAlert(target, ensnareable);
-        var ev = new EnsnareRemoveEvent(component.WalkSpeed, component.SprintSpeed);
+        UpdateAlert(ensnare, ensnareable);
+        var ev = new EnsnareRemoveEvent();
         RaiseLocalEvent(ensnare, ev);
     }
 
-    /// <summary>
-    /// Update the Ensnared alert for an entity.
-    /// </summary>
-    /// <param name="target">The entity that has been affected by a snare</param>
-    public void UpdateAlert(EntityUid target, EnsnareableComponent component)
+    public void UpdateAlert(EntityUid ensnare, EnsnareableComponent component)
     {
         if (!component.IsEnsnared)
-            _alerts.ClearAlert(target, component.EnsnaredAlert);
+            _alerts.ClearAlert(ensnare, AlertType.Ensnared);
         else
-            _alerts.ShowAlert(target, component.EnsnaredAlert);
+            _alerts.ShowAlert(ensnare, AlertType.Ensnared);
     }
 }

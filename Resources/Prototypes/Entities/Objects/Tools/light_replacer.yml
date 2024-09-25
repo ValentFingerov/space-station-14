@@ -2,7 +2,7 @@
   parent: BaseItem
   name: light replacer
   id: LightReplacer
-  description: An item which uses magnets to easily replace broken lights. Refill By adding more lights into the replacer.
+  description: An item which uses magnets to easily replace broken lights.
   components:
   - type: Sprite
     sprite: Objects/Specific/Janitorial/light_replacer.rsi
@@ -15,6 +15,9 @@
       amount: 8
     - id: LightBulb
       amount: 5
+  - type: Tag
+    tags:
+      - DroneUsable
   - type: StaticPrice
     price: 100
   - type: ContainerContainer

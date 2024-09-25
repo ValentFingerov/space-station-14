@@ -1,4 +1,3 @@
-using Content.Shared.DrawDepth;
 using Content.Shared.SubFloor;
 using Robust.Client.GameObjects;
 
@@ -63,26 +62,13 @@ public sealed class SubFloorHideSystem : SharedSubFloorHideSystem
         }
 
         args.Sprite.Visible = hasVisibleLayer || revealed;
-
-        // allows a t-ray to show wires/pipes above carpets/puddles
-        if (scannerRevealed)
-        {
-            component.OriginalDrawDepth ??= args.Sprite.DrawDepth;
-            args.Sprite.DrawDepth = (int) Shared.DrawDepth.DrawDepth.FloorObjects + 1;
-        }
-        else if (component.OriginalDrawDepth.HasValue)
-        {
-            args.Sprite.DrawDepth = component.OriginalDrawDepth.Value;
-            component.OriginalDrawDepth = null;
-        }
     }
 
     private void UpdateAll()
     {
-        var query = AllEntityQuery<SubFloorHideComponent, AppearanceComponent>();
-        while (query.MoveNext(out var uid, out _, out var appearance))
+        foreach (var (_, appearance) in EntityManager.EntityQuery<SubFloorHideComponent, AppearanceComponent>(true))
         {
-            _appearance.QueueUpdate(uid, appearance);
+            _appearance.MarkDirty(appearance, true);
         }
     }
 }

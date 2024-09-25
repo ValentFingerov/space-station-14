@@ -13,18 +13,9 @@
   - type: Sprite
     sprite: Structures/Holo/wetfloor.rsi
     state: icon
+    netsync: false
   - type: TimedDespawn
     lifetime: 90
-  - type: Damageable
-    damageContainer: Inorganic
-  - type: Destructible
-    thresholds:
-      - trigger:
-          !type:DamageTrigger
-          damage: 30
-        behaviors:
-          - !type:DoActsBehavior
-            acts: [ "Destruction" ]
 
 - type: entity
   id: HoloFan
@@ -35,6 +26,7 @@
   - type: Sprite
     sprite: Structures/Holo/holofan.rsi
     state: icon
+    netsync: false
   - type: Fixtures
     fixtures:
       fix1:
@@ -50,7 +42,7 @@
   id: HolosignSecurity
   parent: HolosignWetFloor
   name: holographic barrier
-  description: A barrier of hard light that blocks movement, but pretty weak.
+  description: A barrier of hard light that blocks movenment, but pretty weak.
   components:
     - type: Physics
       bodyType: Static
@@ -58,6 +50,7 @@
     - type: Sprite
       sprite: Structures/Holo/security.rsi
       state: icon
+      netsync: false
     - type: Fixtures
       fixtures:
         fix1:
@@ -68,51 +61,18 @@
             - TableMask
           layer:
             - TableLayer
+    - type: Damageable
+      damageContainer: Inorganic
+      damageModifierSet: Metallic
+    - type: Destructible
+      thresholds:
+        - trigger:
+            !type:DamageTrigger
+            damage: 30
     - type: TimedDespawn
-      lifetime: 180
+      lifetime: 60
     - type: PointLight
       enabled: true
       radius: 3
       color: red
     - type: Climbable
-    - type: Clickable
-
-- type: entity
-  id: HolosignForcefield
-  parent: HolosignWetFloor
-  name: holographic force field
-  description: A powerful temporal containment field that doesn't let anything through, not even a tesla or singularity.
-  components:
-  - type: Physics
-    bodyType: Static
-    canCollide: true
-  - type: Sprite
-    sprite: Structures/Holo/field.rsi
-    state: icon
-  - type: Fixtures
-    fixtures:
-      fix1:
-        shape:
-          !type:PhysShapeAabb
-          bounds: "-0.5,-0.5,0.5,0.5"
-        mask:
-        - FullTileMask
-        layer:
-        - GlassLayer
-  - type: TimedDespawn
-    lifetime: 180
-  - type: PointLight
-    enabled: true
-    radius: 3
-    color: blue
-  - type: Clickable
-  - type: ContainmentField
-    throwForce: 0
-  - type: Destructible
-    thresholds:
-      - trigger:
-          !type:DamageTrigger
-          damage: 60
-        behaviors:
-          - !type:DoActsBehavior
-            acts: [ "Destruction" ]

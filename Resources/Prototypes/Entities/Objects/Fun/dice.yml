@@ -4,20 +4,22 @@
   id: BaseDice
   components:
   - type: Dice
+  - type: ItemCooldown
   - type: UseDelay
   - type: Sprite
+    netsync: false
     sprite: Objects/Fun/dice.rsi
     noRot: true # If their sprites rotate, the number becomes even more illegible than usual.
   - type: Tag
     tags:
     - Dice
   - type: Item
-    size: Tiny
+    size: 2
 
 - type: entity
   parent: BaseDice
   id: PercentileDie
-  name: percentile die
+  name: Percentile Die
   description: A die with ten sides. Works better for d100 rolls than a golf ball.
   components:
   - type: Dice
@@ -60,10 +62,9 @@
   components:
   - type: Dice
     sides: 10
-    offset: 1
-    currentValue: 0
+    currentValue: 10
   - type: Sprite
-    state: d10_0
+    state: d10_10
 
 - type: entity
   parent: BaseDice
@@ -120,8 +121,9 @@
         - ItemMask
   - type: StepTrigger
     intersectRatio: 0.2
+    requiredTriggeredSpeed: 0
   - type: TriggerOnStepTrigger
-  - type: PreventableStepTrigger
+  - type: ShoesRequiredStepTrigger
   - type: Slippery
     slipSound:
       path: /Audio/Effects/glass_step.ogg

@@ -1,6 +1,4 @@
-using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Content.Shared.Humanoid.Prototypes;
 using Robust.Shared.Prototypes;
 
@@ -11,41 +9,33 @@ namespace Content.Shared.Humanoid.Markings
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
 
         private readonly List<MarkingPrototype> _index = new();
-        public FrozenDictionary<MarkingCategories, FrozenDictionary<string, MarkingPrototype>> CategorizedMarkings = default!;
-        public FrozenDictionary<string, MarkingPrototype> Markings = default!;
+        private readonly Dictionary<MarkingCategories, Dictionary<string, MarkingPrototype>> _markingDict = new();
+        private readonly Dictionary<string, MarkingPrototype> _markings = new();
 
         public void Initialize()
         {
             _prototypeManager.PrototypesReloaded += OnPrototypeReload;
-            CachePrototypes();
-        }
-
-        private void CachePrototypes()
-        {
-            _index.Clear();
-            var markingDict = new Dictionary<MarkingCategories, Dictionary<string, MarkingPrototype>>();
 
             foreach (var category in Enum.GetValues<MarkingCategories>())
             {
-                markingDict.Add(category, new());
+                _markingDict.Add(category, new Dictionary<string, MarkingPrototype>());
             }
 
             foreach (var prototype in _prototypeManager.EnumeratePrototypes<MarkingPrototype>())
             {
                 _index.Add(prototype);
-                markingDict[prototype.MarkingCategory].Add(prototype.ID, prototype);
+                _markingDict[prototype.MarkingCategory].Add(prototype.ID, prototype);
+                _markings.Add(prototype.ID, prototype);
             }
-
-            Markings = _prototypeManager.EnumeratePrototypes<MarkingPrototype>().ToFrozenDictionary(x => x.ID);
-            CategorizedMarkings = markingDict.ToFrozenDictionary(
-                x => x.Key,
-                x => x.Value.ToFrozenDictionary());
         }
 
-        public FrozenDictionary<string, MarkingPrototype> MarkingsByCategory(MarkingCategories category)
+        public IReadOnlyDictionary<string, MarkingPrototype> Markings => _markings;
+        public IReadOnlyDictionary<MarkingCategories, Dictionary<string, MarkingPrototype>> CategorizedMarkings => _markingDict;
+
+        public IReadOnlyDictionary<string, MarkingPrototype> MarkingsByCategory(MarkingCategories category)
         {
             // all marking categories are guaranteed to have a dict entry
-            return CategorizedMarkings[category];
+            return _markingDict[category];
         }
 
         /// <summary>
@@ -76,74 +66,6 @@ namespace Content.Shared.Humanoid.Markings
                 {
                     continue;
                 }
-                res.Add(key, marking);
-            }
-
-            return res;
-        }
-
-        /// <summary>
-        ///     Markings by category and sex.
-        /// </summary>
-        /// <param name="category"></param>
-        /// <param name="sex"></param>
-        /// <remarks>
-        ///     This is done per category, as enumerating over every single marking by species isn't useful.
-        ///     Please make a pull request if you find a use case for that behavior.
-        /// </remarks>
-        /// <returns></returns>
-        public IReadOnlyDictionary<string, MarkingPrototype> MarkingsByCategoryAndSex(MarkingCategories category,
-            Sex sex)
-        {
-            var res = new Dictionary<string, MarkingPrototype>();
-
-            foreach (var (key, marking) in MarkingsByCategory(category))
-            {
-                if (marking.SexRestriction != null && marking.SexRestriction != sex)
-                {
-                    continue;
-                }
-
-                res.Add(key, marking);
-            }
-
-            return res;
-        }
-
-        /// <summary>
-        ///     Markings by category, species and sex.
-        /// </summary>
-        /// <param name="category"></param>
-        /// <param name="species"></param>
-        /// <param name="sex"></param>
-        /// <remarks>
-        ///     This is done per category, as enumerating over every single marking by species isn't useful.
-        ///     Please make a pull request if you find a use case for that behavior.
-        /// </remarks>
-        /// <returns></returns>
-        public IReadOnlyDictionary<string, MarkingPrototype> MarkingsByCategoryAndSpeciesAndSex(MarkingCategories category,
-            string species, Sex sex)
-        {
-            var speciesProto = _prototypeManager.Index<SpeciesPrototype>(species);
-            var onlyWhitelisted = _prototypeManager.Index<MarkingPointsPrototype>(speciesProto.MarkingPoints).OnlyWhitelisted;
-            var res = new Dictionary<string, MarkingPrototype>();
-
-            foreach (var (key, marking) in MarkingsByCategory(category))
-            {
-                if (onlyWhitelisted && marking.SpeciesRestrictions == null)
-                {
-                    continue;
-                }
-
-                if (marking.SpeciesRestrictions != null && !marking.SpeciesRestrictions.Contains(species))
-                {
-                    continue;
-                }
-
-                if (marking.SexRestriction != null && marking.SexRestriction != sex)
-                {
-                    continue;
-                }
 
                 res.Add(key, marking);
             }
@@ -153,7 +75,7 @@ namespace Content.Shared.Humanoid.Markings
 
         public bool TryGetMarking(Marking marking, [NotNullWhen(true)] out MarkingPrototype? markingResult)
         {
-            return Markings.TryGetValue(marking.MarkingId, out markingResult);
+            return _markings.TryGetValue(marking.MarkingId, out markingResult);
         }
 
         /// <summary>
@@ -162,9 +84,8 @@ namespace Content.Shared.Humanoid.Markings
         /// <param name="marking"></param>
         /// <param name="category"></param>
         /// <param name="species"></param>
-        /// <param name="sex"></param>
         /// <returns></returns>
-        public bool IsValidMarking(Marking marking, MarkingCategories category, string species, Sex sex)
+        public bool IsValidMarking(Marking marking, MarkingCategories category, string species)
         {
             if (!TryGetMarking(marking, out var proto))
             {
@@ -172,8 +93,7 @@ namespace Content.Shared.Humanoid.Markings
             }
 
             if (proto.MarkingCategory != category ||
-                proto.SpeciesRestrictions != null && !proto.SpeciesRestrictions.Contains(species) ||
-                proto.SexRestriction != null && proto.SexRestriction != sex)
+                proto.SpeciesRestrictions != null && !proto.SpeciesRestrictions.Contains(species))
             {
                 return false;
             }
@@ -188,11 +108,20 @@ namespace Content.Shared.Humanoid.Markings
 
         private void OnPrototypeReload(PrototypesReloadedEventArgs args)
         {
-            if (args.WasModified<MarkingPrototype>())
-                CachePrototypes();
+            if(!args.ByType.TryGetValue(typeof(MarkingPrototype), out var set))
+                return;
+
+
+            _index.RemoveAll(i => set.Modified.ContainsKey(i.ID));
+
+            foreach (var prototype in set.Modified.Values)
+            {
+                var markingPrototype = (MarkingPrototype) prototype;
+                _index.Add(markingPrototype);
+            }
         }
 
-        public bool CanBeApplied(string species, Sex sex, Marking marking, IPrototypeManager? prototypeManager = null)
+        public bool CanBeApplied(string species, Marking marking, IPrototypeManager? prototypeManager = null)
         {
             IoCManager.Resolve(ref prototypeManager);
 
@@ -214,16 +143,10 @@ namespace Content.Shared.Humanoid.Markings
             {
                 return false;
             }
-
-            if (prototype.SexRestriction != null && prototype.SexRestriction != sex)
-            {
-                return false;
-            }
-
             return true;
         }
 
-        public bool CanBeApplied(string species, Sex sex, MarkingPrototype prototype, IPrototypeManager? prototypeManager = null)
+        public bool CanBeApplied(string species, MarkingPrototype prototype, IPrototypeManager? prototypeManager = null)
         {
             IoCManager.Resolve(ref prototypeManager);
 
@@ -240,12 +163,6 @@ namespace Content.Shared.Humanoid.Markings
             {
                 return false;
             }
-
-            if (prototype.SexRestriction != null && prototype.SexRestriction != sex)
-            {
-                return false;
-            }
-
             return true;
         }
 
@@ -264,7 +181,7 @@ namespace Content.Shared.Humanoid.Markings
                 alpha = 1f;
                 return false;
             }
-
+            
             alpha = sprite.LayerAlpha;
             return true;
         }

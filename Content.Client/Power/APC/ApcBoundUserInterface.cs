@@ -2,26 +2,27 @@
 using Content.Shared.APC;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
+using Robust.Shared.GameObjects;
+using Robust.Shared.ViewVariables;
 
 namespace Content.Client.Power.APC
 {
     [UsedImplicitly]
     public sealed class ApcBoundUserInterface : BoundUserInterface
     {
-        [ViewVariables]
-        private ApcMenu? _menu;
-
-        public ApcBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
-        {
-        }
+        [ViewVariables] private ApcMenu? _menu;
 
         protected override void Open()
         {
             base.Open();
-            _menu = this.CreateWindow<ApcMenu>();
-            _menu.SetEntity(Owner);
-            _menu.OnBreaker += BreakerPressed;
+
+            _menu = new ApcMenu(this,Owner);
+            _menu.OnClose += Close;
+            _menu.OpenCentered();
+        }
+
+        public ApcBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
+        {
         }
 
         protected override void UpdateState(BoundUserInterfaceState state)
@@ -35,6 +36,16 @@ namespace Content.Client.Power.APC
         public void BreakerPressed()
         {
             SendMessage(new ApcToggleMainBreakerMessage());
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                _menu?.Dispose();
+            }
         }
     }
 }

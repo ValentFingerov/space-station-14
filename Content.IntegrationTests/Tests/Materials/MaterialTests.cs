@@ -1,4 +1,6 @@
 #nullable enable
+using NUnit.Framework;
+using System.Threading.Tasks;
 using Content.Server.Stack;
 using Content.Shared.Stacks;
 using Content.Shared.Materials;
@@ -20,15 +22,15 @@ namespace Content.IntegrationTests.Tests.Materials
         [Test]
         public async Task MaterialPrototypeSpawnsStackMaterial()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{NoClient = true});
+            var server = pairTracker.Pair.Server;
             await server.WaitIdleAsync();
 
             var mapManager = server.ResolveDependency<IMapManager>();
             var prototypeManager = server.ResolveDependency<IPrototypeManager>();
             var entityManager = server.ResolveDependency<IEntityManager>();
 
-            var testMap = await pair.CreateTestMap();
+            var testMap = await PoolManager.CreateTestMap(pairTracker);
 
             await server.WaitAssertion(() =>
             {
@@ -39,7 +41,7 @@ namespace Content.IntegrationTests.Tests.Materials
                 {
                     foreach (var proto in allMaterialProtos)
                     {
-                        if (proto.StackEntity == null)
+                        if (proto.StackEntity == "")
                             continue;
 
                         var spawned = entityManager.SpawnEntity(proto.StackEntity, coords);
@@ -62,7 +64,7 @@ namespace Content.IntegrationTests.Tests.Materials
                 mapManager.DeleteMap(testMap.MapId);
             });
 
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

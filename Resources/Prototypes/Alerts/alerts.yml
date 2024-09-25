@@ -1,4 +1,4 @@
-- type: alertOrder
+﻿- type: alertOrder
   # Defines ordering in alert tab, higher up = higher in tab.
   # List below can contain alert type or category, if both are present the id will take precedence.
   # If item is not in list it will go at the bottom (ties broken by alert type enum value)
@@ -6,7 +6,6 @@
   order:
     - category: Health
     - category: Stamina
-    - alertType: SuitPower
     - category: Internals
     - alertType: Fire
     - alertType: Handcuffed
@@ -18,20 +17,10 @@
     - alertType: Stun
     - category: Breathing # Vox gang not calling this oxygen
     - category: Pressure
-    - alertType: Bleed
     - category: Temperature
     - category: Hunger
     - category: Thirst
     - alertType: Magboots
-    - alertType: Pacified
-
-- type: entity
-  id: AlertSpriteView
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Sprite
-    layers:
-    - map: [ "enum.AlertVisualLayers.Base" ]
 
 - type: alert
   id: LowOxygen
@@ -41,15 +30,6 @@
     state: not_enough_oxy
   name: alerts-low-oxygen-name
   description: alerts-low-oxygen-desc
-
-- type: alert
-  id: LowNitrogen
-  category: Breathing
-  icons:
-    - sprite: /Textures/Interface/Alerts/breathing.rsi
-      state: not_enough_nitro
-  name: alerts-low-nitrogen-name
-  description: alerts-low-nitrogen-desc
 
 - type: alert
   id: Toxins
@@ -87,7 +67,7 @@
 - type: alert
   id: Fire
   icons: [ /Textures/Interface/Alerts/Fire/fire.png ]
-  clickEvent: !type:ResistFireAlertEvent
+  onClick: !type:ResistFire  { }
   name: alerts-on-fire-name
   description: alerts-on-fire-desc
 
@@ -136,14 +116,14 @@
 
 - type: alert
   id: Handcuffed
-  clickEvent: !type:RemoveCuffsAlertEvent
+  onClick: !type:RemoveCuffs  { }
   icons: [ /Textures/Interface/Alerts/Handcuffed/Handcuffed.png ]
   name: alerts-handcuffed-name
   description: alerts-handcuffed-desc
 
 - type: alert
   id: Ensnared
-  clickEvent: !type:RemoveEnsnareAlertEvent
+  onClick: !type:RemoveEnsnare  { }
   icons:
   - sprite: /Textures/Interface/Alerts/ensnared.rsi
     state: ensnared
@@ -153,7 +133,7 @@
 - type: alert
   id: Buckled
   category: Buckled
-  clickEvent: !type:UnbuckleAlertEvent
+  onClick: !type:Unbuckle  { }
   icons: [ /Textures/Interface/Alerts/Buckle/buckled.png ]
   name: alerts-buckled-name
   description: alerts-buckled-desc
@@ -196,86 +176,9 @@
   maxSeverity: 4
 
 - type: alert
-  id: BorgHealth
-  category: Health
-  icons:
-  - sprite: /Textures/Interface/Alerts/borg_alive.rsi
-    state: health0
-  - sprite: /Textures/Interface/Alerts/borg_alive.rsi
-    state: health1
-  - sprite: /Textures/Interface/Alerts/borg_alive.rsi
-    state: health2
-  - sprite: /Textures/Interface/Alerts/borg_alive.rsi
-    state: health3
-  - sprite: /Textures/Interface/Alerts/borg_alive.rsi
-    state: health4
-  name: alerts-health-name
-  description: alerts-health-desc
-  minSeverity: 0
-  maxSeverity: 4
-
-- type: alert
-  id: BorgCrit
-  category: Health
-  icons:
-  - sprite: /Textures/Interface/Alerts/borg_critical.rsi
-    state: critical
-  name: alerts-crit-name
-  description: alerts-crit-desc
-
-- type: alert
-  id: BorgDead
-  category: Health
-  icons:
-  - sprite: /Textures/Interface/Alerts/borg_dead.rsi
-    state: dead
-  name: alerts-dead-name
-  description: alerts-dead-desc
-
-- type: alert
-  id: BorgBattery
-  category: Battery
-  icons:
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery0
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery1
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery2
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery3
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery4
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery5
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery6
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery7
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery8
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery9
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery10
-  name: alerts-battery-name
-  description: alerts-battery-desc
-  minSeverity: 0
-  maxSeverity: 10
-
-- type: alert
-  id: BorgBatteryNone
-  category: Battery
-  icons:
-  - sprite: /Textures/Interface/Alerts/battery.rsi
-    state: battery-none
-  name: alerts-no-battery-name
-  description: alerts-no-battery-desc
-
-- type: alert
   id: Internals
   category: Internals
-  clickEvent: !type:ToggleInternalsAlertEvent
+  onClick: !type:ToggleInternals {}
   icons:
   - sprite: /Textures/Interface/Alerts/internals.rsi
     state: internal0
@@ -291,7 +194,7 @@
 - type: alert
   id: PilotingShuttle
   category: Piloting
-  clickEvent: !type:StopPilotingAlertEvent
+  onClick: !type:StopPiloting { }
   icons: [ /Textures/Interface/Alerts/piloting.png ]
   name: alerts-piloting-name
   description: alerts-piloting-desc
@@ -299,9 +202,7 @@
 - type: alert
   id: Peckish
   category: Hunger
-  icons:
-  - sprite: /Textures/Interface/Alerts/hunger.rsi
-    state: peckish
+  icons: [ /Textures/Interface/Alerts/Hunger/Peckish.png ]
   name: alerts-hunger-name
   description: alerts-hunger-desc
 
@@ -331,27 +232,21 @@
 - type: alert
   id: Starving
   category: Hunger
-  icons:
-  - sprite: /Textures/Interface/Alerts/hunger.rsi
-    state: starving
+  icons: [ /Textures/Interface/Alerts/Hunger/Starving.png ]
   name: alerts-starving-name
   description: alerts-starving-desc
 
 - type: alert
   id: Thirsty
   category: Thirst
-  icons:
-  - sprite: /Textures/Interface/Alerts/thirst.rsi
-    state: thirsty
+  icons: [ /Textures/Interface/Alerts/Thirst/Thirsty.png ]
   name: alerts-thirsty-name
   description: alerts-thirsty-desc
 
 - type: alert
   id: Parched
   category: Thirst
-  icons:
-  - sprite: /Textures/Interface/Alerts/thirst.rsi
-    state: parched
+  icons: [ /Textures/Interface/Alerts/Thirst/Parched.png ]
   name: alerts-parched-name
   description: alerts-parched-desc
 
@@ -365,75 +260,29 @@
   id: VowOfSilence
   icons: [ /Textures/Interface/Alerts/Abilities/silenced.png ]
   name: alerts-vow-silence-name
-  clickEvent: !type:BreakVowAlertEvent
+  onClick: !type:BreakVow  { }
   description: alerts-vow-silence-desc
 
 - type: alert
   id: VowBroken
   icons: [ /Textures/Interface/Actions/scream.png ]
   name: alerts-vow-broken-name
-  clickEvent: !type:RetakeVowAlertEvent
+  onClick: !type:RetakeVow  { }
   description: alerts-vow-broken-desc
 
 - type: alert
   id: Pulled
   icons: [ /Textures/Interface/Alerts/Pull/pulled.png ]
-  clickEvent: !type:StopBeingPulledAlertEvent
+  onClick: !type:StopBeingPulled  { }
   name: alerts-pulled-name
   description: alerts-pulled-desc
 
 - type: alert
   id: Pulling
   icons: [ /Textures/Interface/Alerts/Pull/pulling.png ]
-  clickEvent: !type:StopPullingAlertEvent
+  onClick: !type:StopPulling  { }
   name: alerts-pulling-name
   description: alerts-pulling-desc
-
-- type: alert
-  id: Bleed
-  icons:
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed0
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed1
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed2
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed3
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed4
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed5
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed6
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed7
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed8
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed9
-  - sprite: /Textures/Interface/Alerts/bleed.rsi
-    state: bleed10
-  name: alerts-bleed-name
-  description: alerts-bleed-desc
-  minSeverity: 0
-  maxSeverity: 10
-
-- type: alert
-  id: Pacified
-  icons:
-  - sprite: /Textures/Interface/Alerts/pacified.rsi
-    state: icon
-  name: alerts-pacified-name
-  description: alerts-pacified-desc
-
-- type: alert
-  id: Adrenaline
-  icons:
-  - sprite: Mobs/Species/Human/organs.rsi
-    state: heart-on
-  name: alerts-adrenaline-name
-  description: alerts-adrenaline-desc
 
 - type: alert
   id: Debug1

@@ -1,7 +1,10 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Content.Server.Administration.UI;
 using Content.Server.EUI;
+using NUnit.Framework;
 using Robust.Server.Player;
+using Robust.Shared.IoC;
 
 namespace Content.IntegrationTests.Tests.Cleanup;
 
@@ -11,25 +14,21 @@ public sealed class EuiManagerTest
     public async Task EuiManagerRecycleWithOpenWindowTest()
     {
         // Even though we are using the server EUI here, we actually want to see if the client EUIManager crashes
-        for (var i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++)
         {
-            await using var pair = await PoolManager.GetServerClient(new PoolSettings
-            {
-                Connected = true,
-                Dirty = true
-            });
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{Dirty = true});
+            var server = pairTracker.Pair.Server;
 
             var sPlayerManager = server.ResolveDependency<IPlayerManager>();
-            var eui = server.ResolveDependency<EuiManager>();
 
             await server.WaitAssertion(() =>
             {
-                var clientSession = sPlayerManager.Sessions.Single();
+                var clientSession = sPlayerManager.ServerSessions.Single();
+                var eui = IoCManager.Resolve<EuiManager>();
                 var ui = new AdminAnnounceEui();
                 eui.OpenEui(ui, clientSession);
             });
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

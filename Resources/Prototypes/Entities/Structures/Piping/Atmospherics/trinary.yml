@@ -6,9 +6,6 @@
     mode: SnapgridCenter
   components:
     - type: AtmosDevice
-    - type: Tag
-      tags:
-        - Unstackable
     - type: SubFloorHide
       blockInteractions: false
       blockAmbience: false
@@ -36,6 +33,7 @@
     mode: SnapgridCenter
   components:
     - type: Sprite
+      netsync: false
       sprite: Structures/Piping/Atmospherics/gasfilter.rsi
       layers:
         - sprite: Structures/Piping/Atmospherics/pipe.rsi
@@ -53,12 +51,10 @@
     - type: PipeColorVisuals
     - type: UserInterface
       interfaces:
-        enum.GasFilterUiKey.Key:
+        - key: enum.GasFilterUiKey.Key
           type: GasFilterBoundUserInterface
     - type: GasFilter
       enabled: false
-      transferRate: 1000
-      maxTransferRate: 1000
     - type: Flippable
       mirrorEntity: GasFilterFlipped
     - type: Construction
@@ -80,6 +76,7 @@
     mode: SnapgridCenter
   components:
   - type: Sprite
+    netsync: false
     sprite: Structures/Piping/Atmospherics/gasfilter.rsi
     layers:
     - sprite: Structures/Piping/Atmospherics/pipe.rsi
@@ -96,9 +93,6 @@
         enabled:
           True: { state: gasFilterFOn }
           False: { state: gasFilterF }
-  - type: Construction
-    node: filterflipped
-
   - type: PipeColorVisuals
   - type: NodeContainer
     nodes:
@@ -124,6 +118,7 @@
     mode: SnapgridCenter
   components:
     - type: Sprite
+      netsync: false
       sprite: Structures/Piping/Atmospherics/gasmixer.rsi
       layers:
         - sprite: Structures/Piping/Atmospherics/pipe.rsi
@@ -141,7 +136,7 @@
     - type: PipeColorVisuals
     - type: UserInterface
       interfaces:
-        enum.GasMixerUiKey.Key:
+        - key: enum.GasMixerUiKey.Key
           type: GasMixerBoundUserInterface
     - type: GasMixer
       enabled: false
@@ -168,6 +163,7 @@
     mode: SnapgridCenter
   components:
   - type: Sprite
+    netsync: false
     sprite: Structures/Piping/Atmospherics/gasmixer.rsi
     layers:
     - sprite: Structures/Piping/Atmospherics/pipe.rsi
@@ -199,8 +195,6 @@
         !type:PipeNode
         nodeGroupID: Pipe
         pipeDirection: North
-  - type: Construction
-    node: mixerflipped
 
 - type: entity
   parent: GasPipeBase
@@ -211,9 +205,6 @@
     mode: SnapgridCenter
   components:
     - type: AtmosDevice
-    - type: Tag
-      tags:
-        - Unstackable
     - type: SubFloorHide
       blockInteractions: false
       blockAmbience: false
@@ -232,6 +223,7 @@
           nodeGroupID: Pipe
           pipeDirection: South
     - type: Sprite
+      netsync: false
       sprite: Structures/Piping/Atmospherics/pneumaticvalve.rsi
       layers:
         - sprite: Structures/Piping/Atmospherics/pipe.rsi

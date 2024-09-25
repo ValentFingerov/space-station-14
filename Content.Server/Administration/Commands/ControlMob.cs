@@ -1,6 +1,9 @@
-using Content.Server.Mind;
+using Content.Server.Mind.Components;
+using Content.Server.Players;
 using Content.Shared.Administration;
+using Robust.Server.Player;
 using Robust.Shared.Console;
+using Robust.Shared.Utility;
 
 namespace Content.Server.Administration.Commands
 {
@@ -15,9 +18,9 @@ namespace Content.Server.Administration.Commands
 
         public void Execute(IConsoleShell shell, string argStr, string[] args)
         {
-            if (shell.Player is not { } player)
+            if (shell.Player is not IPlayerSession player)
             {
-                shell.WriteError(Loc.GetString("shell-cannot-run-command-from-server"));
+                shell.WriteLine("shell-server-cannot");
                 return;
             }
 
@@ -33,15 +36,25 @@ namespace Content.Server.Administration.Commands
                 return;
             }
 
-            var targetNet = new NetEntity(targetId);
+            var target = new EntityUid(targetId);
 
-            if (!_entities.TryGetEntity(targetNet, out var target))
+            if (!target.IsValid() || !_entities.EntityExists(target))
             {
                 shell.WriteLine(Loc.GetString("shell-invalid-entity-id"));
                 return;
             }
 
-            _entities.System<MindSystem>().ControlMob(player.UserId, target.Value);
+            if (!_entities.HasComponent<MindComponent>(target))
+            {
+                shell.WriteLine(Loc.GetString("shell-entity-is-not-mob"));
+                return;
+            }
+
+            var mind = player.ContentData()?.Mind;
+
+            DebugTools.AssertNotNull(mind);
+
+            mind!.TransferTo(target);
         }
     }
 }

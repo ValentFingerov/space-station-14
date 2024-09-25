@@ -3,9 +3,9 @@
 namespace Content.Shared.Construction.Steps
 {
     [DataDefinition]
-    public sealed partial class ComponentConstructionGraphStep : ArbitraryInsertConstructionGraphStep
+    public sealed class ComponentConstructionGraphStep : ArbitraryInsertConstructionGraphStep
     {
-        [DataField("component")] public string Component { get; private set; } = string.Empty;
+        [DataField("component")] public string Component { get; } = string.Empty;
 
         public override bool EntityValid(EntityUid uid, IEntityManager entityManager, IComponentFactory compFactory)
         {
@@ -20,7 +20,7 @@ namespace Content.Shared.Construction.Steps
 
         public override void DoExamine(ExaminedEvent examinedEvent)
         {
-            examinedEvent.PushMarkup(string.IsNullOrEmpty(Name)
+            examinedEvent.Message.AddMarkup(string.IsNullOrEmpty(Name)
                 ? Loc.GetString(
                     "construction-insert-entity-with-component",
                     ("componentName", Component))// Terrible.

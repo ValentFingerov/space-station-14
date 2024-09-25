@@ -18,6 +18,7 @@
   - type: Sprite
     sprite: Structures/Furniture/furniture.rsi
     state: rack
+    netsync: false
     snapCardinals: true
   - type: Fixtures
     fixtures:
@@ -27,11 +28,11 @@
           bounds: "-0.3,-0.3,0.3,0.3"
         density: 140
         mask:
-        - TableMask
+        - MachineMask
         layer:
-        - TableLayer
+        - MachineLayer
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -47,9 +48,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -59,4 +58,4 @@
         acts: [ "Destruction" ]
   - type: Climbable
   - type: StaticPrice
-    price: 30
+    price: 150

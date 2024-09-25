@@ -1,11 +1,14 @@
 - type: entity
-  id: PlasticFlapsBase
+  id: PlasticFlapsClear
   parent: BaseStructureDynamic
-  abstract: true
+  name: plastic flaps
+  suffix: Clear
+  description: Heavy duty, plastic flaps. Definitely can't get past those. No way.
   placement:
     mode: SnapgridCenter
   components:
   - type: Sprite
+    netsync: false
     sprite: Structures/plastic_flaps.rsi
     state: plasticflaps
     drawdepth: Mobs
@@ -21,11 +24,11 @@
           bounds: "-0.49,-0.49,0.49,0.49"
         density: 100
         mask:
-        - Impassable
+        - TabletopMachineMask
         layer:
         - MidImpassable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -38,23 +41,15 @@
   - type: IconSmooth
     key: walls
     mode: NoSprite
-  - type: StaticPrice
-    price: 100
-
-- type: entity
-  id: PlasticFlapsClear
-  parent: PlasticFlapsBase
-  name: plastic flaps
-  suffix: Clear
-  description: Heavy duty, plastic flaps. Definitely can't get past those. No way.
-  components:
   - type: Construction
     graph: PlasticFlapsGraph
     node: plasticFlaps
+  - type: StaticPrice
+    price: 150
 
 - type: entity
   id: PlasticFlapsOpaque
-  parent: PlasticFlapsBase
+  parent: PlasticFlapsClear
   name: plastic flaps
   suffix: Opaque
   description: Heavy duty, plastic flaps. Definitely can't get past those. No way.
@@ -67,20 +62,17 @@
           bounds: "-0.49,-0.49,0.49,0.49"
         density: 100
         mask:
-        - Impassable
+        - TabletopMachineMask
         layer:
         - Opaque
         - MidImpassable
   - type: Occluder
-  - type: Construction
-    graph: PlasticFlapsGraph
-    node: opaqueFlaps
 
 - type: entity
   id: PlasticFlapsAirtightClear
-  parent: PlasticFlapsBase
+  parent: PlasticFlapsClear
   name: airtight plastic flaps
-  suffix: Airtight, Clear
+  suffix: Airtight Clear
   description: Heavy duty, slightly stronger, airtight plastic flaps. Definitely can't get past those. No way.
   components:
   - type: Destructible
@@ -92,14 +84,13 @@
       - !type:DoActsBehavior
         acts: ["Destruction"]
   - type: Airtight
-  - type: StaticPrice
-    price: 100
+    fixVacuum: true
 
 - type: entity
   id: PlasticFlapsAirtightOpaque
-  parent: PlasticFlapsBase
+  parent: PlasticFlapsOpaque
   name: airtight plastic flaps
-  suffix: Airtight, Opaque
+  suffix: Airtight Opaque
   description: Heavy duty, slightly stronger, airtight plastic flaps. Definitely can't get past those. No way.
   components:
   - type: Destructible
@@ -111,5 +102,4 @@
       - !type:DoActsBehavior
         acts: ["Destruction"]
   - type: Airtight
-  - type: StaticPrice
-    price: 100
+    fixVacuum: true

@@ -12,7 +12,6 @@
       - id: OxygenTankFilled
       - id: FireExtinguisher
       - id: ClothingShoesBootsMag
-      - id: HandHeldMassScanner
       - id: Pickaxe
       - id: Welder
       - id: Wrench
@@ -26,19 +25,17 @@
 - type: entity
   id: CrateSalvageAssortedGoodies
   suffix: Filled, Salvage Random
-  categories: [ HideSpawnMenu ] # You should use SalvageMaterialCrateSpawner instead
+  noSpawn: true # You should use SalvageMaterialCrateSpawner instead
   parent: CrateGenericSteel
   components:
   - type: StorageFill
     contents:
         # Normal (10%)
+      - id: ToolboxEmergencyFilled
+        prob: 0.1
+      - id: ClothingMaskBreath
+        prob: 0.1
       - id: OxygenTankFilled
-        prob: 0.1
-      - id: SheetPlasma
-        prob: 0.1
-      - id: IngotGold
-        prob: 0.1
-      - id: IngotSilver
         prob: 0.1
       - id: SheetPlasma
         prob: 0.1
@@ -46,7 +43,7 @@
         prob: 0.1
       - id: ResearchDisk
         prob: 0.1
-      - id: SheetUranium
+      - id: ClothingBeltStorageWaistbag
         prob: 0.1
         #  - Service
       - id: CrayonBox
@@ -58,14 +55,21 @@
         prob: 0.1
       - id: BoxBeaker
         prob: 0.1
+        #  - Scaf
+      - id: ClothingHeadHelmetScaf
+        prob: 0.1
+      - id: ClothingOuterArmorScaf
+        prob: 0.1
         #  - Heh
       - id: SalvageHumanCorpse
+        prob: 0.1
+      - id: LidSalami
         prob: 0.1
         # Interesting (1%)
         #  - Ammo
       - id: MagazineBoxMagnum
         prob: 0.01
-      - id: ResearchDisk10000
+      - id: ResearchDisk5000
         prob: 0.01
         # Just no (0.1%)
         #  - Working guns
@@ -78,10 +82,30 @@
         #  - Skub
       - id: Skub
         prob: 0.001
+      - id: ResearchDisk10000
+        prob: 0.001
       - id: ClothingHeadHatCatEars
         prob: 0.01
-      - id: ClothingHeadHatDogEars
-        prob: 0.01
+        #  - Pins
+      - id: ClothingNeckLGBTPin
+        prob: 0.025
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckAromanticPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckAsexualPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckBisexualPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckIntersexPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckLesbianPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckNonBinaryPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckPansexualPin
+        orGroup: LGBTQIAPlusPins
+      - id: ClothingNeckTransPin
+        orGroup: LGBTQIAPlusPins
         # TRAITOR EQUIPMENT (0.01%)
       - id: Telecrystal10
         prob: 0.0001
@@ -90,38 +114,3 @@
       - id: WeaponRevolverMateba
         prob: 0.0001
 
-- type: entity
-  parent: CrateGenericSteel
-  id: CratePartsT3
-  name: tier 3 parts crate
-  description: Contains 5 random tier 3 parts for upgrading machines.
-  # TODO add contents.
-  #components:
-  #- type: StorageFill
-  #  contents:
-  #   - id: SalvagePartsT3Spawner
-  #    amount: 5
-
-- type: entity
-  parent: CrateGenericSteel
-  id: CratePartsT3T4
-  name: tier 3/4 parts crate
-  description: Contains 5 random tier 3 or 4 parts for upgrading machines.
-  # TODO add contents.
-  #components:
-  # type: StorageFill
-  #  contents:
-  #  - id: SalvagePartsT3T4Spawner
-  #     amount: 5
-
-- type: entity
-  parent: CrateGenericSteel
-  id: CratePartsT4
-  name: tier 4 parts crate
-  description: Contains 5 random tier 4 parts for upgrading machines.
-  # TODO add contents.
-  #components:
-  #- type: StorageFill
-  #  contents:
-  #  - id: SalvagePartsT4Spawner
-  #    amount: 5

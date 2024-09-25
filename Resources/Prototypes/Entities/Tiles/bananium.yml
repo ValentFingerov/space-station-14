@@ -6,6 +6,7 @@
   components:
   - type: Clickable
   - type: Sprite
+    netsync: false
     sprite: Tiles/Misc/bananium.rsi
     drawdepth: FloorTiles
     layers:
@@ -44,6 +45,8 @@
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
   - type: Slippery
+    paralyzeTime: 2
+    launchForwardsMultiplier: 1.5
   - type: StepTrigger
     intersectRatio: 0.2
   - type: Physics

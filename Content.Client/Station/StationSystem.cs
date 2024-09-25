@@ -7,7 +7,8 @@ namespace Content.Client.Station;
 /// </summary>
 public sealed class StationSystem : EntitySystem
 {
-    private readonly List<(string Name, NetEntity Entity)> _stations = new();
+
+    private readonly HashSet<EntityUid> _stations = new();
 
     /// <summary>
     /// All stations that currently exist.
@@ -15,7 +16,7 @@ public sealed class StationSystem : EntitySystem
     /// <remarks>
     /// I'd have this just invoke an entity query, but we're on the client and the client barely knows about stations.
     /// </remarks>
-    public IReadOnlyList<(string Name, NetEntity Entity)> Stations => _stations;
+    public IReadOnlySet<EntityUid> Stations => _stations;
 
     /// <inheritdoc/>
     public override void Initialize()
@@ -26,7 +27,6 @@ public sealed class StationSystem : EntitySystem
     private void StationsUpdated(StationsUpdatedEvent ev)
     {
         _stations.Clear();
-        // TODO this needs to be done in component states and with the Ensure() methods
-        _stations.AddRange(ev.Stations);
+        _stations.UnionWith(ev.Stations);
     }
 }

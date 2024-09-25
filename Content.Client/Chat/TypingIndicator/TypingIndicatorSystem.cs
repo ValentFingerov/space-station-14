@@ -21,8 +21,7 @@ public sealed class TypingIndicatorSystem : SharedTypingIndicatorSystem
     public override void Initialize()
     {
         base.Initialize();
-
-        Subs.CVar(_cfg, CCVars.ChatShowTypingIndicator, OnShowTypingChanged);
+        _cfg.OnValueChanged(CCVars.ChatShowTypingIndicator, OnShowTypingChanged);
     }
 
     public void ClientChangedChatText()
@@ -90,20 +89,21 @@ public sealed class TypingIndicatorSystem : SharedTypingIndicatorSystem
         // Corvax-TypingIndicator-Start
         // if (_isClientTyping == isClientTyping)
         //     return;
+        // _isClientTyping = isClientTyping;
         // Corvax-TypingIndicator-End
 
-        // check if player controls any entity.
-        if (_playerManager.LocalEntity == null)
+        // check if player controls any pawn
+        if (_playerManager.LocalPlayer?.ControlledEntity == null)
             return;
 
         // Corvax-TypingIndicator-Start
-        // _isClientTyping = isClientTyping;
         var state = TypingIndicatorState.None;
         if (_isClientChatFocused)
             state = _isClientTyping ? TypingIndicatorState.Typing : TypingIndicatorState.Idle;
         // Corvax-TypingIndicator-End
+
         // send a networked event to server
-        RaisePredictiveEvent(new TypingChangedEvent(state)); // Corvax-TypingIndicator
+        RaiseNetworkEvent(new TypingChangedEvent(state)); // Corvax-TypingIndicator
     }
 
     private void OnShowTypingChanged(bool showTyping)

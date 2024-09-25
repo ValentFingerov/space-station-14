@@ -1,8 +1,9 @@
 ﻿using Content.Server.Hands.Systems;
+using Content.Server.Mind.Components;
 using Content.Server.Popups;
 using Content.Shared.Interaction;
 using Content.Shared.Storage;
-using Robust.Shared.Player;
+using Robust.Server.GameObjects;
 
 namespace Content.Server.Holiday.Christmas;
 

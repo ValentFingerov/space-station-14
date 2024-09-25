@@ -6,7 +6,7 @@ using Robust.Client.UserInterface.XAML;
 namespace Content.Client.PDA;
 
 [GenerateTypedNameReferences]
-public sealed partial class PdaSettingsButton : ContainerButton
+public sealed partial class PDASettingsButton : ContainerButton
 {
     public const string StylePropertyFgColor = "foregroundColor";
     public const string StylePropertyBgColor = "backgroundColor";
@@ -42,14 +42,14 @@ public sealed partial class PdaSettingsButton : ContainerButton
     {
         get => OptionName.FontColorOverride;
 
-        set
+            set
         {
             OptionName.FontColorOverride = value;
             OptionDescription.FontColorOverride = value;
         }
     }
 
-    public PdaSettingsButton()
+    public PDASettingsButton()
     {
         RobustXamlLoader.Load(this);
         Panel.PanelOverride = _styleBox;

@@ -1,7 +1,7 @@
 using System.Linq;
-using Content.Server.Administration.Logs;
 using Content.Server.DeviceLinking.Systems;
 using Content.Server.DeviceNetwork.Components;
+using Content.Server.UserInterface;
 using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.Database;
@@ -12,13 +12,10 @@ using Content.Shared.DeviceNetwork.Systems;
 using Content.Shared.Examine;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
-using Content.Shared.UserInterface;
 using Content.Shared.Verbs;
 using JetBrains.Annotations;
-using Robust.Server.Audio;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
-using Robust.Shared.Player;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
@@ -36,14 +33,12 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
     [Dependency] private readonly AudioSystem _audioSystem = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearanceSystem = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly IAdminLogManager _adminLogger = default!;
 
     public override void Initialize()
     {
         base.Initialize();
 
         SubscribeLocalEvent<NetworkConfiguratorComponent, MapInitEvent>(OnMapInit);
-        SubscribeLocalEvent<NetworkConfiguratorComponent, ComponentShutdown>(OnShutdown);
 
         //Interaction
         SubscribeLocalEvent<NetworkConfiguratorComponent, AfterInteractEvent>(AfterInteract); //TODO: Replace with utility verb?
@@ -62,33 +57,33 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         SubscribeLocalEvent<NetworkConfiguratorComponent, NetworkConfiguratorClearLinksMessage>(OnClearLinks);
         SubscribeLocalEvent<NetworkConfiguratorComponent, NetworkConfiguratorToggleLinkMessage>(OnToggleLinks);
         SubscribeLocalEvent<NetworkConfiguratorComponent, NetworkConfiguratorButtonPressedMessage>(OnConfigButtonPressed);
-
-        SubscribeLocalEvent<NetworkConfiguratorComponent, BoundUserInterfaceCheckRangeEvent>(OnUiRangeCheck);
+        SubscribeLocalEvent<NetworkConfiguratorComponent, ActivatableUIOpenAttemptEvent>(OnUiOpenAttempt);
 
         SubscribeLocalEvent<DeviceListComponent, ComponentRemove>(OnComponentRemoved);
     }
 
-    private void OnUiRangeCheck(Entity<NetworkConfiguratorComponent> ent, ref BoundUserInterfaceCheckRangeEvent args)
+    public override void Update(float frameTime)
     {
-        if (ent.Comp.ActiveDeviceList == null || args.Result == BoundUserInterfaceRangeResult.Fail)
-            return;
+        base.Update(frameTime);
 
-        DebugTools.Assert(Exists(ent.Comp.ActiveDeviceList));
-        if (!_interactionSystem.InRangeUnobstructed(args.Actor!, ent.Comp.ActiveDeviceList.Value))
-            args.Result = BoundUserInterfaceRangeResult.Fail;
-    }
+        foreach (var component in EntityManager.EntityQuery<NetworkConfiguratorComponent>())
+        {
+            var uid = component.Owner;
 
-    private void OnShutdown(EntityUid uid, NetworkConfiguratorComponent component, ComponentShutdown args)
-    {
-        ClearDevices(uid, component);
+            if (component.ActiveDeviceList != null && EntityManager.EntityExists(component.ActiveDeviceList.Value) &&
+                _interactionSystem.InRangeUnobstructed(uid, component.ActiveDeviceList.Value))
+            {
+                continue;
+            }
 
-        if (TryComp(component.ActiveDeviceList, out DeviceListComponent? list))
-            list.Configurators.Remove(uid);
-        component.ActiveDeviceList = null;
+            //The network configurator is a handheld device. There can only ever be an ui session open for the player holding the device.
+            _uiSystem.TryCloseAll(uid, NetworkConfiguratorUiKey.Configure);
+        }
     }
 
     private void OnMapInit(EntityUid uid, NetworkConfiguratorComponent component, MapInitEvent args)
     {
+        component.Devices.Clear();
         UpdateListUiState(uid, component);
     }
 
@@ -98,19 +93,12 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (!Resolve(configuratorUid, ref configurator))
             return;
 
-        TryAddNetworkDevice(configuratorUid, targetUid, userUid, configurator);
+        TryAddNetworkDevice(targetUid, userUid, configurator);
     }
 
-    private void TryAddNetworkDevice(EntityUid configuratorUid, EntityUid? targetUid, EntityUid userUid, NetworkConfiguratorComponent configurator, DeviceNetworkComponent? device = null)
+    private void TryAddNetworkDevice(EntityUid? targetUid, EntityUid userUid, NetworkConfiguratorComponent configurator, DeviceNetworkComponent? device = null)
     {
         if (!targetUid.HasValue || !Resolve(targetUid.Value, ref device, false))
-            return;
-
-        //This checks if the device is marked as having a savable address,
-        //to avoid adding pdas and whatnot to air alarms. This flag is true
-        //by default, so this will only prevent devices from being added to
-        //network configurator lists if manually set to false in the prototype
-        if (!device.SavableAddress)
             return;
 
         var address = device.Address;
@@ -132,7 +120,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
                 return;
             }
 
-            address = $"UID: {targetUid.Value}";
+            address = $"UID: {targetUid.Value.ToString()}";
         }
 
         if (configurator.Devices.ContainsValue(targetUid.Value))
@@ -141,14 +129,11 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
             return;
         }
 
-        device.Configurators.Add(configuratorUid);
         configurator.Devices.Add(address, targetUid.Value);
         _popupSystem.PopupCursor(Loc.GetString("network-configurator-device-saved", ("address", device.Address), ("device", targetUid)),
             userUid, PopupType.Medium);
 
-        _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low, $"{ToPrettyString(userUid):actor} saved {ToPrettyString(targetUid.Value):subject} to {ToPrettyString(configuratorUid):tool}");
-
-        UpdateListUiState(configuratorUid, configurator);
+        UpdateListUiState(configurator.Owner, configurator);
     }
 
     private void TryLinkDevice(EntityUid uid, NetworkConfiguratorComponent configurator, EntityUid? target, EntityUid user)
@@ -177,11 +162,11 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
             || HasComp<DeviceLinkSinkComponent>(target) && HasComp<DeviceLinkSinkComponent>(configurator.ActiveDeviceLink))
             return;
 
-        _popupSystem.PopupEntity(Loc.GetString("network-configurator-link-mode-started", ("device", Name(target.Value))), target.Value, user);
+        _popupSystem.PopupEntity(Loc.GetString("network-configurator-link-mode-started",  ("device", Name(target.Value))), target.Value, user);
         configurator.ActiveDeviceLink = target;
     }
 
-    private void TryLinkDefaults(EntityUid _, NetworkConfiguratorComponent configurator, EntityUid? targetUid, EntityUid user)
+    private void TryLinkDefaults(EntityUid uid, NetworkConfiguratorComponent configurator, EntityUid? targetUid, EntityUid user)
     {
         if (!configurator.LinkModeActive || !configurator.ActiveDeviceLink.HasValue
             || !targetUid.HasValue || configurator.ActiveDeviceLink == targetUid)
@@ -205,7 +190,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (!TryComp(target, out AccessReaderComponent? reader) || user == null)
             return true;
 
-        if (_accessSystem.IsAllowed(user.Value, target, reader))
+        if (_accessSystem.IsAllowed(user.Value, reader))
             return true;
 
         _audioSystem.PlayPvs(component.SoundNoAccess, user.Value, AudioParams.Default.WithVolume(-2f).WithPitchScale(1.2f));
@@ -216,12 +201,9 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
 
     private void OnComponentRemoved(EntityUid uid, DeviceListComponent component, ComponentRemove args)
     {
-        _uiSystem.CloseUi(uid, NetworkConfiguratorUiKey.Configure);
+        _uiSystem.TryCloseAll(uid, NetworkConfiguratorUiKey.Configure);
     }
 
-    /// <summary>
-    /// Toggles between linking and listing mode
-    /// </summary>
     private void SwitchMode(EntityUid? userUid, EntityUid configuratorUid, NetworkConfiguratorComponent configurator)
     {
         if (Delay(configurator))
@@ -235,32 +217,15 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (!configurator.LinkModeActive)
             configurator.ActiveDeviceLink = null;
 
-        UpdateModeAppearance(userUid.Value, configuratorUid, configurator);
-    }
+        var locString = configurator.LinkModeActive ? "network-configurator-mode-link" : "network-configurator-mode-list";
+        _popupSystem.PopupEntity(Loc.GetString("network-configurator-switched-mode", ("mode", Loc.GetString(locString))),
+            configuratorUid, userUid.Value);
 
-    /// <summary>
-    /// Sets the mode to linking or list depending on the link mode parameter
-    /// </summary>>
-    private void SetMode(EntityUid configuratorUid, NetworkConfiguratorComponent configurator, EntityUid userUid, bool linkMode)
-    {
-        configurator.LinkModeActive = linkMode;
-
-        if (!linkMode)
-            configurator.ActiveDeviceLink = null;
-
-        UpdateModeAppearance(userUid, configuratorUid, configurator);
-    }
-
-    /// <summary>
-    /// Updates the configurators appearance and plays a sound indicating that the mode switched
-    /// </summary>
-    private void UpdateModeAppearance(EntityUid userUid, EntityUid configuratorUid, NetworkConfiguratorComponent configurator)
-    {
-        Dirty(configuratorUid, configurator);
+        Dirty(configurator);
         _appearanceSystem.SetData(configuratorUid, NetworkConfiguratorVisuals.Mode, configurator.LinkModeActive);
 
         var pitch = configurator.LinkModeActive ? 1 : 0.8f;
-        _audioSystem.PlayPvs(configurator.SoundSwitchMode, userUid, AudioParams.Default.WithVolume(1.5f).WithPitchScale(pitch));
+        _audioSystem.PlayPvs(configurator.SoundSwitchMode, userUid.Value, AudioParams.Default.WithVolume(1.5f).WithPitchScale(pitch));
     }
 
     /// <summary>
@@ -297,8 +262,6 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (!canReach || !target.HasValue)
             return;
 
-        DetermineMode(uid, configurator, target, user);
-
         if (configurator.LinkModeActive)
         {
             TryLinkDevice(uid, configurator, target, user);
@@ -307,28 +270,11 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
 
         if (!HasComp<DeviceListComponent>(target))
         {
-            TryAddNetworkDevice(uid, target, user, configurator);
+            TryAddNetworkDevice(target, user, configurator);
             return;
         }
 
-        OpenDeviceListUi(uid, target, user, configurator);
-    }
-
-    private void DetermineMode(EntityUid configuratorUid, NetworkConfiguratorComponent configurator, EntityUid? target, EntityUid userUid)
-    {
-        var hasLinking = HasComp<DeviceLinkSinkComponent>(target) || HasComp<DeviceLinkSourceComponent>(target);
-
-        if (hasLinking && HasComp<DeviceListComponent>(target) || hasLinking == configurator.LinkModeActive)
-            return;
-
-        if (hasLinking)
-        {
-            SetMode(configuratorUid, configurator, userUid, true);
-            return;
-        }
-
-        if (HasComp<DeviceNetworkComponent>(target))
-            SetMode(configuratorUid, configurator, userUid, false);
+        OpenDeviceListUi(target, user, configurator);
     }
 
     #endregion
@@ -392,8 +338,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
             return;
         }
 
-        if (configurator is { LinkModeActive: true, ActiveDeviceLink: { } }
-        && (HasComp<DeviceLinkSinkComponent>(args.Target) || HasComp<DeviceLinkSourceComponent>(args.Target)))
+        if (configurator is {LinkModeActive: true, ActiveDeviceLink: { }} && (HasComp<DeviceLinkSinkComponent>(args.Target) || HasComp<DeviceLinkSourceComponent>(args.Target)))
         {
             AlternativeVerb verb = new()
             {
@@ -430,11 +375,11 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (Delay(configurator))
             return;
 
-        if (!targetUid.HasValue || !configurator.ActiveDeviceLink.HasValue || !AccessCheck(targetUid.Value, userUid, configurator))
+        if (!targetUid.HasValue || !configurator.ActiveDeviceLink.HasValue || !TryComp(userUid, out ActorComponent? actor) || !AccessCheck(targetUid.Value, userUid, configurator))
             return;
 
 
-        _uiSystem.OpenUi(configuratorUid, NetworkConfiguratorUiKey.Link, userUid);
+        _uiSystem.TryOpen(configuratorUid, NetworkConfiguratorUiKey.Link, actor.PlayerSession);
         configurator.DeviceLinkTarget = targetUid;
 
 
@@ -453,7 +398,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         DeviceLinkSourceComponent? sourceComponent = null, DeviceLinkSinkComponent? sinkComponent = null,
         DeviceNetworkComponent? sourceNetworkComponent = null, DeviceNetworkComponent? sinkNetworkComponent = null)
     {
-        if (!Resolve(sourceUid, ref sourceComponent, false) || !Resolve(sinkUid, ref sinkComponent, false))
+        if (!Resolve(sourceUid, ref sourceComponent) || !Resolve(sinkUid, ref sinkComponent))
             return;
 
         var sources = _deviceLinkSystem.GetSourcePorts(sourceUid, sourceComponent);
@@ -461,41 +406,33 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         var links = _deviceLinkSystem.GetLinks(sourceUid, sinkUid, sourceComponent);
         var defaults = _deviceLinkSystem.GetDefaults(sources);
 
-        var sourceAddress = Resolve(sourceUid, ref sourceNetworkComponent, false) ? sourceNetworkComponent.Address : "";
-        var sinkAddress = Resolve(sinkUid, ref sinkNetworkComponent, false) ? sinkNetworkComponent.Address : "";
+        var sourceAddress = Resolve(sourceUid, ref sourceNetworkComponent) ? sourceNetworkComponent.Address : "";
+        var sinkAddress = Resolve(sinkUid, ref sinkNetworkComponent) ? sinkNetworkComponent.Address : "";
 
         var state = new DeviceLinkUserInterfaceState(sources, sinks, links, sourceAddress, sinkAddress, defaults);
-        _uiSystem.SetUiState(configuratorUid, NetworkConfiguratorUiKey.Link, state);
+        _uiSystem.TrySetUiState(configuratorUid, NetworkConfiguratorUiKey.Link, state);
     }
 
     /// <summary>
     /// Opens the config ui. It can be used to modify the devices in the targets device list.
     /// </summary>
-    private void OpenDeviceListUi(EntityUid configuratorUid, EntityUid? targetUid, EntityUid userUid, NetworkConfiguratorComponent configurator)
+    private void OpenDeviceListUi(EntityUid? targetUid, EntityUid userUid, NetworkConfiguratorComponent configurator)
     {
-        if (configurator.ActiveDeviceLink == targetUid)
-            return;
-
         if (Delay(configurator))
             return;
 
-        if (!targetUid.HasValue || !AccessCheck(targetUid.Value, userUid, configurator))
+        if (!targetUid.HasValue || !TryComp(userUid, out ActorComponent? actor) || !AccessCheck(targetUid.Value, userUid, configurator))
             return;
 
-        if (!TryComp(targetUid, out DeviceListComponent? list))
-            return;
-
-        list.Configurators.Add(configuratorUid);
         configurator.ActiveDeviceList = targetUid;
-        Dirty(configuratorUid, configurator);
-
-        if (_uiSystem.TryOpenUi(configuratorUid, NetworkConfiguratorUiKey.Configure, userUid))
-        {
-            _uiSystem.SetUiState(configuratorUid, NetworkConfiguratorUiKey.Configure, new DeviceListUserInterfaceState(
+        Dirty(configurator);
+        _uiSystem.GetUiOrNull(configurator.Owner, NetworkConfiguratorUiKey.Configure)?.Open(actor.PlayerSession);
+        _uiSystem.TrySetUiState(
+            configurator.Owner,
+            NetworkConfiguratorUiKey.Configure,
+            new DeviceListUserInterfaceState(
                 _deviceListSystem.GetDeviceList(configurator.ActiveDeviceList.Value)
-                    .Select(v => (v.Key, MetaData(v.Value).EntityName)).ToHashSet()
-            ));
-        }
+                    .Select(v => (v.Key, MetaData(v.Value).EntityName)).ToHashSet()));
     }
 
     /// <summary>
@@ -523,7 +460,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
             component.Devices.Remove(invalidDevice);
         }
 
-        _uiSystem.SetUiState(uid, NetworkConfiguratorUiKey.List, new NetworkConfiguratorUserInterfaceState(devices));
+        _uiSystem.GetUiOrNull(uid, NetworkConfiguratorUiKey.List)?.SetState(new NetworkConfiguratorUserInterfaceState(devices));
     }
 
     /// <summary>
@@ -531,18 +468,6 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
     /// </summary>
     private void OnUiClosed(EntityUid uid, NetworkConfiguratorComponent component, BoundUIClosedEvent args)
     {
-        if (!args.UiKey.Equals(NetworkConfiguratorUiKey.Configure)
-            && !args.UiKey.Equals(NetworkConfiguratorUiKey.Link)
-            && !args.UiKey.Equals(NetworkConfiguratorUiKey.List))
-        {
-            return;
-        }
-
-        if (TryComp(component.ActiveDeviceList, out DeviceListComponent? list))
-        {
-            list.Configurators.Remove(uid);
-        }
-
         component.ActiveDeviceList = null;
 
         if (args.UiKey is NetworkConfiguratorUiKey.Link)
@@ -552,62 +477,28 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         }
     }
 
-    public void OnDeviceListShutdown(Entity<NetworkConfiguratorComponent?> conf, Entity<DeviceListComponent> list)
-    {
-        list.Comp.Configurators.Remove(conf.Owner);
-        if (Resolve(conf.Owner, ref conf.Comp))
-            conf.Comp.ActiveDeviceList = null;
-    }
-
     /// <summary>
     /// Removes a device from the saved devices list
     /// </summary>
     private void OnRemoveDevice(EntityUid uid, NetworkConfiguratorComponent component, NetworkConfiguratorRemoveDeviceMessage args)
     {
-        if (component.Devices.TryGetValue(args.Address, out var removedDevice))
-        {
-            _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-                $"{ToPrettyString(args.Actor):actor} removed buffered device {ToPrettyString(removedDevice):subject} from {ToPrettyString(uid):tool}");
-        }
-
         component.Devices.Remove(args.Address);
-        if (TryComp(removedDevice, out DeviceNetworkComponent? device))
-            device.Configurators.Remove(uid);
-
         UpdateListUiState(uid, component);
     }
 
     /// <summary>
     /// Clears the saved devices
     /// </summary>
-    private void OnClearDevice(EntityUid uid, NetworkConfiguratorComponent component, NetworkConfiguratorClearDevicesMessage args)
+    private void OnClearDevice(EntityUid uid, NetworkConfiguratorComponent component, NetworkConfiguratorClearDevicesMessage _)
     {
-        _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-            $"{ToPrettyString(args.Actor):actor} cleared buffered devices from {ToPrettyString(uid):tool}");
-
-        ClearDevices(uid, component);
-        UpdateListUiState(uid, component);
-    }
-
-    private void ClearDevices(EntityUid uid, NetworkConfiguratorComponent component)
-    {
-        var query = GetEntityQuery<DeviceNetworkComponent>();
-        foreach (var device in component.Devices.Values)
-        {
-            if (query.TryGetComponent(device, out var comp))
-                comp.Configurators.Remove(uid);
-        }
-
         component.Devices.Clear();
+        UpdateListUiState(uid, component);
     }
 
     private void OnClearLinks(EntityUid uid, NetworkConfiguratorComponent configurator, NetworkConfiguratorClearLinksMessage args)
     {
         if (!configurator.ActiveDeviceLink.HasValue || !configurator.DeviceLinkTarget.HasValue)
             return;
-
-        _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-            $"{ToPrettyString(args.Actor):actor} cleared links between {ToPrettyString(configurator.ActiveDeviceLink.Value):subject} and {ToPrettyString(configurator.DeviceLinkTarget.Value):subject2} with {ToPrettyString(uid):tool}");
 
         if (HasComp<DeviceLinkSourceComponent>(configurator.ActiveDeviceLink) && HasComp<DeviceLinkSinkComponent>(configurator.DeviceLinkTarget))
         {
@@ -645,7 +536,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (TryComp(configurator.ActiveDeviceLink, out DeviceLinkSourceComponent? activeSource) && TryComp(configurator.DeviceLinkTarget, out DeviceLinkSinkComponent? targetSink))
         {
             _deviceLinkSystem.ToggleLink(
-                args.Actor,
+                args.Session.AttachedEntity,
                 configurator.ActiveDeviceLink.Value,
                 configurator.DeviceLinkTarget.Value,
                 args.Source, args.Sink,
@@ -656,7 +547,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         else if (TryComp(configurator.DeviceLinkTarget, out DeviceLinkSourceComponent? targetSource) && TryComp(configurator.ActiveDeviceLink, out DeviceLinkSinkComponent? activeSink))
         {
             _deviceLinkSystem.ToggleLink(
-                args.Actor,
+                args.Session.AttachedEntity,
                 configurator.DeviceLinkTarget.Value,
                 configurator.ActiveDeviceLink.Value,
                 args.Source, args.Sink,
@@ -683,7 +574,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         if (TryComp(configurator.ActiveDeviceLink, out DeviceLinkSourceComponent? activeSource) && TryComp(configurator.DeviceLinkTarget, out DeviceLinkSinkComponent? targetSink))
         {
             _deviceLinkSystem.SaveLinks(
-                args.Actor,
+                args.Session.AttachedEntity,
                 configurator.ActiveDeviceLink.Value,
                 configurator.DeviceLinkTarget.Value,
                 args.Links,
@@ -701,7 +592,7 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         else if (TryComp(configurator.DeviceLinkTarget, out DeviceLinkSourceComponent? targetSource) && TryComp(configurator.ActiveDeviceLink, out DeviceLinkSinkComponent? activeSink))
         {
             _deviceLinkSystem.SaveLinks(
-                args.Actor,
+                args.Session.AttachedEntity,
                 configurator.DeviceLinkTarget.Value,
                 configurator.ActiveDeviceLink.Value,
                 args.Links,
@@ -731,37 +622,16 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
         switch (args.ButtonKey)
         {
             case NetworkConfiguratorButtonKey.Set:
-                _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-                    $"{ToPrettyString(args.Actor):actor} set device links to {ToPrettyString(component.ActiveDeviceList.Value):subject} with {ToPrettyString(uid):tool}");
-
                 result = _deviceListSystem.UpdateDeviceList(component.ActiveDeviceList.Value, new HashSet<EntityUid>(component.Devices.Values));
                 break;
             case NetworkConfiguratorButtonKey.Add:
-                _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-                    $"{ToPrettyString(args.Actor):actor} added device links to {ToPrettyString(component.ActiveDeviceList.Value):subject} with {ToPrettyString(uid):tool}");
-
                 result = _deviceListSystem.UpdateDeviceList(component.ActiveDeviceList.Value, new HashSet<EntityUid>(component.Devices.Values), true);
                 break;
             case NetworkConfiguratorButtonKey.Clear:
-                _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-                    $"{ToPrettyString(args.Actor):actor} cleared device links from {ToPrettyString(component.ActiveDeviceList.Value):subject} with {ToPrettyString(uid):tool}");
                 result = _deviceListSystem.UpdateDeviceList(component.ActiveDeviceList.Value, new HashSet<EntityUid>());
                 break;
             case NetworkConfiguratorButtonKey.Copy:
-                _adminLogger.Add(LogType.DeviceLinking, LogImpact.Low,
-                    $"{ToPrettyString(args.Actor):actor} copied devices from {ToPrettyString(component.ActiveDeviceList.Value):subject} to {ToPrettyString(uid):tool}");
-
-                ClearDevices(uid, component);
-
-                var query = GetEntityQuery<DeviceNetworkComponent>();
-                foreach (var (addr, device) in _deviceListSystem.GetDeviceList(component.ActiveDeviceList.Value))
-                {
-                    if (query.TryGetComponent(device, out var comp))
-                    {
-                        component.Devices[addr] = device;
-                        comp.Configurators.Add(uid);
-                    }
-                }
+                component.Devices = _deviceListSystem.GetDeviceList(component.ActiveDeviceList.Value);
                 UpdateListUiState(uid, component);
                 return;
             case NetworkConfiguratorButtonKey.Show:
@@ -775,28 +645,13 @@ public sealed class NetworkConfiguratorSystem : SharedNetworkConfiguratorSystem
             _ => "error"
         };
 
-        _popupSystem.PopupCursor(Loc.GetString(resultText), args.Actor, PopupType.Medium);
-        _uiSystem.SetUiState(
+        _popupSystem.PopupCursor(Loc.GetString(resultText), args.Session, PopupType.Medium);
+        _uiSystem.TrySetUiState(
             uid,
             NetworkConfiguratorUiKey.Configure,
             new DeviceListUserInterfaceState(
                 _deviceListSystem.GetDeviceList(component.ActiveDeviceList.Value)
                     .Select(v => (v.Key, MetaData(v.Value).EntityName)).ToHashSet()));
-    }
-
-    public void OnDeviceShutdown(Entity<NetworkConfiguratorComponent?> conf, Entity<DeviceNetworkComponent> device)
-    {
-        device.Comp.Configurators.Remove(conf.Owner);
-        if (!Resolve(conf.Owner, ref conf.Comp))
-            return;
-
-        foreach (var (addr, dev) in conf.Comp.Devices)
-        {
-            if (device.Owner == dev)
-                conf.Comp.Devices.Remove(addr);
-        }
-
-        UpdateListUiState(conf, conf.Comp);
     }
 
     private void OnUiOpenAttempt(EntityUid uid, NetworkConfiguratorComponent configurator, ActivatableUIOpenAttemptEvent args)

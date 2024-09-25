@@ -8,12 +8,11 @@
   - type: MeleeSound
     soundGroups:
       Brute:
-        collection: GlassSmash
+        path:
+          "/Audio/Effects/glass_hit.ogg"
   - type: Construction
     graph: Computer
     node: computer
-    containers:
-      - board
   - type: Computer
   - type: ApcPowerReceiver
     powerLoad: 200
@@ -21,6 +20,7 @@
   - type: ActivatableUIRequiresPower
   - type: Sprite
     sprite: Structures/Machines/computers.rsi
+    netsync: false
     layers:
     - map: ["computerLayerBody"]
       state: computer
@@ -52,12 +52,7 @@
   - type: EmitSoundOnUIOpen
     sound:
       collection: Keyboard
-      params:
-        volume: -1
   - type: ContainerContainer
     containers:
       board: !type:Container
         ents: []
-  - type: LightningTarget
-    priority: 1
-  - type: RequireProjectileTarget

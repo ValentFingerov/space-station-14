@@ -3,7 +3,7 @@ namespace Content.Server.NPC.HTN.PrimitiveTasks.Operators;
 /// <summary>
 /// Waits the specified amount of time. Removes the key when finished.
 /// </summary>
-public sealed partial class WaitOperator : HTNOperator
+public sealed class WaitOperator : HTNOperator
 {
     [Dependency] private readonly IEntityManager _entManager = default!;
 
@@ -25,9 +25,9 @@ public sealed partial class WaitOperator : HTNOperator
         return timer <= 0f ? HTNOperatorStatus.Finished : HTNOperatorStatus.Continuing;
     }
 
-    public override void TaskShutdown(NPCBlackboard blackboard, HTNOperatorStatus status)
+    public override void Shutdown(NPCBlackboard blackboard, HTNOperatorStatus status)
     {
-        base.TaskShutdown(blackboard, status);
+        base.Shutdown(blackboard, status);
 
         // The replacement plan may want this value so only dump it if we're successful.
         if (status != HTNOperatorStatus.BetterPlan)

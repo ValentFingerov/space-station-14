@@ -1,18 +1,23 @@
-ent-BaseFilingCabinet = { ent-BaseStructureDynamic }
-  .desc = A cabinet for all your filing needs.
-  .suffix = Empty
 ent-filingCabinet = filing cabinet
-    .desc = { ent-BaseFilingCabinet.desc }
+    .desc = A cabinet for all your filing needs.
+    .suffix = Empty
 ent-filingCabinetTall = tall cabinet
-    .desc = { ent-BaseFilingCabinet.desc }
+    .suffix = Empty
+    .desc = { ent-filingCabinet.desc }
 ent-filingCabinetDrawer = chest drawer
     .desc = A small drawer for all your filing needs, Now with wheels!
+    .suffix = Empty
 ent-BaseBureaucraticStorageFill = { "" }
-    .suffix = Filled
     .desc = { "" }
-ent-filingCabinetRandom = { ent-BaseBureaucraticStorageFill }
-  .desc = { ent-BaseBureaucraticStorageFill.desc }
-ent-filingCabinetTallRandom = { ent-BaseBureaucraticStorageFill }
-  .desc = { ent-BaseBureaucraticStorageFill.desc }
-ent-filingCabinetDrawerRandom = { ent-BaseBureaucraticStorageFill }
-  .desc = { ent-BaseBureaucraticStorageFill.desc }
+ent-filingCabinetRandom = { ent-['filingCabinet', 'BaseBureaucraticStorageFill'] }
+
+  .suffix = Random
+  .desc = { ent-['filingCabinet', 'BaseBureaucraticStorageFill'].desc }
+ent-filingCabinetTallRandom = { ent-['filingCabinetTall', 'BaseBureaucraticStorageFill'] }
+
+  .suffix = Random
+  .desc = { ent-['filingCabinetTall', 'BaseBureaucraticStorageFill'].desc }
+ent-filingCabinetDrawerRandom = { ent-['filingCabinetDrawer', 'BaseBureaucraticStorageFill'] }
+
+  .suffix = Random
+  .desc = { ent-['filingCabinetDrawer', 'BaseBureaucraticStorageFill'].desc }

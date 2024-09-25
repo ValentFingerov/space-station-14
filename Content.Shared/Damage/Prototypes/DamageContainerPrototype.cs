@@ -14,11 +14,11 @@ namespace Content.Shared.Damage.Prototypes
     /// </remarks>
     [Prototype("damageContainer")]
     [Serializable, NetSerializable]
-    public sealed partial class DamageContainerPrototype : IPrototype
+    public sealed class DamageContainerPrototype : IPrototype
     {
         [ViewVariables]
         [IdDataField]
-        public string ID { get; private set; } = default!;
+        public string ID { get; } = default!;
 
         /// <summary>
         ///     List of damage groups that are supported by this container.

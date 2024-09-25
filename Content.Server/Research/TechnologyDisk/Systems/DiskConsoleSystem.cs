@@ -1,9 +1,8 @@
-using Content.Server.Research.Systems;
+﻿using Content.Server.Research.Systems;
 using Content.Server.Research.TechnologyDisk.Components;
-using Content.Shared.UserInterface;
+using Content.Server.UserInterface;
 using Content.Shared.Research;
 using Content.Shared.Research.Components;
-using Robust.Server.Audio;
 using Robust.Server.GameObjects;
 using Robust.Shared.Timing;
 
@@ -31,14 +30,13 @@ public sealed class DiskConsoleSystem : EntitySystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<DiskConsolePrintingComponent, DiskConsoleComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var printing, out var console, out var xform))
+        foreach (var (printing, console, xform) in EntityQuery<DiskConsolePrintingComponent, DiskConsoleComponent, TransformComponent>())
         {
             if (printing.FinishTime > _timing.CurTime)
                 continue;
 
-            RemComp(uid, printing);
-            Spawn(console.DiskPrototype, xform.Coordinates);
+            RemComp(printing.Owner, printing);
+            EntityManager.SpawnEntity(console.DiskPrototype, xform.Coordinates);
         }
     }
 
@@ -53,7 +51,7 @@ public sealed class DiskConsoleSystem : EntitySystem
         if (serverComp.Points < component.PricePerDisk)
             return;
 
-        _research.ModifyServerPoints(server.Value, -component.PricePerDisk, serverComp);
+        _research.AddPointsToServer(server.Value, -component.PricePerDisk, serverComp);
         _audio.PlayPvs(component.PrintSound, uid);
 
         var printing = EnsureComp<DiskConsolePrintingComponent>(uid);
@@ -86,12 +84,10 @@ public sealed class DiskConsoleSystem : EntitySystem
         {
             totalPoints = server.Points;
         }
-
-        var canPrint = !(TryComp<DiskConsolePrintingComponent>(uid, out var printing) && printing.FinishTime >= _timing.CurTime) &&
-                       totalPoints >= component.PricePerDisk;
+        var canPrint = !HasComp<DiskConsolePrintingComponent>(uid) && totalPoints >= component.PricePerDisk;
 
         var state = new DiskConsoleBoundUserInterfaceState(totalPoints, component.PricePerDisk, canPrint);
-        _ui.SetUiState(uid, DiskConsoleUiKey.Key, state);
+        _ui.TrySetUiState(uid, DiskConsoleUiKey.Key, state);
     }
 
     private void OnShutdown(EntityUid uid, DiskConsolePrintingComponent component, ComponentShutdown args)

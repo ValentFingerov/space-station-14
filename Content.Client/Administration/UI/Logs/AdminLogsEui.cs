@@ -62,6 +62,7 @@ public sealed class AdminLogsEui : BaseEui
             LogsControl.SelectedPlayers.ToArray(),
             null,
             LogsControl.IncludeNonPlayerLogs,
+            null,
             DateOrder.Descending);
 
         SendMessage(request);
@@ -69,7 +70,6 @@ public sealed class AdminLogsEui : BaseEui
 
     private void NextLogs()
     {
-        LogsControl.NextButton.Disabled = true;
         var request = new NextLogsRequest();
         SendMessage(request);
     }
@@ -88,7 +88,7 @@ public sealed class AdminLogsEui : BaseEui
             Maximized = false,
             Title = "Admin Logs",
             Monitor = monitor,
-            Width = 1100,
+            Width = 1000,
             Height = 400
         });
 
@@ -117,7 +117,6 @@ public sealed class AdminLogsEui : BaseEui
 
         LogsControl.SetCurrentRound(s.RoundId);
         LogsControl.SetPlayers(s.Players);
-        LogsControl.UpdateCount(round: s.RoundLogs);
 
         if (!FirstState)
         {

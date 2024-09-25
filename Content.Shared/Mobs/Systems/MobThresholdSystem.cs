@@ -1,10 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Content.Shared.Alert;
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
 using Content.Shared.Mobs.Components;
-using Robust.Shared.GameStates;
 
 namespace Content.Shared.Mobs.Systems;
 
@@ -15,74 +14,13 @@ public sealed class MobThresholdSystem : EntitySystem
 
     public override void Initialize()
     {
-        SubscribeLocalEvent<MobThresholdsComponent, ComponentGetState>(OnGetState);
-        SubscribeLocalEvent<MobThresholdsComponent, ComponentHandleState>(OnHandleState);
-
         SubscribeLocalEvent<MobThresholdsComponent, ComponentShutdown>(MobThresholdShutdown);
         SubscribeLocalEvent<MobThresholdsComponent, ComponentStartup>(MobThresholdStartup);
         SubscribeLocalEvent<MobThresholdsComponent, DamageChangedEvent>(OnDamaged);
         SubscribeLocalEvent<MobThresholdsComponent, UpdateMobStateEvent>(OnUpdateMobState);
-        SubscribeLocalEvent<MobThresholdsComponent, MobStateChangedEvent>(OnThresholdsMobState);
-    }
-
-    private void OnGetState(EntityUid uid, MobThresholdsComponent component, ref ComponentGetState args)
-    {
-        var thresholds = new Dictionary<FixedPoint2, MobState>();
-        foreach (var (key, value) in component.Thresholds)
-        {
-            thresholds.Add(key, value);
-        }
-        args.State = new MobThresholdsComponentState(thresholds,
-            component.TriggersAlerts,
-            component.CurrentThresholdState,
-            component.StateAlertDict,
-            component.ShowOverlays,
-            component.AllowRevives);
-    }
-
-    private void OnHandleState(EntityUid uid, MobThresholdsComponent component, ref ComponentHandleState args)
-    {
-        if (args.Current is not MobThresholdsComponentState state)
-            return;
-        component.Thresholds = new SortedDictionary<FixedPoint2, MobState>(state.UnsortedThresholds);
-        component.TriggersAlerts = state.TriggersAlerts;
-        component.CurrentThresholdState = state.CurrentThresholdState;
-        component.AllowRevives = state.AllowRevives;
     }
 
     #region Public API
-
-    /// <summary>
-    /// Gets the next available state for a mob.
-    /// </summary>
-    /// <param name="target">Target entity</param>
-    /// <param name="mobState">Supplied MobState</param>
-    /// <param name="nextState">The following MobState. Can be null if there isn't one.</param>
-    /// <param name="thresholdsComponent">Threshold Component Owned by the target</param>
-    /// <returns>True if the next mob state exists</returns>
-    public bool TryGetNextState(
-        EntityUid target,
-        MobState mobState,
-        [NotNullWhen(true)] out MobState? nextState,
-        MobThresholdsComponent? thresholdsComponent = null)
-    {
-        nextState = null;
-        if (!Resolve(target, ref thresholdsComponent))
-            return false;
-
-        MobState? min = null;
-        foreach (var state in thresholdsComponent.Thresholds.Values)
-        {
-            if (state <= mobState)
-                continue;
-
-            if (min == null || state < min)
-                min = state;
-        }
-
-        nextState = min;
-        return nextState != null;
-    }
 
     /// <summary>
     /// Get the Damage Threshold for the appropriate state if it exists
@@ -212,7 +150,7 @@ public sealed class MobThresholdSystem : EntitySystem
         MobThresholdsComponent? thresholdComponent = null)
     {
         threshold = null;
-        if (!Resolve(target, ref thresholdComponent, false))
+        if (!Resolve(target, ref thresholdComponent))
             return false;
 
         return TryGetThresholdForState(target, MobState.Dead, out threshold, thresholdComponent);
@@ -284,16 +222,7 @@ public sealed class MobThresholdSystem : EntitySystem
         if (!Resolve(target, ref threshold))
             return;
 
-        // create a duplicate dictionary so we don't modify while enumerating.
-        var thresholds = new Dictionary<FixedPoint2, MobState>(threshold.Thresholds);
-        foreach (var (damageThreshold, state) in thresholds)
-        {
-            if (state != mobState)
-                continue;
-            threshold.Thresholds.Remove(damageThreshold);
-        }
         threshold.Thresholds[damage] = mobState;
-        Dirty(target, threshold);
         VerifyThresholds(target, threshold);
     }
 
@@ -323,8 +252,7 @@ public sealed class MobThresholdSystem : EntitySystem
         if (!Resolve(uid, ref component, false))
             return;
         component.AllowRevives = val;
-        Dirty(uid, component);
-        VerifyThresholds(uid, component);
+        Dirty(component);
     }
 
     #endregion
@@ -332,14 +260,14 @@ public sealed class MobThresholdSystem : EntitySystem
     #region Private Implementation
 
     private void CheckThresholds(EntityUid target, MobStateComponent mobStateComponent,
-        MobThresholdsComponent thresholdsComponent, DamageableComponent damageableComponent, EntityUid? origin = null)
+        MobThresholdsComponent thresholdsComponent, DamageableComponent damageableComponent)
     {
         foreach (var (threshold, mobState) in thresholdsComponent.Thresholds.Reverse())
         {
             if (damageableComponent.TotalDamage < threshold)
                 continue;
 
-            TriggerThreshold(target, mobState, mobStateComponent, thresholdsComponent, origin);
+            TriggerThreshold(target, mobState, mobStateComponent, thresholdsComponent);
             break;
         }
     }
@@ -348,8 +276,7 @@ public sealed class MobThresholdSystem : EntitySystem
         EntityUid target,
         MobState newState,
         MobStateComponent? mobState = null,
-        MobThresholdsComponent? thresholds = null,
-        EntityUid? origin = null)
+        MobThresholdsComponent? thresholds = null)
     {
         if (!Resolve(target, ref mobState, ref thresholds) ||
             mobState.CurrentState == newState)
@@ -358,12 +285,10 @@ public sealed class MobThresholdSystem : EntitySystem
         }
 
         if (mobState.CurrentState != MobState.Dead || thresholds.AllowRevives)
-        {
             thresholds.CurrentThresholdState = newState;
-            Dirty(target, thresholds);
-        }
+        _mobStateSystem.UpdateMobState(target, mobState);
 
-        _mobStateSystem.UpdateMobState(target, mobState, origin);
+        Dirty(target);
     }
 
     private void UpdateAlerts(EntityUid target, MobState currentMobState, MobThresholdsComponent? threshold = null,
@@ -376,37 +301,33 @@ public sealed class MobThresholdSystem : EntitySystem
         if (!threshold.TriggersAlerts)
             return;
 
-        if (!threshold.StateAlertDict.TryGetValue(currentMobState, out var currentAlert))
+        switch (currentMobState)
         {
-            Log.Error($"No alert alert for mob state {currentMobState} for entity {ToPrettyString(target)}");
-            return;
-        }
-
-        if (!_alerts.TryGet(currentAlert, out var alertPrototype))
-        {
-            Log.Error($"Invalid alert type {currentAlert}");
-            return;
-        }
-
-        if (alertPrototype.SupportsSeverity)
-        {
-            var severity = _alerts.GetMinSeverity(currentAlert);
-            if (TryGetNextState(target, currentMobState, out var nextState, threshold) &&
-                TryGetPercentageForState(target, nextState.Value, damageable.TotalDamage, out var percentage))
+            case MobState.Alive:
             {
-                percentage = FixedPoint2.Clamp(percentage.Value, 0, 1);
-
-                severity = (short) MathF.Round(
-                    MathHelper.Lerp(
-                        _alerts.GetMinSeverity(currentAlert),
-                        _alerts.GetMaxSeverity(currentAlert),
-                        percentage.Value.Float()));
+                var severity = _alerts.GetMinSeverity(AlertType.HumanHealth);
+                if (TryGetIncapPercentage(target, damageable.TotalDamage, out var percentage))
+                {
+                    severity = (short) MathF.Floor(percentage.Value.Float() *
+                                                   _alerts.GetSeverityRange(AlertType.HumanHealth));
+                    severity += _alerts.GetMinSeverity(AlertType.HumanHealth);
+                }
+                _alerts.ShowAlert(target, AlertType.HumanHealth, severity);
+                break;
             }
-            _alerts.ShowAlert(target, currentAlert, severity);
-        }
-        else
-        {
-            _alerts.ShowAlert(target, currentAlert);
+            case MobState.Critical:
+            {
+                _alerts.ShowAlert(target, AlertType.HumanCrit);
+                break;
+            }
+            case MobState.Dead:
+            {
+                _alerts.ShowAlert(target, AlertType.HumanDead);
+                break;
+            }
+            case MobState.Invalid:
+            default:
+                throw new ArgumentOutOfRangeException(nameof(currentMobState), currentMobState, null);
         }
     }
 
@@ -414,7 +335,7 @@ public sealed class MobThresholdSystem : EntitySystem
     {
         if (!TryComp<MobStateComponent>(target, out var mobState))
             return;
-        CheckThresholds(target, mobState, thresholds, args.Damageable, args.Origin);
+        CheckThresholds(target, mobState, thresholds, args.Damageable);
         var ev = new MobThresholdChecked(target, mobState, thresholds, args.Damageable);
         RaiseLocalEvent(target, ref ev, true);
         UpdateAlerts(target, mobState.CurrentState, thresholds, args.Damageable);
@@ -425,13 +346,15 @@ public sealed class MobThresholdSystem : EntitySystem
         if (!TryComp<MobStateComponent>(target, out var mobState) || !TryComp<DamageableComponent>(target, out var damageable))
             return;
         CheckThresholds(target, mobState, thresholds, damageable);
-        UpdateAllEffects((target, thresholds, mobState, damageable), mobState.CurrentState);
+        var ev = new MobThresholdChecked(target, mobState, thresholds, damageable);
+        RaiseLocalEvent(target, ref ev, true);
+        UpdateAlerts(target, mobState.CurrentState, thresholds, damageable);
     }
 
     private void MobThresholdShutdown(EntityUid target, MobThresholdsComponent component, ComponentShutdown args)
     {
         if (component.TriggersAlerts)
-            _alerts.ClearAlertCategory(target, component.HealthAlertCategory);
+            _alerts.ClearAlertCategory(target, AlertCategory.Health);
     }
 
     private void OnUpdateMobState(EntityUid target, MobThresholdsComponent component, ref UpdateMobStateEvent args)
@@ -444,23 +367,6 @@ public sealed class MobThresholdSystem : EntitySystem
         {
             args.State = component.CurrentThresholdState;
         }
-    }
-
-    private void UpdateAllEffects(Entity<MobThresholdsComponent, MobStateComponent?, DamageableComponent?> ent, MobState currentState)
-    {
-        var (_, thresholds, mobState, damageable) = ent;
-        if (Resolve(ent, ref thresholds, ref mobState, ref damageable))
-        {
-            var ev = new MobThresholdChecked(ent, mobState, thresholds, damageable);
-            RaiseLocalEvent(ent, ref ev, true);
-        }
-
-        UpdateAlerts(ent, currentState, thresholds, damageable);
-    }
-
-    private void OnThresholdsMobState(Entity<MobThresholdsComponent> ent, ref MobStateChangedEvent args)
-    {
-        UpdateAllEffects((ent, ent, null, null), args.NewMobState);
     }
 
     #endregion

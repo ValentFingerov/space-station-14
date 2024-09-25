@@ -1,6 +1,5 @@
 using Robust.Shared.GameStates;
 using Content.Shared.Singularity.EntitySystems;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
 namespace Content.Shared.Singularity.Components;
 
@@ -9,9 +8,8 @@ namespace Content.Shared.Singularity.Components;
 /// Also makes the associated entity destroy other entities upon contact.
 /// Primarily managed by <see cref="SharedEventHorizonSystem"/> and its server/client versions.
 /// </summary>
-[Access(friends: typeof(SharedEventHorizonSystem))]
-[RegisterComponent, NetworkedComponent, AutoGenerateComponentPause]
-public sealed partial class EventHorizonComponent : Component
+[RegisterComponent, NetworkedComponent]
+public sealed class EventHorizonComponent : Component
 {
     /// <summary>
     /// The radius of the event horizon within which it will destroy all entities and tiles.
@@ -19,26 +17,15 @@ public sealed partial class EventHorizonComponent : Component
     /// If you want to set this go through <see cref="SharedEventHorizonSystem.SetRadius"/>.
     /// </summary>
     [DataField("radius")]
+    [Access(friends:typeof(SharedEventHorizonSystem))]
     public float Radius;
-
-    /// <summary>
-    /// involves periodically destroying tiles within a specified radius
-    /// </summary>
-    [DataField]
-    public bool ConsumeTiles = true;
-
-    /// <summary>
-    /// involves periodically destroying entities within a specified radius. Does not affect collide destruction of entities.
-    /// </summary>
-    [DataField]
-    public bool ConsumeEntities = true;
 
     /// <summary>
     /// Whether the event horizon can consume/destroy the devices built to contain it.
     /// If you want to set this go through <see cref="SharedEventHorizonSystem.SetCanBreachContainment"/>.
     /// </summary>
     [DataField("canBreachContainment")]
-    [ViewVariables(VVAccess.ReadWrite)]
+    [Access(friends:typeof(SharedEventHorizonSystem))]
     public bool CanBreachContainment = false;
 
     /// <summary>
@@ -46,18 +33,9 @@ public sealed partial class EventHorizonComponent : Component
     /// Can be set to null, in which case no such fixture is used.
     /// If you want to set this go through <see cref="SharedEventHorizonSystem.SetHorizonFixtureId"/>.
     /// </summary>
-    [DataField("consumerFixtureId")]
-    [ViewVariables(VVAccess.ReadWrite)]
-    public string? ConsumerFixtureId = "EventHorizonConsumer";
-
-    /// <summary>
-    /// The ID of the fixture used to detect if the event horizon has collided with any physics objects.
-    /// Can be set to null, in which case no such fixture is used.
-    /// If you want to set this go through <see cref="SharedEventHorizonSystem.SetHorizonFixtureId"/>.
-    /// </summary>
-    [DataField("colliderFixtureId")]
-    [ViewVariables(VVAccess.ReadWrite)]
-    public string? ColliderFixtureId = "EventHorizonCollider";
+    [DataField("horizonFixtureId")]
+    [Access(friends:typeof(SharedEventHorizonSystem))]
+    public string? HorizonFixtureId = "EventHorizon";
 
     /// <summary>
     /// Whether the entity this event horizon is attached to is being consumed by another event horizon.
@@ -71,15 +49,23 @@ public sealed partial class EventHorizonComponent : Component
     /// The amount of time that should elapse between this event horizon consuming everything it overlaps with.
     /// </summary>
     [DataField("consumePeriod")]
-    [ViewVariables(VVAccess.ReadWrite)]
-    public TimeSpan TargetConsumePeriod = TimeSpan.FromSeconds(0.5);
+    [ViewVariables(VVAccess.ReadOnly)]
+    [Access(typeof(SharedEventHorizonSystem))]
+    public TimeSpan TargetConsumePeriod { get; set; } = TimeSpan.FromSeconds(0.5);
+
+    /// <summary>
+    /// The last time at which this consumed everything it overlapped with.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    [Access(typeof(SharedEventHorizonSystem))]
+    public TimeSpan LastConsumeWaveTime { get; set; } = default!;
 
     /// <summary>
     /// The next time at which this consumed everything it overlapped with.
     /// </summary>
-    [ViewVariables(VVAccess.ReadOnly), DataField("nextConsumeWaveTime", customTypeSerializer:typeof(TimeOffsetSerializer))]
-    [AutoPausedField]
-    public TimeSpan NextConsumeWaveTime;
+    [ViewVariables(VVAccess.ReadOnly)]
+    [Access(typeof(SharedEventHorizonSystem))]
+    public TimeSpan NextConsumeWaveTime { get; set; } = default!;
 
     #endregion Update Timing
 }

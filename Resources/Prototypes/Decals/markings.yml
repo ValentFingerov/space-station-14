@@ -8,7 +8,6 @@
 - type: decal
   id: ArrowsGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: arrows_greyscale
@@ -23,7 +22,6 @@
 - type: decal
   id: BotGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: bot_greyscale
@@ -38,7 +36,6 @@
 - type: decal
   id: BotLeftGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: bot_left_greyscale
@@ -53,7 +50,6 @@
 - type: decal
   id: BotRightGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: bot_right_greyscale
@@ -68,7 +64,6 @@
 - type: decal
   id: BoxGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: box_greyscale
@@ -83,7 +78,6 @@
 - type: decal
   id: CautionGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: caution_greyscale
@@ -98,7 +92,6 @@
 - type: decal
   id: DeliveryGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: delivery_greyscale
@@ -113,7 +106,6 @@
 - type: decal
   id: LoadingAreaGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: loading_area_greyscale
@@ -128,7 +120,6 @@
 - type: decal
   id: StandClearGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: standclear_greyscale
@@ -143,7 +134,6 @@
 - type: decal
   id: WarnBoxGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_box_greyscale
@@ -178,7 +168,6 @@
 - type: decal
   id: WarnFullGreyscale
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_full_greyscale
@@ -270,7 +259,6 @@
 - type: decal
   id: WarnCornerGreyscaleNE
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_greyscale_ne
@@ -278,7 +266,6 @@
 - type: decal
   id: WarnCornerGreyscaleNW
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_greyscale_nw
@@ -286,7 +273,6 @@
 - type: decal
   id: WarnCornerGreyscaleSE
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_greyscale_se
@@ -294,7 +280,6 @@
 - type: decal
   id: WarnCornerGreyscaleSW
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_greyscale_sw
@@ -330,7 +315,6 @@
 - type: decal
   id: WarnCornerSmallGreyscaleNE
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_small_greyscale_ne
@@ -338,7 +322,6 @@
 - type: decal
   id: WarnCornerSmallGreyscaleNW
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_small_greyscale_nw
@@ -346,7 +329,6 @@
 - type: decal
   id: WarnCornerSmallGreyscaleSE
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_small_greyscale_se
@@ -354,7 +336,6 @@
 - type: decal
   id: WarnCornerSmallGreyscaleSW
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_corner_small_greyscale_sw
@@ -418,7 +399,6 @@
 - type: decal
   id: WarnEndGreyscaleE
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_end_greyscale_e
@@ -426,7 +406,6 @@
 - type: decal
   id: WarnEndGreyscaleN
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_end_greyscale_n
@@ -434,7 +413,6 @@
 - type: decal
   id: WarnEndGreyscaleS
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_end_greyscale_s
@@ -442,7 +420,6 @@
 - type: decal
   id: WarnEndGreyscaleW
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_end_greyscale_w
@@ -478,7 +455,6 @@
 - type: decal
   id: WarnLineGreyscaleE
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_line_greyscale_e
@@ -486,7 +462,6 @@
 - type: decal
   id: WarnLineGreyscaleN
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_line_greyscale_n
@@ -494,7 +469,6 @@
 - type: decal
   id: WarnLineGreyscaleS
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_line_greyscale_s
@@ -502,7 +476,6 @@
 - type: decal
   id: WarnLineGreyscaleW
   tags: ["station", "markings"]
-  defaultCustomColor: true
   sprite:
     sprite: Decals/markings.rsi
     state: warn_line_greyscale_w

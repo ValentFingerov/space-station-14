@@ -1,8 +1,5 @@
-using System.Collections.Frozen;
-using System.Text.RegularExpressions;
 using Content.Shared.Popups;
 using Content.Shared.Radio;
-using Content.Shared.Speech;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
@@ -12,30 +9,18 @@ public abstract class SharedChatSystem : EntitySystem
 {
     public const char RadioCommonPrefix = ';';
     public const char RadioChannelPrefix = ':';
-    public const char RadioChannelAltPrefix = '.';
-    public const char LocalPrefix = '>';
+    public const char LocalPrefix = '.';
     public const char ConsolePrefix = '/';
     public const char DeadPrefix = '\\';
-    public const char LOOCPrefix = '_'; // Corvax-Localization
+    public const char LOOCPrefix = '(';
     public const char OOCPrefix = '[';
     public const char EmotesPrefix = '%'; // Corvax-Localization
-    public const char EmotesAltPrefix = '*';
     public const char AdminPrefix = ']';
     public const char WhisperPrefix = ',';
-    public const char DefaultChannelKey = 'р'; // Corvax-Localization
-    // Corvax-TTS-Start: Moved from Server to Shared
-    public const int VoiceRange = 10; // how far voice goes in world units
-    public const int WhisperClearRange = 2; // how far whisper goes while still being understandable, in world units
-    public const int WhisperMuffledRange = 5; // how far whisper goes at all, in world units
-    // Corvax-TTS-End
 
-    [ValidatePrototypeId<RadioChannelPrototype>]
+    public const char DefaultChannelKey = 'р';
     public const string CommonChannel = "Common";
-
     public static string DefaultChannelPrefix = $"{RadioChannelPrefix}{DefaultChannelKey}";
-
-    [ValidatePrototypeId<SpeechVerbPrototype>]
-    public const string DefaultSpeechVerb = "Default";
 
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
@@ -43,50 +28,35 @@ public abstract class SharedChatSystem : EntitySystem
     /// <summary>
     /// Cache of the keycodes for faster lookup.
     /// </summary>
-    private FrozenDictionary<char, RadioChannelPrototype> _keyCodes = default!;
+    private Dictionary<char, RadioChannelPrototype> _keyCodes = new();
 
     public override void Initialize()
     {
         base.Initialize();
         DebugTools.Assert(_prototypeManager.HasIndex<RadioChannelPrototype>(CommonChannel));
-        SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnPrototypeReload);
+        _prototypeManager.PrototypesReloaded += OnPrototypeReload;
         CacheRadios();
     }
 
-    protected virtual void OnPrototypeReload(PrototypesReloadedEventArgs obj)
+    private void OnPrototypeReload(PrototypesReloadedEventArgs obj)
     {
-        if (obj.WasModified<RadioChannelPrototype>())
+        if (obj.ByType.ContainsKey(typeof(RadioChannelPrototype)))
             CacheRadios();
     }
 
     private void CacheRadios()
     {
-        _keyCodes = _prototypeManager.EnumeratePrototypes<RadioChannelPrototype>()
-            .ToFrozenDictionary(x => x.KeyCode);
+        _keyCodes.Clear();
+
+        foreach (var proto in _prototypeManager.EnumeratePrototypes<RadioChannelPrototype>())
+        {
+            _keyCodes.Add(proto.KeyCode, proto);
+        }
     }
 
-    /// <summary>
-    ///     Attempts to find an applicable <see cref="SpeechVerbPrototype"/> for a speaking entity's message.
-    ///     If one is not found, returns <see cref="DefaultSpeechVerb"/>.
-    /// </summary>
-    public SpeechVerbPrototype GetSpeechVerb(EntityUid source, string message, SpeechComponent? speech = null)
+    public override void Shutdown()
     {
-        if (!Resolve(source, ref speech, false))
-            return _prototypeManager.Index<SpeechVerbPrototype>(DefaultSpeechVerb);
-
-        // check for a suffix-applicable speech verb
-        SpeechVerbPrototype? current = null;
-        foreach (var (str, id) in speech.SuffixSpeechVerbs)
-        {
-            var proto = _prototypeManager.Index<SpeechVerbPrototype>(id);
-            if (message.EndsWith(Loc.GetString(str)) && proto.Priority >= (current?.Priority ?? 0))
-            {
-                current = proto;
-            }
-        }
-
-        // if no applicable suffix verb return the normal one used by the entity
-        return current ?? _prototypeManager.Index<SpeechVerbPrototype>(speech.SpeechVerb);
+        _prototypeManager.PrototypesReloaded -= OnPrototypeReload;
     }
 
     /// <summary>
@@ -119,7 +89,7 @@ public abstract class SharedChatSystem : EntitySystem
             return true;
         }
 
-        if (!(input.StartsWith(RadioChannelPrefix) || input.StartsWith(RadioChannelAltPrefix)))
+        if (!input.StartsWith(RadioChannelPrefix))
             return false;
 
         if (input.Length < 2 || char.IsWhiteSpace(input[1]))
@@ -131,7 +101,6 @@ public abstract class SharedChatSystem : EntitySystem
         }
 
         var channelKey = input[1];
-        channelKey = char.ToLower(channelKey);
         output = SanitizeMessageCapital(input[2..].TrimStart());
 
         if (channelKey == DefaultChannelKey)
@@ -158,111 +127,7 @@ public abstract class SharedChatSystem : EntitySystem
         if (string.IsNullOrEmpty(message))
             return message;
         // Capitalize first letter
-        message = OopsConcat(char.ToUpper(message[0]).ToString(), message.Remove(0, 1));
+        message = char.ToUpper(message[0]) + message.Remove(0, 1);
         return message;
-    }
-
-    private static string OopsConcat(string a, string b)
-    {
-        // This exists to prevent Roslyn being clever and compiling something that fails sandbox checks.
-        return a + b;
-    }
-
-    public string SanitizeMessageCapitalizeTheWordI(string message, string theWordI = "i")
-    {
-        if (string.IsNullOrEmpty(message))
-            return message;
-
-        for
-        (
-            var index = message.IndexOf(theWordI);
-            index != -1;
-            index = message.IndexOf(theWordI, index + 1)
-        )
-        {
-            // Stops the code If It's tryIng to capItalIze the letter I In the mIddle of words
-            // Repeating the code twice is the simplest option
-            if (index + 1 < message.Length && char.IsLetter(message[index + 1]))
-                continue;
-            if (index - 1 >= 0 && char.IsLetter(message[index - 1]))
-                continue;
-
-            var beforeTarget = message.Substring(0, index);
-            var target = message.Substring(index, theWordI.Length);
-            var afterTarget = message.Substring(index + theWordI.Length);
-
-            message = beforeTarget + target.ToUpper() + afterTarget;
-        }
-
-        return message;
-    }
-
-    public static string SanitizeAnnouncement(string message, int maxLength = 0, int maxNewlines = 2)
-    {
-        var trimmed = message.Trim();
-        if (maxLength > 0 && trimmed.Length > maxLength)
-        {
-            trimmed = $"{message[..maxLength]}...";
-        }
-
-        // No more than max newlines, other replaced to spaces
-        if (maxNewlines > 0)
-        {
-            var chars = trimmed.ToCharArray();
-            var newlines = 0;
-            for (var i = 0; i < chars.Length; i++)
-            {
-                if (chars[i] != '\n')
-                    continue;
-
-                if (newlines >= maxNewlines)
-                    chars[i] = ' ';
-
-                newlines++;
-            }
-
-            return new string(chars);
-        }
-
-        return trimmed;
-    }
-
-    public static string InjectTagInsideTag(ChatMessage message, string outerTag, string innerTag, string? tagParameter)
-    {
-        var rawmsg = message.WrappedMessage;
-        var tagStart = rawmsg.IndexOf($"[{outerTag}]");
-        var tagEnd = rawmsg.IndexOf($"[/{outerTag}]");
-        if (tagStart < 0 || tagEnd < 0) //If the outer tag is not found, the injection is not performed
-            return rawmsg;
-        tagStart += outerTag.Length + 2;
-
-        string innerTagProcessed = tagParameter != null ? $"[{innerTag}={tagParameter}]" : $"[{innerTag}]";
-
-        rawmsg = rawmsg.Insert(tagEnd, $"[/{innerTag}]");
-        rawmsg = rawmsg.Insert(tagStart, innerTagProcessed);
-
-        return rawmsg;
-    }
-
-    /// <summary>
-    /// Injects a tag around all found instances of a specific string in a ChatMessage.
-    /// Excludes strings inside other tags and brackets.
-    /// </summary>
-    public static string InjectTagAroundString(ChatMessage message, string targetString, string tag, string? tagParameter)
-    {
-        var rawmsg = message.WrappedMessage;
-        rawmsg = Regex.Replace(rawmsg, "(?i)(" + targetString + ")(?-i)(?![^[]*])", $"[{tag}={tagParameter}]$1[/{tag}]");
-        return rawmsg;
-    }
-
-    public static string GetStringInsideTag(ChatMessage message, string tag)
-    {
-        var rawmsg = message.WrappedMessage;
-        var tagStart = rawmsg.IndexOf($"[{tag}]");
-        var tagEnd = rawmsg.IndexOf($"[/{tag}]");
-        if (tagStart < 0 || tagEnd < 0)
-            return "";
-        tagStart += tag.Length + 2;
-        return rawmsg.Substring(tagStart, tagEnd - tagStart);
     }
 }

@@ -1,4 +1,4 @@
-ent-WardrobeBase = { ent-ClosetSteelBase }
+ent-WardrobeBase = { ent-ClosetBase }
     .desc = It's a storage unit for standard-issue Nanotrasen attire.
 ent-WardrobeBlue = blue wardrobe
     .desc = A wardrobe packed with stylish blue clothing.

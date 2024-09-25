@@ -19,7 +19,7 @@
     </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
   </ItemGroup>
 
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />

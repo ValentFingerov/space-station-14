@@ -1,6 +1,6 @@
-using System.Numerics;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
+using Robust.Client.GameObjects;
 using Robust.Client.Player;
 
 namespace Content.Client.Movement.Systems;
@@ -9,7 +9,7 @@ public sealed class ContentEyeSystem : SharedContentEyeSystem
 {
     [Dependency] private readonly IPlayerManager _player = default!;
 
-    public void RequestZoom(EntityUid uid, Vector2 zoom, bool ignoreLimit, bool scalePvs, ContentEyeComponent? content = null)
+    public void RequestZoom(EntityUid uid, Vector2 zoom, ContentEyeComponent? content = null)
     {
         if (!Resolve(uid, ref content, false))
             return;
@@ -17,39 +17,41 @@ public sealed class ContentEyeSystem : SharedContentEyeSystem
         RaisePredictiveEvent(new RequestTargetZoomEvent()
         {
             TargetZoom = zoom,
-            IgnoreLimit = ignoreLimit,
         });
-
-        if (scalePvs)
-            RequestPvsScale(Math.Max(zoom.X, zoom.Y));
-    }
-
-    public void RequestPvsScale(float scale)
-    {
-        RaiseNetworkEvent(new RequestPvsScaleEvent(scale));
     }
 
     public void RequestToggleFov()
     {
-        if (_player.LocalEntity is { } player)
+        if (_player.LocalPlayer?.ControlledEntity is { } player)
             RequestToggleFov(player);
     }
 
     public void RequestToggleFov(EntityUid uid, EyeComponent? eye = null)
     {
         if (Resolve(uid, ref eye, false))
-            RequestEye(!eye.DrawFov, eye.DrawLight);
+            RequestFov(!eye.DrawFov);
     }
 
-    public void RequestToggleLight(EntityUid uid, EyeComponent? eye = null)
+    public void RequestFov(bool value)
     {
-        if (Resolve(uid, ref eye, false))
-            RequestEye(eye.DrawFov, !eye.DrawLight);
+        RaisePredictiveEvent(new RequestFovEvent()
+        {
+            Fov = value,
+        });
     }
 
-
-    public void RequestEye(bool drawFov, bool drawLight)
+    public override void Update(float frameTime)
     {
-        RaisePredictiveEvent(new RequestEyeEvent(drawFov, drawLight));
+        base.Update(frameTime);
+
+        var localPlayer = _player.LocalPlayer?.ControlledEntity;
+
+        if (!TryComp<ContentEyeComponent>(localPlayer, out var content) ||
+            !TryComp<EyeComponent>(localPlayer, out var eye))
+        {
+            return;
+        }
+
+        UpdateEye(localPlayer.Value, content, eye, frameTime);
     }
 }

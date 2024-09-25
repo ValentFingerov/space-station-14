@@ -1,24 +1,26 @@
 using Content.Shared.Research;
 using Content.Shared.Research.Components;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 
 namespace Content.Client.Research.UI
 {
     public sealed class DiskConsoleBoundUserInterface : BoundUserInterface
     {
-        [ViewVariables]
         private DiskConsoleMenu? _menu;
 
-        public DiskConsoleBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+        public DiskConsoleBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
+
         }
 
         protected override void Open()
         {
             base.Open();
 
-            _menu = this.CreateWindow<DiskConsoleMenu>();
+            _menu = new();
+
+            _menu.OnClose += Close;
+            _menu.OpenCentered();
 
             _menu.OnServerButtonPressed += () =>
             {
@@ -28,6 +30,14 @@ namespace Content.Client.Research.UI
             {
                 SendMessage(new DiskConsolePrintDiskMessage());
             };
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (!disposing)
+                return;
+            _menu?.Close();
         }
 
         protected override void UpdateState(BoundUserInterfaceState state)

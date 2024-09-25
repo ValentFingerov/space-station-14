@@ -3,11 +3,8 @@
   name: job-name-clown
   description: job-description-clown
   playTimeTracker: JobClown
-  requirements:
-  - !type:OverallPlaytimeRequirement
-      time: 90000 #25 hrs # Corvax-RoleTime
   startingGear: ClownGear
-  icon: "JobIconClown"
+  icon: "Clown"
   supervisors: job-supervisors-hop
   access:
   - Theatre
@@ -22,21 +19,19 @@
           Piercing: 4
         groups:
           Burn: 3
-    - type: SleepEmitSound
-      snore: /Audio/Voice/Misc/silly_snore.ogg
-      interval: 10
   - !type:AddImplantSpecial
     implants: [ SadTromboneImplant ]
 
 - type: startingGear
   id: ClownGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitClown
+    back: ClothingBackpackClownFilled
+    shoes: ClothingShoesClown
     mask: ClothingMaskClown
     pocket1: BikeHorn
     pocket2: ClownRecorder
     id: ClownPDA
     ears: ClothingHeadsetService
-  storage:
-    back:
-    - RubberStampClown
-    - CrayonRainbow
+  satchel: ClothingBackpackSatchelClownFilled
+  duffelbag: ClothingBackpackDuffelClownFilled

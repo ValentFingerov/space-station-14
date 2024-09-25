@@ -1,14 +1,14 @@
+using Content.Server.Administration.Managers;
 using Content.Server.DeviceNetwork;
 using Content.Server.DeviceNetwork.Components;
 using Content.Server.DeviceNetwork.Systems;
+using Content.Server.Ghost.Components;
 using Content.Server.Power.Components;
 using Content.Shared.ActionBlocker;
 using Content.Shared.DeviceNetwork;
-using Content.Shared.Power;
 using Content.Shared.SurveillanceCamera;
 using Content.Shared.Verbs;
 using Robust.Server.GameObjects;
-using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server.SurveillanceCamera;
@@ -135,14 +135,15 @@ public sealed class SurveillanceCameraRouterSystem : EntitySystem
         UpdateSetupInterface(uid, component);
     }
 
-    private void OpenSetupInterface(EntityUid uid, EntityUid player, SurveillanceCameraRouterComponent? camera = null)
+    private void OpenSetupInterface(EntityUid uid, EntityUid player, SurveillanceCameraRouterComponent? camera = null, ActorComponent? actor = null)
     {
-        if (!Resolve(uid, ref camera))
+        if (!Resolve(uid, ref camera)
+            || !Resolve(player, ref actor))
+        {
             return;
+        }
 
-        if (!_userInterface.TryOpenUi(uid, SurveillanceCameraSetupUiKey.Router, player))
-            return;
-
+        _userInterface.GetUiOrNull(uid, SurveillanceCameraSetupUiKey.Router)!.Open(actor.PlayerSession);
         UpdateSetupInterface(uid, camera);
     }
 
@@ -155,13 +156,13 @@ public sealed class SurveillanceCameraRouterSystem : EntitySystem
 
         if (router.AvailableNetworks.Count == 0 || router.SubnetFrequencyId != null)
         {
-            _userInterface.CloseUi(uid, SurveillanceCameraSetupUiKey.Router);
+            _userInterface.TryCloseAll(uid, SurveillanceCameraSetupUiKey.Router);
             return;
         }
 
         var state = new SurveillanceCameraSetupBoundUiState(router.SubnetName, deviceNet.ReceiveFrequency ?? 0,
             router.AvailableNetworks, true, router.SubnetFrequencyId != null);
-        _userInterface.SetUiState(uid, SurveillanceCameraSetupUiKey.Router, state);
+        _userInterface.TrySetUiState(uid, SurveillanceCameraSetupUiKey.Router, state);
     }
 
     private void SendHeartbeat(EntityUid uid, string origin, string destination,

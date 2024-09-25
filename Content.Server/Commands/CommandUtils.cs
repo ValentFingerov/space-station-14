@@ -1,9 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Robust.Server.Player;
 using Robust.Shared.Console;
 using Robust.Shared.Network;
-using Robust.Shared.Player;
 
 namespace Content.Server.Commands
 {
@@ -17,7 +16,7 @@ namespace Content.Server.Commands
         /// sending a failure to the performer if unable to.
         /// </summary>
         public static bool TryGetSessionByUsernameOrId(IConsoleShell shell,
-            string usernameOrId, ICommonSession performer, [NotNullWhen(true)] out ICommonSession? session)
+            string usernameOrId, IPlayerSession performer, [NotNullWhen(true)] out IPlayerSession? session)
         {
             var plyMgr = IoCManager.Resolve<IPlayerManager>();
             if (plyMgr.TryGetSessionByUsername(usernameOrId, out session)) return true;
@@ -37,7 +36,7 @@ namespace Content.Server.Commands
         /// sending a failure to the performer if unable to.
         /// </summary>
         public static bool TryGetAttachedEntityByUsernameOrId(IConsoleShell shell,
-            string usernameOrId, ICommonSession performer, out EntityUid attachedEntity)
+            string usernameOrId, IPlayerSession performer, out EntityUid attachedEntity)
         {
             attachedEntity = default;
             if (!TryGetSessionByUsernameOrId(shell, usernameOrId, performer, out var session)) return false;
@@ -55,33 +54,30 @@ namespace Content.Server.Commands
         {
             var entMan = IoCManager.Resolve<IEntityManager>();
             var transform = entMan.GetComponent<TransformComponent>(ent);
-            var transformSystem = entMan.System<SharedTransformSystem>();
-            var worldPosition = transformSystem.GetWorldPosition(transform);
 
             // gross, is there a better way to do this?
             ruleString = ruleString.Replace("$ID", ent.ToString());
             ruleString = ruleString.Replace("$WX",
-                worldPosition.X.ToString(CultureInfo.InvariantCulture));
+                transform.WorldPosition.X.ToString(CultureInfo.InvariantCulture));
             ruleString = ruleString.Replace("$WY",
-                worldPosition.Y.ToString(CultureInfo.InvariantCulture));
+                transform.WorldPosition.Y.ToString(CultureInfo.InvariantCulture));
             ruleString = ruleString.Replace("$LX",
                 transform.LocalPosition.X.ToString(CultureInfo.InvariantCulture));
             ruleString = ruleString.Replace("$LY",
                 transform.LocalPosition.Y.ToString(CultureInfo.InvariantCulture));
             ruleString = ruleString.Replace("$NAME", entMan.GetComponent<MetaDataComponent>(ent).EntityName);
 
-            if (shell.Player is { } player)
+            if (shell.Player is IPlayerSession player)
             {
                 if (player.AttachedEntity is {Valid: true} p)
                 {
                     var pTransform = entMan.GetComponent<TransformComponent>(p);
-                    var pWorldPosition = transformSystem.GetWorldPosition(pTransform);
 
                     ruleString = ruleString.Replace("$PID", ent.ToString());
                     ruleString = ruleString.Replace("$PWX",
-                        pWorldPosition.X.ToString(CultureInfo.InvariantCulture));
+                        pTransform.WorldPosition.X.ToString(CultureInfo.InvariantCulture));
                     ruleString = ruleString.Replace("$PWY",
-                        pWorldPosition.Y.ToString(CultureInfo.InvariantCulture));
+                        pTransform.WorldPosition.Y.ToString(CultureInfo.InvariantCulture));
                     ruleString = ruleString.Replace("$PLX",
                         pTransform.LocalPosition.X.ToString(CultureInfo.InvariantCulture));
                     ruleString = ruleString.Replace("$PLY",

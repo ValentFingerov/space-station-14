@@ -2,6 +2,7 @@ using Content.Shared.Chemistry.Components;
 using Content.Shared.DragDrop;
 using Content.Shared.FixedPoint;
 using Content.Shared.Fluids;
+using Content.Shared.Fluids.Components;
 
 namespace Content.Server.Fluids.EntitySystems;
 
@@ -12,33 +13,30 @@ public sealed partial class PuddleSystem
         SubscribeLocalEvent<RefillableSolutionComponent, DragDropDraggedEvent>(OnRefillableDragged);
     }
 
-    private void OnRefillableDragged(Entity<RefillableSolutionComponent> entity, ref DragDropDraggedEvent args)
+    private void OnRefillableDragged(EntityUid uid, RefillableSolutionComponent component, ref DragDropDraggedEvent args)
     {
-        if (!_solutionContainerSystem.TryGetSolution(entity.Owner, entity.Comp.Solution, out var soln, out var solution) || solution.Volume == FixedPoint2.Zero)
+        _solutionContainerSystem.TryGetSolution(uid, component.Solution, out var solution);
+
+        if (solution?.Volume == FixedPoint2.Zero)
         {
-            _popups.PopupEntity(Loc.GetString("mopping-system-empty", ("used", entity.Owner)), entity, args.User);
+            _popups.PopupEntity(Loc.GetString("mopping-system-empty", ("used", uid)), uid, args.User);
             return;
         }
 
-        // Dump reagents into DumpableSolution
-        if (TryComp<DumpableSolutionComponent>(args.Target, out var dump))
+        TryComp<DrainableSolutionComponent>(args.Target, out var drainable);
+
+        _solutionContainerSystem.TryGetDrainableSolution(args.Target, out var drainableSolution, drainable);
+
+        // Dump reagents into drain
+        if (TryComp<DrainComponent>(args.Target, out var drain) && drainable != null)
         {
-            if (!_solutionContainerSystem.TryGetDumpableSolution((args.Target, dump, null), out var dumpableSoln, out var dumpableSolution))
+            if (drainableSolution == null || solution == null)
                 return;
 
-            bool success = true;
-            if (dump.Unlimited)
-            {
-                var split = _solutionContainerSystem.SplitSolution(soln.Value, solution.Volume);
-                dumpableSolution.AddSolution(split, _prototypeManager);
-            }
-            else
-            {
-                var split = _solutionContainerSystem.SplitSolution(soln.Value, dumpableSolution.AvailableVolume);
-                success = _solutionContainerSystem.TryAddSolution(dumpableSoln.Value, split);
-            }
+            var split = _solutionContainerSystem.SplitSolution(uid, solution, drainableSolution.AvailableVolume);
 
-            if (success)
+            // TODO: Drane refactor
+            if (_solutionContainerSystem.TryAddSolution(args.Target, drainableSolution, split))
             {
                 _audio.PlayPvs(AbsorbentComponent.DefaultTransferSound, args.Target);
             }
@@ -51,20 +49,20 @@ public sealed partial class PuddleSystem
         }
 
         // Take reagents from target
-        if (!TryComp<DrainableSolutionComponent>(args.Target, out var drainable))
+        if (drainable != null)
         {
-            if (!_solutionContainerSystem.TryGetDrainableSolution((args.Target, drainable, null), out var drainableSolution, out _))
+            if (drainableSolution == null || solution == null)
                 return;
 
-            var split = _solutionContainerSystem.SplitSolution(drainableSolution.Value, solution.AvailableVolume);
+            var split = _solutionContainerSystem.SplitSolution(args.Target, drainableSolution, solution.AvailableVolume);
 
-            if (_solutionContainerSystem.TryAddSolution(soln.Value, split))
+            if (_solutionContainerSystem.TryAddSolution(uid, solution, split))
             {
-                _audio.PlayPvs(AbsorbentComponent.DefaultTransferSound, entity);
+                _audio.PlayPvs(AbsorbentComponent.DefaultTransferSound, uid);
             }
             else
             {
-                _popups.PopupEntity(Loc.GetString("mopping-system-full", ("used", entity.Owner)), entity, args.User);
+                _popups.PopupEntity(Loc.GetString("mopping-system-full", ("used", uid)), uid, args.User);
             }
         }
     }

@@ -197,11 +197,11 @@
               doAfter: 0.5
 
 - type: constructionGraph
-  id: ParticleAcceleratorEmitterPort
+  id: ParticleAcceleratorEmitterLeft
   start: start
   graph:
     - node: start
-      entity: ParticleAcceleratorEmitterPortUnfinished
+      entity: ParticleAcceleratorEmitterLeftUnfinished
       actions:
       - !type:AppearanceChange
       edges:
@@ -213,7 +213,7 @@
               doAfter: 0.5
 
     - node: wired
-      entity: ParticleAcceleratorEmitterPortUnfinished
+      entity: ParticleAcceleratorEmitterLeftUnfinished
       actions:
       - !type:AppearanceChange
       edges:
@@ -236,7 +236,7 @@
               doAfter: 0.5
 
     - node: completed
-      entity: ParticleAcceleratorEmitterPort
+      entity: ParticleAcceleratorEmitterLeft
       edges:
         - to: wired
           conditions:
@@ -246,11 +246,11 @@
               doAfter: 0.5
 
 - type: constructionGraph
-  id: ParticleAcceleratorEmitterFore
+  id: ParticleAcceleratorEmitterCenter
   start: start
   graph:
     - node: start
-      entity: ParticleAcceleratorEmitterForeUnfinished
+      entity: ParticleAcceleratorEmitterCenterUnfinished
       actions:
       - !type:AppearanceChange
       edges:
@@ -262,7 +262,7 @@
               doAfter: 0.5
 
     - node: wired
-      entity: ParticleAcceleratorEmitterForeUnfinished
+      entity: ParticleAcceleratorEmitterCenterUnfinished
       actions:
       - !type:AppearanceChange
       edges:
@@ -285,7 +285,7 @@
               doAfter: 0.5
 
     - node: completed
-      entity: ParticleAcceleratorEmitterFore
+      entity: ParticleAcceleratorEmitterCenter
       edges:
         - to: wired
           conditions:
@@ -295,11 +295,11 @@
               doAfter: 0.5
 
 - type: constructionGraph
-  id: ParticleAcceleratorEmitterStarboard
+  id: ParticleAcceleratorEmitterRight
   start: start
   graph:
     - node: start
-      entity: ParticleAcceleratorEmitterStarboardUnfinished
+      entity: ParticleAcceleratorEmitterRightUnfinished
       actions:
       - !type:AppearanceChange
       edges:
@@ -311,7 +311,7 @@
               doAfter: 0.5
 
     - node: wired
-      entity: ParticleAcceleratorEmitterStarboardUnfinished
+      entity: ParticleAcceleratorEmitterRightUnfinished
       actions:
       - !type:AppearanceChange
       edges:
@@ -334,7 +334,7 @@
               doAfter: 0.5
 
     - node: completed
-      entity: ParticleAcceleratorEmitterStarboard
+      entity: ParticleAcceleratorEmitterRight
       edges:
         - to: wired
           conditions:

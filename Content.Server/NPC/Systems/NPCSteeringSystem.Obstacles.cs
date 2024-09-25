@@ -1,17 +1,13 @@
 using Content.Server.Destructible;
 using Content.Server.NPC.Components;
 using Content.Server.NPC.Pathfinding;
-using Content.Shared.Climbing;
 using Content.Shared.CombatMode;
 using Content.Shared.DoAfter;
 using Content.Shared.Doors.Components;
 using Content.Shared.NPC;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Utility;
-using ClimbableComponent = Content.Shared.Climbing.Components.ClimbableComponent;
-using ClimbingComponent = Content.Shared.Climbing.Components.ClimbingComponent;
 
 namespace Content.Server.NPC.Systems;
 
@@ -37,7 +33,7 @@ public sealed partial class NPCSteeringSystem
      */
 
 
-    private SteeringObstacleStatus TryHandleFlags(EntityUid uid, NPCSteeringComponent component, PathPoly poly)
+    private SteeringObstacleStatus TryHandleFlags(EntityUid uid, NPCSteeringComponent component, PathPoly poly, EntityQuery<PhysicsComponent> bodyQuery)
     {
         DebugTools.Assert(!poly.Data.IsFreeSpace);
         // TODO: Store PathFlags on the steering comp
@@ -75,10 +71,9 @@ public sealed partial class NPCSteeringSystem
 
             var obstacleEnts = new List<EntityUid>();
 
-            GetObstacleEntities(poly, mask, layer, obstacleEnts);
+            GetObstacleEntities(poly, mask, layer, bodyQuery, obstacleEnts);
             var isDoor = (poly.Data.Flags & PathfindingBreadcrumbFlag.Door) != 0x0;
             var isAccessRequired = (poly.Data.Flags & PathfindingBreadcrumbFlag.Access) != 0x0;
-            var isClimbable = (poly.Data.Flags & PathfindingBreadcrumbFlag.Climb) != 0x0;
 
             // Just walk into it stupid
             if (isDoor && !isAccessRequired)
@@ -116,7 +111,7 @@ public sealed partial class NPCSteeringSystem
                         // TODO: Use the verb.
 
                         if (door.State != DoorState.Opening)
-                            _pryingSystem.TryPry(ent, uid, out id, uid);
+                            _doors.TryPryDoor(ent, uid, uid, door, out id, force: true);
 
                         component.DoAfterId = id;
                         return SteeringObstacleStatus.Continuing;
@@ -126,65 +121,28 @@ public sealed partial class NPCSteeringSystem
                 if (obstacleEnts.Count == 0)
                     return SteeringObstacleStatus.Completed;
             }
-            // Try climbing obstacles
-            else if ((component.Flags & PathFlags.Climbing) != 0x0 && isClimbable)
-            {
-                if (TryComp<ClimbingComponent>(uid, out var climbing))
-                {
-                    if (climbing.IsClimbing)
-                    {
-                        return SteeringObstacleStatus.Completed;
-                    }
-                    else if (climbing.NextTransition != null)
-                    {
-                        return SteeringObstacleStatus.Continuing;
-                    }
-
-                    var climbableQuery = GetEntityQuery<ClimbableComponent>();
-
-                    // Get the relevant obstacle
-                    foreach (var ent in obstacleEnts)
-                    {
-                        if (climbableQuery.TryGetComponent(ent, out var table) &&
-                            _climb.CanVault(table, uid, uid, out _) &&
-                            _climb.TryClimb(uid, uid, ent, out id, table, climbing))
-                        {
-                            component.DoAfterId = id;
-                            return SteeringObstacleStatus.Continuing;
-                        }
-                    }
-                }
-
-                if (obstacleEnts.Count == 0)
-                    return SteeringObstacleStatus.Completed;
-            }
             // Try smashing obstacles.
             else if ((component.Flags & PathFlags.Smashing) != 0x0)
             {
-                if (_melee.TryGetWeapon(uid, out _, out var meleeWeapon) && meleeWeapon.NextAttack <= _timing.CurTime && TryComp<CombatModeComponent>(uid, out var combatMode))
+                if (_melee.TryGetWeapon(uid, out var meleeUid, out var meleeWeapon) && meleeWeapon.NextAttack <= _timing.CurTime && TryComp<CombatModeComponent>(uid, out var combatMode))
                 {
                     _combat.SetInCombatMode(uid, true, combatMode);
                     var destructibleQuery = GetEntityQuery<DestructibleComponent>();
 
                     // TODO: This is a hack around grilles and windows.
                     _random.Shuffle(obstacleEnts);
-                    var attackResult = false;
 
                     foreach (var ent in obstacleEnts)
                     {
                         // TODO: Validate we can damage it
                         if (destructibleQuery.HasComponent(ent))
                         {
-                            attackResult = _melee.AttemptLightAttack(uid, uid, meleeWeapon, ent);
+                            _melee.AttemptLightAttack(uid, uid, meleeWeapon, ent);
                             break;
                         }
                     }
 
                     _combat.SetInCombatMode(uid, false, combatMode);
-
-                    // Blocked or the likes?
-                    if (!attackResult)
-                        return SteeringObstacleStatus.Failed;
 
                     if (obstacleEnts.Count == 0)
                         return SteeringObstacleStatus.Completed;
@@ -199,17 +157,18 @@ public sealed partial class NPCSteeringSystem
         return SteeringObstacleStatus.Completed;
     }
 
-    private void GetObstacleEntities(PathPoly poly, int mask, int layer, List<EntityUid> ents)
+    private void GetObstacleEntities(PathPoly poly, int mask, int layer, EntityQuery<PhysicsComponent> bodyQuery,
+        List<EntityUid> ents)
     {
         // TODO: Can probably re-use this from pathfinding or something
-        if (!TryComp<MapGridComponent>(poly.GraphUid, out var grid))
+        if (!_mapManager.TryGetGrid(poly.GraphUid, out var grid))
         {
             return;
         }
 
-        foreach (var ent in _mapSystem.GetLocalAnchoredEntities(poly.GraphUid, grid, poly.Box))
+        foreach (var ent in grid.GetLocalAnchoredEntities(poly.Box))
         {
-            if (!_physicsQuery.TryGetComponent(ent, out var body) ||
+            if (!bodyQuery.TryGetComponent(ent, out var body) ||
                 !body.Hard ||
                 !body.CanCollide ||
                 (body.CollisionMask & layer) == 0x0 && (body.CollisionLayer & mask) == 0x0)

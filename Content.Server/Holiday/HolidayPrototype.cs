@@ -1,3 +1,4 @@
+using Content.Server.Holiday.Celebrate;
 using Content.Server.Holiday.Greet;
 using Content.Server.Holiday.Interfaces;
 using Content.Server.Holiday.ShouldCelebrate;
@@ -6,13 +7,13 @@ using Robust.Shared.Prototypes;
 namespace Content.Server.Holiday
 {
     [Prototype("holiday")]
-    public sealed partial class HolidayPrototype : IPrototype
+    public sealed class HolidayPrototype : IPrototype
     {
         [DataField("name")] public string Name { get; private set; } = string.Empty;
 
         [ViewVariables]
         [IdDataField]
-        public string ID { get; private set; } = default!;
+        public string ID { get; } = default!;
 
         [DataField("beginDay")]
         public byte BeginDay { get; set; } = 1;
@@ -33,13 +34,13 @@ namespace Content.Server.Holiday
         public Month EndMonth { get; set; } = Month.Invalid;
 
         [DataField("shouldCelebrate")]
-        private IHolidayShouldCelebrate _shouldCelebrate = new DefaultHolidayShouldCelebrate();
+        private readonly IHolidayShouldCelebrate _shouldCelebrate = new DefaultHolidayShouldCelebrate();
 
         [DataField("greet")]
-        private IHolidayGreet _greet = new DefaultHolidayGreet();
+        private readonly IHolidayGreet _greet = new DefaultHolidayGreet();
 
         [DataField("celebrate")]
-        private IHolidayCelebrate? _celebrate = null;
+        private readonly IHolidayCelebrate _celebrate = new DefaultHolidayCelebrate();
 
         public bool ShouldCelebrate(DateTime date)
         {
@@ -56,7 +57,7 @@ namespace Content.Server.Holiday
         /// </summary>
         public void Celebrate()
         {
-            _celebrate?.Celebrate(this);
+            _celebrate.Celebrate(this);
         }
     }
 }

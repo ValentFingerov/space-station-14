@@ -1,6 +1,6 @@
-using Content.Shared.Mind;
+using Content.Server.Mind.Components;
+using Content.Server.Roles;
 using Content.Shared.Roles;
-using Content.Shared.Roles.Jobs;
 using Content.Shared.Store;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.Set;
 
@@ -10,7 +10,7 @@ namespace Content.Server.Store.Conditions;
 /// Allows a store entry to be filtered out based on the user's job.
 /// Supports both blacklists and whitelists
 /// </summary>
-public sealed partial class BuyerJobCondition : ListingCondition
+public sealed class BuyerJobCondition : ListingCondition
 {
     /// <summary>
     /// A whitelist of jobs prototypes that can purchase this listing. Only one needs to be found.
@@ -27,24 +27,34 @@ public sealed partial class BuyerJobCondition : ListingCondition
     public override bool Condition(ListingConditionArgs args)
     {
         var ent = args.EntityManager;
-        var minds = ent.System<SharedMindSystem>();
 
-        // this is for things like surplus crate
-        if (!minds.TryGetMind(args.Buyer, out var mindId, out _))
-            return true;
-
-        var jobs = ent.System<SharedJobSystem>();
-        jobs.MindTryGetJob(mindId, out var job, out _);
+        if (!ent.TryGetComponent<MindComponent>(args.Buyer, out var mind) || mind.Mind == null)
+            return true; //this is for things like surplus crate
 
         if (Blacklist != null)
         {
-            if (job?.Prototype != null && Blacklist.Contains(job.Prototype))
-                return false;
+            foreach (var role in mind.Mind.AllRoles)
+            {
+                if (role is not Job job)
+                    continue;
+
+                if (Blacklist.Contains(job.Prototype.ID))
+                    return false;
+            }
         }
 
         if (Whitelist != null)
         {
-            if (job?.Prototype == null || !Whitelist.Contains(job.Prototype))
+            var found = false;
+            foreach (var role in mind.Mind.AllRoles)
+            {
+                if (role is not Job job)
+                    continue;
+
+                if (Whitelist.Contains(job.Prototype.ID))
+                    found = true;
+            }
+            if (!found)
                 return false;
         }
 

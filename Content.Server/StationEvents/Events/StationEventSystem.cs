@@ -1,26 +1,35 @@
 using Content.Server.Administration.Logs;
+using Content.Server.Atmos.EntitySystems;
 using Content.Server.Chat.Systems;
-using Content.Server.GameTicking;
 using Content.Server.GameTicking.Rules;
+using Content.Server.GameTicking.Rules.Components;
+using Content.Server.Station.Components;
 using Content.Server.Station.Systems;
 using Content.Server.StationEvents.Components;
 using Content.Shared.Database;
-using Content.Shared.GameTicking.Components;
-using Robust.Shared.Audio.Systems;
+using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
+using Robust.Shared.Random;
+using Robust.Shared.Timing;
 
 namespace Content.Server.StationEvents.Events;
 
 /// <summary>
 ///     An abstract entity system inherited by all station events for their behavior.
 /// </summary>
-public abstract class StationEventSystem<T> : GameRuleSystem<T> where T : IComponent
+public abstract class StationEventSystem<T> : GameRuleSystem<T> where T : Component
 {
     [Dependency] protected readonly IAdminLogManager AdminLogManager = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] protected readonly IMapManager MapManager = default!;
     [Dependency] protected readonly IPrototypeManager PrototypeManager = default!;
+    [Dependency] protected readonly IRobustRandom RobustRandom = default!;
+    [Dependency] private readonly AtmosphereSystem _atmosphere = default!;
     [Dependency] protected readonly ChatSystem ChatSystem = default!;
     [Dependency] protected readonly SharedAudioSystem Audio = default!;
+    [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] protected readonly StationSystem StationSystem = default!;
 
     protected ISawmill Sawmill = default!;
@@ -42,13 +51,13 @@ public abstract class StationEventSystem<T> : GameRuleSystem<T> where T : ICompo
 
         AdminLogManager.Add(LogType.EventAnnounced, $"Event added / announced: {ToPrettyString(uid)}");
 
-        // we don't want to send to players who aren't in game (i.e. in the lobby)
-        Filter allPlayersInGame = Filter.Empty().AddWhere(GameTicker.UserHasJoinedGame);
-
         if (stationEvent.StartAnnouncement != null)
-            ChatSystem.DispatchFilteredAnnouncement(allPlayersInGame, Loc.GetString(stationEvent.StartAnnouncement), playSound: false, colorOverride: stationEvent.StartAnnouncementColor);
+        {
+            ChatSystem.DispatchGlobalAnnouncement(Loc.GetString(stationEvent.StartAnnouncement), playSound: false, colorOverride: Color.Gold);
+        }
 
-        Audio.PlayGlobal(stationEvent.StartAudio, allPlayersInGame, true);
+        Audio.PlayGlobal(stationEvent.StartAudio, Filter.Broadcast(), true);
+        stationEvent.StartTime = _timing.CurTime + stationEvent.StartDelay;
     }
 
     /// <inheritdoc/>
@@ -67,7 +76,7 @@ public abstract class StationEventSystem<T> : GameRuleSystem<T> where T : ICompo
                 ? stationEvent.Duration
                 : TimeSpan.FromSeconds(RobustRandom.NextDouble(stationEvent.Duration.Value.TotalSeconds,
                     stationEvent.MaxDuration.Value.TotalSeconds));
-            stationEvent.EndTime = Timing.CurTime + duration;
+            stationEvent.EndTime = _timing.CurTime + duration;
         }
     }
 
@@ -81,13 +90,12 @@ public abstract class StationEventSystem<T> : GameRuleSystem<T> where T : ICompo
 
         AdminLogManager.Add(LogType.EventStopped, $"Event ended: {ToPrettyString(uid)}");
 
-        // we don't want to send to players who aren't in game (i.e. in the lobby)
-        Filter allPlayersInGame = Filter.Empty().AddWhere(GameTicker.UserHasJoinedGame);
-
         if (stationEvent.EndAnnouncement != null)
-            ChatSystem.DispatchFilteredAnnouncement(allPlayersInGame, Loc.GetString(stationEvent.EndAnnouncement), playSound: false, colorOverride: stationEvent.EndAnnouncementColor);
+        {
+            ChatSystem.DispatchGlobalAnnouncement(Loc.GetString(stationEvent.EndAnnouncement), playSound: false, colorOverride: Color.Gold);
+        }
 
-        Audio.PlayGlobal(stationEvent.EndAudio, allPlayersInGame, true);
+        Audio.PlayGlobal(stationEvent.EndAudio, Filter.Broadcast(), true);
     }
 
     /// <summary>
@@ -105,14 +113,91 @@ public abstract class StationEventSystem<T> : GameRuleSystem<T> where T : ICompo
             if (!GameTicker.IsGameRuleAdded(uid, ruleData))
                 continue;
 
-            if (!GameTicker.IsGameRuleActive(uid, ruleData) && !HasComp<DelayedStartRuleComponent>(uid))
+            if (!GameTicker.IsGameRuleActive(uid, ruleData) && _timing.CurTime >= stationEvent.StartTime)
             {
                 GameTicker.StartGameRule(uid, ruleData);
             }
-            else if (stationEvent.EndTime != null && Timing.CurTime >= stationEvent.EndTime && GameTicker.IsGameRuleActive(uid, ruleData))
+            else if (stationEvent.EndTime != null && _timing.CurTime >= stationEvent.EndTime && GameTicker.IsGameRuleActive(uid, ruleData))
             {
                 GameTicker.EndGameRule(uid, ruleData);
             }
         }
     }
+
+    #region Helper Functions
+
+    protected void ForceEndSelf(EntityUid uid, GameRuleComponent? component = null)
+    {
+        GameTicker.EndGameRule(uid, component);
+    }
+
+    protected bool TryFindRandomTile(out Vector2i tile, out EntityUid targetStation, out EntityUid targetGrid, out EntityCoordinates targetCoords)
+    {
+        tile = default;
+
+        targetCoords = EntityCoordinates.Invalid;
+        if (StationSystem.Stations.Count == 0)
+        {
+            targetStation = EntityUid.Invalid;
+            targetGrid = EntityUid.Invalid;
+            return false;
+        }
+        targetStation = RobustRandom.Pick(StationSystem.Stations);
+        var possibleTargets = Comp<StationDataComponent>(targetStation).Grids;
+        if (possibleTargets.Count == 0)
+        {
+            targetGrid = EntityUid.Invalid;
+            return false;
+        }
+
+        targetGrid = RobustRandom.Pick(possibleTargets);
+
+        if (!TryComp<MapGridComponent>(targetGrid, out var gridComp))
+            return false;
+
+        var found = false;
+        var (gridPos, _, gridMatrix) = _transform.GetWorldPositionRotationMatrix(targetGrid);
+        var gridBounds = gridMatrix.TransformBox(gridComp.LocalAABB);
+
+        for (var i = 0; i < 10; i++)
+        {
+            var randomX = RobustRandom.Next((int) gridBounds.Left, (int) gridBounds.Right);
+            var randomY = RobustRandom.Next((int) gridBounds.Bottom, (int) gridBounds.Top);
+
+            tile = new Vector2i(randomX - (int) gridPos.X, randomY - (int) gridPos.Y);
+            if (_atmosphere.IsTileSpace(targetGrid, Transform(targetGrid).MapUid, tile,
+                    mapGridComp: gridComp)
+                || _atmosphere.IsTileAirBlocked(targetGrid, tile, mapGridComp: gridComp))
+            {
+                continue;
+            }
+
+            found = true;
+            targetCoords = gridComp.GridTileToLocal(tile);
+            break;
+        }
+
+        return found;
+    }
+    public float GetSeverityModifier()
+    {
+        var ev = new GetSeverityModifierEvent();
+        RaiseLocalEvent(ev);
+        return ev.Modifier;
+    }
+
+    #endregion
+}
+
+/// <summary>
+///     Raised broadcast to determine what the severity modifier should be for an event, some positive number that can be multiplied with various things.
+///     Handled by usually other game rules (like the ramping scheduler).
+///     Most events should try and make use of this if possible.
+/// </summary>
+public sealed class GetSeverityModifierEvent : EntityEventArgs
+{
+    /// <summary>
+    ///     Should be multiplied/added to rather than set, for commutativity.
+    /// </summary>
+    public float Modifier = 1.0f;
 }

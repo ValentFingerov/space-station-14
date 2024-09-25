@@ -6,9 +6,9 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Medical
-      time: 7200 #2 hrs # Corvax-RoleTime
+      time: 7200 # Corvax-RoleTime
   startingGear: DoctorGear
-  icon: "JobIconMedicalDoctor"
+  icon: "MedicalDoctor"
   supervisors: job-supervisors-cmo
   access:
   - Medical
@@ -19,8 +19,13 @@
 - type: startingGear
   id: DoctorGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitMedicalDoctor
+    back: ClothingBackpackMedicalFilled
+    shoes: ClothingShoesColorWhite
+    outerClothing: ClothingOuterCoatLab
+    id: MedicalPDA
     ears: ClothingHeadsetMedical
     belt: ClothingBeltMedicalFilled
-  #storage:
-    #back:
-    #- Stuff
+  innerclothingskirt: ClothingUniformJumpskirtMedicalDoctor
+  satchel: ClothingBackpackSatchelMedicalFilled
+  duffelbag: ClothingBackpackDuffelMedicalFilled

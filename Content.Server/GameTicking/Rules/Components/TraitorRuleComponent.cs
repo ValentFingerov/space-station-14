@@ -1,72 +1,32 @@
-using Content.Shared.Dataset;
-﻿using Content.Shared.NPC.Prototypes;
-using Content.Shared.Random;
+﻿using Content.Server.Traitor;
+using Content.Shared.Preferences;
 using Content.Shared.Roles;
+using Robust.Server.Player;
 using Robust.Shared.Audio;
-using Robust.Shared.Prototypes;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Server.GameTicking.Rules.Components;
 
 [RegisterComponent, Access(typeof(TraitorRuleSystem))]
-public sealed partial class TraitorRuleComponent : Component
+public sealed class TraitorRuleComponent : Component
 {
-    public readonly List<EntityUid> TraitorMinds = new();
+    public readonly SoundSpecifier AddedSound = new SoundPathSpecifier("/Audio/Misc/tatoralert.ogg");
+    public List<TraitorRole> Traitors = new();
 
-    [DataField]
-    public ProtoId<AntagPrototype> TraitorPrototypeId = "Traitor";
+    [DataField("traitorPrototypeId", customTypeSerializer: typeof(PrototypeIdSerializer<AntagPrototype>))]
+    public string TraitorPrototypeId = "Traitor";
 
-    [DataField]
-    public ProtoId<NpcFactionPrototype> NanoTrasenFaction = "NanoTrasen";
-
-    [DataField]
-    public ProtoId<NpcFactionPrototype> SyndicateFaction = "Syndicate";
-
-    [DataField]
-    public ProtoId<DatasetPrototype> CodewordAdjectives = "adjectives";
-
-    [DataField]
-    public ProtoId<DatasetPrototype> CodewordVerbs = "verbs";
-
-    [DataField]
-    public ProtoId<DatasetPrototype> ObjectiveIssuers = "TraitorCorporations";
-
-    public int TotalTraitors => TraitorMinds.Count;
+    public int TotalTraitors => Traitors.Count;
     public string[] Codewords = new string[3];
 
     public enum SelectionState
     {
         WaitingForSpawn = 0,
-        ReadyToStart = 1,
-        Started = 2,
+        ReadyToSelect = 1,
+        SelectionMade = 2,
     }
 
-    /// <summary>
-    /// Current state of the rule
-    /// </summary>
     public SelectionState SelectionStatus = SelectionState.WaitingForSpawn;
-
-    /// <summary>
-    /// When should traitors be selected and the announcement made
-    /// </summary>
-    [DataField(customTypeSerializer: typeof(TimeOffsetSerializer)), ViewVariables(VVAccess.ReadWrite)]
-    public TimeSpan? AnnounceAt;
-
-    /// <summary>
-    ///     Path to antagonist alert sound.
-    /// </summary>
-    [DataField]
-    public SoundSpecifier GreetSoundNotification = new SoundPathSpecifier("/Audio/Ambience/Antag/traitor_start.ogg");
-
-    /// <summary>
-    /// The amount of codewords that are selected.
-    /// </summary>
-    [DataField]
-    public int CodewordCount = 4;
-
-    /// <summary>
-    /// The amount of TC traitors start with.
-    /// </summary>
-    [DataField]
-    public int StartingBalance = 20;
+    public TimeSpan AnnounceAt = TimeSpan.Zero;
+    public Dictionary<IPlayerSession, HumanoidCharacterProfile> StartCandidates = new();
 }

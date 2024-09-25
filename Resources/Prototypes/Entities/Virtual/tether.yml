@@ -1,10 +1,9 @@
 - type: entity
   id: TetherEntity
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Physics
     bodyType: Dynamic
-    sleepingAllowed: false
   - type: Fixtures
     fixtures:
       tether:

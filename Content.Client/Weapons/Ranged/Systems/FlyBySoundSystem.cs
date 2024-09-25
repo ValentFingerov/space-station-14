@@ -2,8 +2,6 @@ using Content.Shared.Projectiles;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Systems;
 using Robust.Client.Player;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Physics.Events;
 using Robust.Shared.Player;
 using Robust.Shared.Random;
@@ -24,7 +22,7 @@ public sealed class FlyBySoundSystem : SharedFlyBySoundSystem
 
     private void OnCollide(EntityUid uid, FlyBySoundComponent component, ref StartCollideEvent args)
     {
-        var attachedEnt = _player.LocalEntity;
+        var attachedEnt = _player.LocalPlayer?.ControlledEntity;
 
         // If it's not our ent or we shot it.
         if (attachedEnt == null ||
@@ -35,7 +33,7 @@ public sealed class FlyBySoundSystem : SharedFlyBySoundSystem
             return;
         }
 
-        if (args.OurFixtureId != FlyByFixture ||
+        if (args.OurFixture.ID != FlyByFixture ||
             !_random.Prob(component.Prob))
         {
             return;

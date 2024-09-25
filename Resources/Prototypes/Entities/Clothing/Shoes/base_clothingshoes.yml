@@ -8,22 +8,6 @@
     - FEET
   - type: Sprite
     state: icon
-  - type: Item
-    size: Normal
-  - type: Food
-    requiresSpecialDigestion: true
-  - type: SolutionContainerManager
-    solutions:
-      food:
-        maxVol: 10
-        reagents:
-        - ReagentId: Fiber
-          Quantity: 10
-  - type: Tag
-    tags:
-    - ClothMade
-    - WhitelistChameleon
-  - type: ProtectedFromStepTriggers
 
 - type: entity
   abstract: true
@@ -36,38 +20,18 @@
     - id: MaterialCloth1
       amount: 1
 
-# stuff common to all military boots
 - type: entity
   abstract: true
-  parent: [ClothingShoesBase, ClothingSlotBase]
-  id: ClothingShoesMilitaryBase
+  parent: ClothingShoesBase
+  id: ClothingShoesStorageBase
   components:
-  - type: Matchbox
-  - type: ItemSlots
-    slots:
-      item:
-        name: clothing-boots-sidearm
-        whitelist:
-          tags:
-          - Knife
-          - Sidearm
-
-- type: entity
-  abstract: true
-  id: ClothingShoesBootsSecFilled
-  suffix: Filled
-  components:
-  - type: ContainerFill
+  - type: Storage
+    capacity: 10
+  - type: ContainerContainer
     containers:
-      item:
-      - CombatKnife
-
-- type: entity
-  abstract: true
-  parent: ClothingShoesBaseButcherable
-  id: ClothingShoesBaseWinterBoots
-  description: Fluffy boots to help survive even the coldest of winters.
-  components:
-  - type: TemperatureProtection
-    heatingCoefficient: 1.025
-    coolingCoefficient: 0.5
+      storagebase: !type:Container
+        ents: []
+  - type: UserInterface
+    interfaces:
+    - key: enum.StorageUiKey.Key
+      type: StorageBoundUserInterface

@@ -2,14 +2,14 @@
 - type: entity
   id: BaseMagazineRifle
   name: "magazine (.20 rifle)"
-  parent: [ BaseItem, BaseRestrictedContraband ]
+  parent: BaseItem
   abstract: true
   components:
   - type: Tag
     tags:
       - MagazineRifle
   - type: Item
-    size: Small
+    size: 5
   - type: BallisticAmmoProvider
     mayTransfer: true
     whitelist:
@@ -20,6 +20,7 @@
     containers:
       ballistic-ammo: !type:Container
   - type: Sprite
+    netsync: false
     sprite: Objects/Weapons/Guns/Ammunition/Magazine/Rifle/rifle_mag.rsi
     layers:
     - state: base
@@ -48,25 +49,18 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazineRifleEmpty
-  name: "magazine (.20 rifle any)"
-  suffix: empty
-  parent: MagazineRifle
+  id: MagazineRifleHighVelocity
+  name: "magazine (.20 rifle high-velocity)"
+  parent: BaseMagazineRifle
   components:
   - type: BallisticAmmoProvider
-    proto: null
+    proto: CartridgeRifleHighVelocity
   - type: Sprite
     layers:
-    - state: base
+    - state: high_velocity
       map: ["enum.GunVisualLayers.Base"]
-
-- type: entity
-  id: MagazineRifleIncendiary
-  name: "magazine (.20 rifle incendiary)"
-  parent: MagazineRifle
-  components:
-  - type: BallisticAmmoProvider
-    proto: CartridgeRifleIncendiary
+    - state: mag-1
+      map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
   id: MagazineRiflePractice
@@ -83,15 +77,15 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazineRifleUranium
-  name: "magazine (.20 rifle uranium)"
+  id: MagazineRifleRubber
+  name: "magazine (.20 rifle rubber)"
   parent: BaseMagazineRifle
   components:
   - type: BallisticAmmoProvider
-    proto: CartridgeRifleUranium
+    proto: CartridgeRifleRubber
   - type: Sprite
     layers:
-    - state: uranium
+    - state: rubber
       map: ["enum.GunVisualLayers.Base"]
     - state: mag-1
       map: ["enum.GunVisualLayers.Mag"]

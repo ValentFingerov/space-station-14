@@ -1,4 +1,4 @@
-# Utility effects permanently modify the entity in some way when triggered, and they generally make it 'useful' for some purpose,
+﻿# Utility effects permanently modify the entity in some way when triggered, and they generally make it 'useful' for some purpose,
 # like turning the artifact into a tool, or gun, or whatever.
 - type: artifactEffect
   id: EffectIntercom
@@ -7,15 +7,7 @@
   permanentComponents:
   - type: RadioMicrophone
     powerRequired: false
-    toggleOnInteract: false
     listenRange: 3
-  - type: Speech
-  - type: RadioSpeaker
-    toggleOnInteract: false
-  - type: ActivatableUI
-    key: enum.IntercomUiKey.Key
-  - type: Intercom
-    requiresPower: false
     supportedChannels:
     - Common
     - CentCom
@@ -26,6 +18,7 @@
     - Security
     - Service
     - Supply
+    - Syndicate
 
 - type: artifactEffect
   id: EffectRandomInstrument
@@ -47,16 +40,12 @@
     components:
     - Item # it doesnt necessarily have to be restricted from structures, but i think it'll be better that way
   permanentComponents:
-  - type: Item
-    size: Huge
   - type: ContainerContainer
     containers:
       storagebase: !type:Container
         ents: [ ]
   - type: Storage
-    maxItemSize: Huge
-    grid:
-    - 0,0,10,5
+    capacity: 50
 
 - type: artifactEffect
   id: EffectPhasing
@@ -106,19 +95,8 @@
   - type: SolutionTransfer
     canChangeTransferAmount: true
   - type: Drink
+    isOpen: true
     solution: beaker
-
-- type: artifactEffect
-  id: EffectSpeedUp
-  targetDepth: 2
-  effectHint: artifact-effect-hint-displacement
-  whitelist:
-    components:
-    - Item
-  permanentComponents:
-  - type: HeldSpeedModifier
-    walkModifier: 1.2
-    sprintModifier: 1.3
 
 - type: artifactEffect
   id: EffectDrill
@@ -128,7 +106,13 @@
     components:
     - Item
   permanentComponents:
-  - type: UseDelay
+  - type: GatheringTool
+    damage:
+      types:
+        Structural: 125
+    gatheringTime: 0.50
+    MaxGatheringEntities: 3
+  - type: ItemCooldown
   - type: MeleeWeapon
     damage:
       types:
@@ -137,6 +121,7 @@
     soundHit:
       path: /Audio/Weapons/bladeslice.ogg
   - type: Sharp
+
 
 - type: artifactEffect
   id: EffectPowerGen20K
@@ -148,12 +133,6 @@
   permanentComponents:
   - type: PowerSupplier
     supplyRate: 20000
-  - type: NodeContainer
-    examinable: true
-    nodes:
-      output_hv:
-        !type:CableDeviceNode
-        nodeGroupID: HVPower
 
 - type: artifactEffect
   id: EffectBigIron
@@ -197,11 +176,10 @@
     allowMovement: true
     allowSpeech: true
     makeSentient: true
-    name: ghost-role-information-artifact-name
-    description: ghost-role-information-artifact-description
-    rules: ghost-role-information-freeagent-rules
-    raffle:
-      settings: default
+    name: sentient artifact
+    description: |
+      Enact your eldritch whims.
+      Forcibly activate your nodes for good or for evil.
   - type: GhostTakeoverAvailable
   - type: MovementSpeedModifier
     baseWalkSpeed: 0.25
@@ -215,15 +193,16 @@
     components:
     - Item
   permanentComponents:
+  - type: TilePrying
   - type: UserInterface
     interfaces:
-        enum.SignalLinkerUiKey.Key:
-          type: SignalPortSelectorBoundUserInterface
-  - type: ToolTileCompatible
+      - key: enum.SignalLinkerUiKey.Key
+        type: SignalPortSelectorBoundUserInterface
+  - type: LatticeCutting
   - type: Tool
     qualities:
     - Screwing
-    speedModifier: 2 # Very powerful multitool to balance out the desire to sell or scrap for points
+    speed: 2 # Very powerful multitool to balance out the desire to sell or scrap for points
     useSound: /Audio/Items/drill_use.ogg
   - type: Tag
     tags:

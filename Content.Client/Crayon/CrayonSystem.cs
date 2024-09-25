@@ -18,7 +18,7 @@ public sealed class CrayonSystem : SharedCrayonSystem
     {
         base.Initialize();
         SubscribeLocalEvent<CrayonComponent, ComponentHandleState>(OnCrayonHandleState);
-        Subs.ItemStatus<CrayonComponent>(ent => new StatusControl(ent));
+        SubscribeLocalEvent<CrayonComponent, ItemStatusCollectMessage>(OnCrayonItemStatus);
     }
 
     private static void OnCrayonHandleState(EntityUid uid, CrayonComponent component, ref ComponentHandleState args)
@@ -31,6 +31,11 @@ public sealed class CrayonSystem : SharedCrayonSystem
         component.Capacity = state.Capacity;
 
         component.UIUpdateNeeded = true;
+    }
+
+    private static void OnCrayonItemStatus(EntityUid uid, CrayonComponent component, ItemStatusCollectMessage args)
+    {
+        args.Controls.Add(new StatusControl(component));
     }
 
     private sealed class StatusControl : Control
@@ -57,7 +62,7 @@ public sealed class CrayonSystem : SharedCrayonSystem
             }
 
             _parent.UIUpdateNeeded = false;
-            _label.SetMarkup(Robust.Shared.Localization.Loc.GetString("crayon-drawing-label",
+            _label.SetMarkup(Loc.GetString("crayon-drawing-label",
                 ("color",_parent.Color),
                 ("state",_parent.SelectedState),
                 ("charges", _parent.Charges),

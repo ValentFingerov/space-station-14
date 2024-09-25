@@ -35,7 +35,7 @@ namespace Content.Client.Shuttles.Systems
         protected override void HandlePilotShutdown(EntityUid uid, PilotComponent component, ComponentShutdown args)
         {
             base.HandlePilotShutdown(uid, component, args);
-            if (_playerManager.LocalEntity != uid) return;
+            if (_playerManager.LocalPlayer?.ControlledEntity != uid) return;
 
             _input.Contexts.SetActiveContext("human");
         }
@@ -44,22 +44,21 @@ namespace Content.Client.Shuttles.Systems
         {
             if (args.Current is not PilotComponentState state) return;
 
-            var console = EnsureEntity<PilotComponent>(state.Console, uid);
-
-            if (console == null)
+            var console = state.Console.GetValueOrDefault();
+            if (!console.IsValid())
             {
                 component.Console = null;
                 _input.Contexts.SetActiveContext("human");
                 return;
             }
 
-            if (!HasComp<ShuttleConsoleComponent>(console))
+            if (!TryComp<ShuttleConsoleComponent>(console, out var shuttleConsoleComponent))
             {
-                Log.Warning($"Unable to set Helmsman console to {console}");
+                Logger.Warning($"Unable to set Helmsman console to {console}");
                 return;
             }
 
-            component.Console = console;
+            component.Console = shuttleConsoleComponent;
             ActionBlockerSystem.UpdateCanMove(uid);
             _input.Contexts.SetActiveContext("shuttle");
         }

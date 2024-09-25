@@ -1,5 +1,5 @@
-using Content.Server.Explosion.EntitySystems;
-using Robust.Shared.Player;
+﻿using Content.Server.Explosion.EntitySystems;
+using Robust.Server.GameObjects;
 
 namespace Content.Server.GhostKick;
 
@@ -18,7 +18,7 @@ public sealed class GhostKickUserOnTriggerSystem : EntitySystem
             return;
 
         _ghostKickManager.DoDisconnect(
-            actor.PlayerSession.Channel,
+            actor.PlayerSession.ConnectedClient,
             "Tripped over a kick mine, crashed through the fourth wall");
 
         args.Handled = true;

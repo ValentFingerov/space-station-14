@@ -1,7 +1,7 @@
 - type: entity
   id: BaseSpeedLoaderPistol
   name: "speed loader (.35 auto)"
-  parent: [ BaseItem, BaseRestrictedContraband ]
+  parent: BaseItem
   abstract: true
   components:
   - type: Tag
@@ -14,6 +14,7 @@
         - CartridgePistol
     capacity: 6
   - type: Sprite
+    netsync: false
     sprite: Objects/Weapons/Guns/Ammunition/SpeedLoaders/Pistol/pistol_speed_loader.rsi
   - type: ContainerContainer
     containers:
@@ -40,6 +41,25 @@
   - type: Appearance
 
 - type: entity
+  id: SpeedLoaderPistolHighVelocity
+  name: "speed loader (.35 auto high-velocity)"
+  parent: BaseSpeedLoaderPistol
+  components:
+  - type: BallisticAmmoProvider
+    proto: CartridgePistolHighVelocity
+  - type: Sprite
+    layers:
+    - state: base
+      map: ["enum.GunVisualLayers.Base"]
+    - state: high-velocity-6
+      map: ["enum.GunVisualLayers.Mag"]
+  - type: MagazineVisuals
+    magState: high-velocity
+    steps: 7
+    zeroVisible: false
+  - type: Appearance
+
+- type: entity
   id: SpeedLoaderPistolPractice
   name: "speed loader (.35 auto practice)"
   parent: BaseSpeedLoaderPistol
@@ -54,6 +74,25 @@
       map: ["enum.GunVisualLayers.Mag"]
   - type: MagazineVisuals
     magState: practice
+    steps: 7
+    zeroVisible: false
+  - type: Appearance
+
+- type: entity
+  id: SpeedLoaderPistolRubber
+  name: "speed loader (.35 auto rubber)"
+  parent: BaseSpeedLoaderPistol
+  components:
+  - type: BallisticAmmoProvider
+    proto: CartridgePistolRubber
+  - type: Sprite
+    layers:
+    - state: base
+      map: ["enum.GunVisualLayers.Base"]
+    - state: rubber-6
+      map: ["enum.GunVisualLayers.Mag"]
+  - type: MagazineVisuals
+    magState: rubber
     steps: 7
     zeroVisible: false
   - type: Appearance

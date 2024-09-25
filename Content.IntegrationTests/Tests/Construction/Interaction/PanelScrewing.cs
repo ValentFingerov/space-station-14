@@ -1,7 +1,7 @@
-using System.Linq;
+using System.Threading.Tasks;
 using Content.IntegrationTests.Tests.Interaction;
-using Content.Shared.DoAfter;
 using Content.Shared.Wires;
+using NUnit.Framework;
 
 namespace Content.IntegrationTests.Tests.Construction.Interaction;
 
@@ -19,21 +19,21 @@ public sealed class PanelScrewing : InteractionTest
 
         // Open & close panel
         Assert.That(comp.Open, Is.False);
-        await InteractUsing(Screw);
+        await Interact(Screw);
         Assert.That(comp.Open, Is.True);
-        await InteractUsing(Screw);
+        await Interact(Screw);
         Assert.That(comp.Open, Is.False);
 
         // Interrupted DoAfters
-        await InteractUsing(Screw, awaitDoAfters: false);
+        await Interact(Screw, awaitDoAfters: false);
         await CancelDoAfters();
         Assert.That(comp.Open, Is.False);
-        await InteractUsing(Screw);
+        await Interact(Screw);
         Assert.That(comp.Open, Is.True);
-        await InteractUsing(Screw, awaitDoAfters: false);
+        await Interact(Screw, awaitDoAfters: false);
         await CancelDoAfters();
         Assert.That(comp.Open, Is.True);
-        await InteractUsing(Screw);
+        await Interact(Screw);
         Assert.That(comp.Open, Is.False);
     }
 }

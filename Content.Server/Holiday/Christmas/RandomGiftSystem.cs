@@ -1,11 +1,9 @@
-using Content.Server.Administration.Logs;
+﻿using Content.Server.Administration.Logs;
 using Content.Server.Hands.Systems;
 using Content.Shared.Database;
 using Content.Shared.Examine;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Item;
-using Content.Shared.Whitelist;
-using Robust.Server.Audio;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Physics.Components;
@@ -25,7 +23,6 @@ public sealed class RandomGiftSystem : EntitySystem
     [Dependency] private readonly IPrototypeManager _prototype = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IAdminLogManager _adminLogger = default!;
-    [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
 
     private readonly List<string> _possibleGiftsSafe = new();
     private readonly List<string> _possibleGiftsUnsafe = new();
@@ -33,7 +30,7 @@ public sealed class RandomGiftSystem : EntitySystem
     /// <inheritdoc/>
     public override void Initialize()
     {
-        SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnPrototypesReloaded);
+        _prototype.PrototypesReloaded += OnPrototypesReloaded;
         SubscribeLocalEvent<RandomGiftComponent, MapInitEvent>(OnGiftMapInit);
         SubscribeLocalEvent<RandomGiftComponent, UseInHandEvent>(OnUseInHand);
         SubscribeLocalEvent<RandomGiftComponent, ExaminedEvent>(OnExamined);
@@ -42,11 +39,12 @@ public sealed class RandomGiftSystem : EntitySystem
 
     private void OnExamined(EntityUid uid, RandomGiftComponent component, ExaminedEvent args)
     {
-        if (_whitelistSystem.IsWhitelistFail(component.ContentsViewers, args.Examiner) || component.SelectedEntity is null)
+        if (!component.ContentsViewers.IsValid(args.Examiner, EntityManager) || component.SelectedEntity is null)
             return;
 
         var name = _prototype.Index<EntityPrototype>(component.SelectedEntity).Name;
-        args.PushText(Loc.GetString("gift-packin-contains", ("name", name)));
+        args.Message.PushNewline();
+        args.Message.AddText(Loc.GetString("gift-packin-contains", ("name", name)));
     }
 
     private void OnUseInHand(EntityUid uid, RandomGiftComponent component, UseInHandEvent args)
@@ -59,7 +57,7 @@ public sealed class RandomGiftSystem : EntitySystem
 
         var coords = Transform(args.User).Coordinates;
         var handsEnt = Spawn(component.SelectedEntity, coords);
-        _adminLogger.Add(LogType.EntitySpawn, LogImpact.Low, $"{ToPrettyString(args.User)} used {ToPrettyString(uid)} which spawned {ToPrettyString(handsEnt)}");
+        _adminLogger.Add(LogType.EntitySpawn, LogImpact.Low, $"{ToPrettyString(args.User)} used {ToPrettyString(component.Owner)} which spawned {ToPrettyString(handsEnt)}");
         EnsureComp<ItemComponent>(handsEnt); // For insane mode.
         if (component.Wrapper is not null)
             Spawn(component.Wrapper, coords);
@@ -81,8 +79,7 @@ public sealed class RandomGiftSystem : EntitySystem
 
     private void OnPrototypesReloaded(PrototypesReloadedEventArgs obj)
     {
-        if (obj.WasModified<EntityPrototype>())
-            BuildIndex();
+        BuildIndex();
     }
 
     private void BuildIndex()
@@ -95,7 +92,7 @@ public sealed class RandomGiftSystem : EntitySystem
 
         foreach (var proto in _prototype.EnumeratePrototypes<EntityPrototype>())
         {
-            if (proto.Abstract || proto.HideSpawnMenu || proto.Components.ContainsKey(mapGridCompName) || !proto.Components.ContainsKey(physicsCompName))
+            if (proto.Abstract || proto.NoSpawn || proto.Components.ContainsKey(mapGridCompName) || !proto.Components.ContainsKey(physicsCompName))
                 continue;
 
             _possibleGiftsUnsafe.Add(proto.ID);

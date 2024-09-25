@@ -4,7 +4,7 @@
   description: job-description-psychologist
   playTimeTracker: JobPsychologist
   startingGear: PsychologistGear
-  icon: "JobIconPsychologist"
+  icon: "Psychologist"
   supervisors: job-supervisors-cmo
   access:
   - Medical
@@ -15,10 +15,11 @@
 - type: startingGear
   id: PsychologistGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitPsychologist
+    back: ClothingBackpackMedicalFilled
     shoes: ClothingShoesLeather
     id: PsychologistPDA
     ears: ClothingHeadsetMedical
-  storage:
-    back:
-#    - BoxSurvivalMedical
-    - RubberStampPsychologist # Corvax-MRP
+  innerclothingskirt: ClothingUniformJumpskirtPsychologist # Corvax-Resprite
+  satchel: ClothingBackpackSatchelMedicalFilled
+  duffelbag: ClothingBackpackDuffelMedicalFilled

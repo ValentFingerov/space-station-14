@@ -5,33 +5,40 @@ using Robust.Shared.Serialization;
 namespace Content.Shared.Dice;
 
 [RegisterComponent, NetworkedComponent, Access(typeof(SharedDiceSystem))]
-[AutoGenerateComponentState(true)]
-public sealed partial class DiceComponent : Component
+public sealed class DiceComponent : Component
 {
-    [DataField]
-    public SoundSpecifier Sound { get; private set; } = new SoundCollectionSpecifier("Dice");
+    [DataField("sound")]
+    public SoundSpecifier Sound { get; } = new SoundCollectionSpecifier("Dice");
 
     /// <summary>
     ///     Multiplier for the value  of a die. Applied after the <see cref="Offset"/>.
     /// </summary>
-    [DataField]
-    public int Multiplier { get; private set; } = 1;
+    [DataField("multiplier")]
+    public int Multiplier { get; } = 1;
 
     /// <summary>
     ///     Quantity that is subtracted from the value of a die. Can be used to make dice that start at "0". Applied
     ///     before the <see cref="Multiplier"/>
     /// </summary>
-    [DataField]
-    public int Offset { get; private set; } = 0;
+    [DataField("offset")]
+    public int Offset { get; } = 0;
 
-    [DataField]
-    public int Sides { get; private set; } = 20;
+    [DataField("sides")]
+    public int Sides { get; } = 20;
 
     /// <summary>
     ///     The currently displayed value.
     /// </summary>
-    [DataField]
-    [AutoNetworkedField]
+    [DataField("currentValue")]
     public int CurrentValue { get; set; } = 20;
 
+    [Serializable, NetSerializable]
+    public sealed class DiceState : ComponentState
+    {
+        public readonly int CurrentValue;
+        public DiceState(int value)
+        {
+            CurrentValue = value;
+        }
+    }
 }

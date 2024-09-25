@@ -9,6 +9,7 @@
       tags: [] # ignore "WhitelistChameleon" tag
     - type: Sprite
       sprite: Clothing/Eyes/Glasses/sunglasses.rsi
+      netsync: false
     - type: Clothing
       sprite: Clothing/Eyes/Glasses/sunglasses.rsi
     - type: ChameleonClothing
@@ -16,21 +17,5 @@
       default: ClothingEyesGlassesSunglasses
     - type: UserInterface
       interfaces:
-        enum.ChameleonUiKey.Key:
+        - key: enum.ChameleonUiKey.Key
           type: ChameleonBoundUserInterface
-# Corvax-HiddenDesc-Start
-    - type: HiddenDescription 
-      entries:
-      - label: corvax-hidden-desc-Chameleon-syndicate
-        whitelistMind:
-          components:
-            - TraitorRole
-            - NukeOperative
-      - label: corvax-hidden-desc-Chameleon-research
-        jobRequired:
-          - ResearchAssistant
-          - ResearchDirector
-          - Scientist
-          - Borg
-# Corvax-HiddenDesc-End
-

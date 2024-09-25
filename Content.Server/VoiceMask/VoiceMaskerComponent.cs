@@ -1,23 +1,14 @@
-using Content.Shared.Speech;
-using Robust.Shared.Prototypes;
+using Content.Shared.Actions.ActionTypes;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Server.VoiceMask;
 
 [RegisterComponent]
-public sealed partial class VoiceMaskerComponent : Component
+public sealed class VoiceMaskerComponent : Component
 {
-    [DataField]
-    public string LastSetName = "Unknown";
+    [ViewVariables(VVAccess.ReadWrite)] public string LastSetName = "Unknown";
+    [ViewVariables(VVAccess.ReadWrite)] public string? LastSetVoice; // Corvax-TTS
 
-    [DataField]
-    public ProtoId<SpeechVerbPrototype>? LastSpeechVerb;
-
-    [DataField]
-    public string? LastSetVoice; // Corvax-TTS
-
-    [DataField]
-    public EntProtoId Action = "ActionChangeVoiceMask";
-
-    [DataField]
-    public EntityUid? ActionEntity;
+    [DataField("action", customTypeSerializer: typeof(PrototypeIdSerializer<InstantActionPrototype>))]
+    public string Action = "ChangeVoiceMask";
 }

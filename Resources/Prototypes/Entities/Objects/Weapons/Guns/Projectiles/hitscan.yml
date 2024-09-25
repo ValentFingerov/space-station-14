@@ -1,11 +1,10 @@
 # Used to animate the hitscan effects because effectsystem doesn't support it
 - type: entity
   id: HitscanEffect
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: TimedDespawn
-    lifetime: 2.0
   - type: Sprite
+    netsync: false
     drawdepth: Effects
     layers:
     - shader: unshaded
@@ -35,7 +34,7 @@
   id: RedLaserPractice
   damage:
     types:
-      Heat: 1
+      Heat: 0
   muzzleFlash:
     sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_laser
@@ -51,21 +50,6 @@
   damage:
     types:
       Heat: 17
-  muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: muzzle_laser
-  travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: beam
-  impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: impact_laser
-
-- type: hitscan
-  id: RedLightLaser
-  damage:
-    types:
-      Heat: 7
   muzzleFlash:
     sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: muzzle_laser
@@ -121,20 +105,3 @@
   impactFlash:
     sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
     state: impact_blue
-
-- type: hitscan
-  id: RedShuttleLaser
-  maxLength: 60
-  damage:
-    types:
-      Heat: 45
-      Structural: 10
-  muzzleFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: muzzle_beam_heavy2
-  travelFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: beam_heavy2
-  impactFlash:
-    sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
-    state: impact_beam_heavy2

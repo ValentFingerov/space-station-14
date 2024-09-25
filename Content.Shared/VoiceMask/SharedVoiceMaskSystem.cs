@@ -11,14 +11,12 @@ public enum VoiceMaskUIKey : byte
 [Serializable, NetSerializable]
 public sealed class VoiceMaskBuiState : BoundUserInterfaceState
 {
-    public readonly string Name;
-    public readonly string? Verb;
-    public readonly string Voice; // Corvax-TTS
+    public string Name { get; }
+    public string Voice { get; } // Corvax-TTS
 
-    public VoiceMaskBuiState(string name, string voice, string? verb)
+    public VoiceMaskBuiState(string name, string voice)  // Corvax-TTS
     {
         Name = name;
-        Verb = verb;
         Voice = voice;  // Corvax-TTS
     }
 }
@@ -26,24 +24,10 @@ public sealed class VoiceMaskBuiState : BoundUserInterfaceState
 [Serializable, NetSerializable]
 public sealed class VoiceMaskChangeNameMessage : BoundUserInterfaceMessage
 {
-    public readonly string Name;
+    public string Name { get; }
 
     public VoiceMaskChangeNameMessage(string name)
     {
         Name = name;
-    }
-}
-
-/// <summary>
-/// Change the speech verb prototype to override, or null to use the user's verb.
-/// </summary>
-[Serializable, NetSerializable]
-public sealed class VoiceMaskChangeVerbMessage : BoundUserInterfaceMessage
-{
-    public readonly string? Verb;
-
-    public VoiceMaskChangeVerbMessage(string? verb)
-    {
-        Verb = verb;
     }
 }

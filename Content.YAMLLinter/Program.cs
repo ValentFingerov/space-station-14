@@ -1,34 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Content.IntegrationTests;
+using Content.Shared.CCVar;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Reflection;
 using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
-using Robust.UnitTesting;
 
 namespace Content.YAMLLinter
 {
     internal static class Program
     {
-        private static async Task<int> Main(string[] _)
+        private static async Task<int> Main(string[] args)
         {
-            PoolManager.Startup();
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var (errors, fieldErrors) = await RunValidation();
+            var errors = await RunValidation();
 
-            var count = errors.Count + fieldErrors.Count;
-
-            if (count == 0)
+            if (errors.Count == 0)
             {
                 Console.WriteLine($"No errors found in {(int) stopwatch.Elapsed.TotalMilliseconds} ms.");
-                PoolManager.Shutdown();
                 return 0;
             }
 
@@ -40,152 +34,80 @@ namespace Content.YAMLLinter
                 }
             }
 
-            foreach (var error in fieldErrors)
-            {
-                Console.WriteLine(error);
-            }
-
-            Console.WriteLine($"{count} errors found in {(int) stopwatch.Elapsed.TotalMilliseconds} ms.");
-            PoolManager.Shutdown();
+            Console.WriteLine($"{errors.Count} errors found in {(int) stopwatch.Elapsed.TotalMilliseconds} ms.");
             return -1;
         }
 
-        private static async Task<(Dictionary<string, HashSet<ErrorNode>> YamlErrors, List<string> FieldErrors)>
-            ValidateClient()
+        private static async Task<Dictionary<string, HashSet<ErrorNode>>> ValidateClient()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var client = pair.Client;
-            var result = await ValidateInstance(client);
-            await pair.CleanReturnAsync();
-            return result;
-        }
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{DummyTicker = true, Disconnected = true});
+            var client = pairTracker.Pair.Client;
 
-        private static async Task<(Dictionary<string, HashSet<ErrorNode>> YamlErrors, List<string> FieldErrors)>
-            ValidateServer()
-        {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
-            var result = await ValidateInstance(server);
-            await pair.CleanReturnAsync();
-            return result;
-        }
+            var cPrototypeManager = client.ResolveDependency<IPrototypeManager>();
+            var clientErrors = new Dictionary<string, HashSet<ErrorNode>>();
 
-        private static async Task<(Dictionary<string, HashSet<ErrorNode>>, List<string>)> ValidateInstance(
-            RobustIntegrationTest.IntegrationInstance instance)
-        {
-            var protoMan = instance.ResolveDependency<IPrototypeManager>();
-            Dictionary<string, HashSet<ErrorNode>> yamlErrors = default!;
-            List<string> fieldErrors = default!;
-
-            await instance.WaitPost(() =>
+            await client.WaitPost(() =>
             {
-                var engineErrors = protoMan.ValidateDirectory(new ResPath("/EnginePrototypes"), out var engPrototypes);
-                yamlErrors = protoMan.ValidateDirectory(new ResPath("/Prototypes"), out var prototypes);
-
-                // Merge engine & content prototypes
-                foreach (var (kind, instances) in engPrototypes)
-                {
-                    if (prototypes.TryGetValue(kind, out var existing))
-                        existing.UnionWith(instances);
-                    else
-                        prototypes[kind] = instances;
-                }
-
-                foreach (var (kind, set) in engineErrors)
-                {
-                    if (yamlErrors.TryGetValue(kind, out var existing))
-                        existing.UnionWith(set);
-                    else
-                        yamlErrors[kind] = set;
-                }
-
-                fieldErrors = protoMan.ValidateStaticFields(prototypes);
+                clientErrors = cPrototypeManager.ValidateDirectory(new ResPath("/Prototypes"));
             });
 
-            return (yamlErrors, fieldErrors);
+            await pairTracker.CleanReturnAsync();
+
+            return clientErrors;
         }
 
-        public static async Task<(Dictionary<string, HashSet<ErrorNode>> YamlErrors, List<string> FieldErrors)>
-            RunValidation()
+        private static async Task<Dictionary<string, HashSet<ErrorNode>>> ValidateServer()
         {
-            var (clientAssemblies, serverAssemblies) = await GetClientServerAssemblies();
-            var serverTypes = serverAssemblies.SelectMany(n => n.GetTypes()).Select(t => t.Name).ToHashSet();
-            var clientTypes = clientAssemblies.SelectMany(n => n.GetTypes()).Select(t => t.Name).ToHashSet();
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{DummyTicker = true, Disconnected = true});
+            var server = pairTracker.Pair.Server;
 
-            var yamlErrors = new Dictionary<string, HashSet<ErrorNode>>();
+            var sPrototypeManager = server.ResolveDependency<IPrototypeManager>();
+            var serverErrors = new Dictionary<string, HashSet<ErrorNode>>();
+
+            await server.WaitPost(() =>
+            {
+                serverErrors = sPrototypeManager.ValidateDirectory(new ResPath("/Prototypes"));
+            });
+
+            await pairTracker.CleanReturnAsync();
+
+            return serverErrors;
+        }
+
+        public static async Task<Dictionary<string, HashSet<ErrorNode>>> RunValidation()
+        {
+            var allErrors = new Dictionary<string, HashSet<ErrorNode>>();
 
             var serverErrors = await ValidateServer();
             var clientErrors = await ValidateClient();
 
-            foreach (var (key, val) in serverErrors.YamlErrors)
+            foreach (var (key, val) in serverErrors)
             {
                 // Include all server errors marked as always relevant
                 var newErrors = val.Where(n => n.AlwaysRelevant).ToHashSet();
 
                 // We include sometimes-relevant errors if they exist both for the client & server
-                if (clientErrors.YamlErrors.TryGetValue(key, out var clientVal))
+                if (clientErrors.TryGetValue(key, out var clientVal))
                     newErrors.UnionWith(val.Intersect(clientVal));
 
-                // Include any errors that relate to server-only types
-                foreach (var errorNode in val)
-                {
-                    if (errorNode is FieldNotFoundErrorNode fieldNotFoundNode && !clientTypes.Contains(fieldNotFoundNode.FieldType.Name))
-                    {
-                        newErrors.Add(errorNode);
-                    }
-                }
-
                 if (newErrors.Count != 0)
-                    yamlErrors[key] = newErrors;
+                    allErrors[key] = newErrors;
             }
 
-            // Next add any always-relevant client errors.
-            foreach (var (key, val) in clientErrors.YamlErrors)
+            // Finally add any always-relevant client errors.
+            foreach (var (key, val) in clientErrors)
             {
                 var newErrors = val.Where(n => n.AlwaysRelevant).ToHashSet();
                 if (newErrors.Count == 0)
                     continue;
 
-                if (yamlErrors.TryGetValue(key, out var errors))
+                if (allErrors.TryGetValue(key, out var errors))
                     errors.UnionWith(val.Where(n => n.AlwaysRelevant));
                 else
-                    yamlErrors[key] = newErrors;
-
-                // Include any errors that relate to client-only types
-                foreach (var errorNode in val)
-                {
-                    if (errorNode is FieldNotFoundErrorNode fieldNotFoundNode && !serverTypes.Contains(fieldNotFoundNode.FieldType.Name))
-                    {
-                        newErrors.Add(errorNode);
-                    }
-                }
+                    allErrors[key] = newErrors;
             }
 
-            // Finally, combine the prototype ID field errors.
-            var fieldErrors = serverErrors.FieldErrors
-                .Concat(clientErrors.FieldErrors)
-                .Distinct()
-                .ToList();
-
-            return (yamlErrors, fieldErrors);
-        }
-
-        private static async Task<(Assembly[] clientAssemblies, Assembly[] serverAssemblies)>
-            GetClientServerAssemblies()
-        {
-            await using var pair = await PoolManager.GetServerClient();
-
-            var result = (GetAssemblies(pair.Client), GetAssemblies(pair.Server));
-
-            await pair.CleanReturnAsync();
-
-            return result;
-
-            Assembly[] GetAssemblies(RobustIntegrationTest.IntegrationInstance instance)
-            {
-                var refl = instance.ResolveDependency<IReflectionManager>();
-                return refl.Assemblies.ToArray();
-            }
+            return allErrors;
         }
     }
 }

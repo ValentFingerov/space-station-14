@@ -1,4 +1,3 @@
-using Content.Shared.Chemistry.Components;
 using Content.Shared.FixedPoint;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
@@ -9,17 +8,14 @@ namespace Content.Shared.Fluids.Components
     /// Puddle on a floor
     /// </summary>
     [RegisterComponent, NetworkedComponent, Access(typeof(SharedPuddleSystem))]
-    public sealed partial class PuddleComponent : Component
+    public sealed class PuddleComponent : Component
     {
-        [DataField]
+        [DataField("spillSound")]
         public SoundSpecifier SpillSound = new SoundPathSpecifier("/Audio/Effects/Fluids/splat.ogg");
 
-        [DataField]
+        [DataField("overflowVolume")]
         public FixedPoint2 OverflowVolume = FixedPoint2.New(20);
 
         [DataField("solution")] public string SolutionName = "puddle";
-
-        [DataField("solutionRef")]
-        public Entity<SolutionComponent>? Solution;
     }
 }

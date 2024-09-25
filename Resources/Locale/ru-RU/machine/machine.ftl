@@ -1,4 +1,4 @@
-machine-insert-item = { CAPITALIZE($user) } помещает { $item } в { $machine }.
+machine-insert-item = { $user } помещает { $item } в { $machine }.
 machine-upgrade-examinable-verb-text = Улучшения
 machine-upgrade-examinable-verb-message = Узнайте, какие параметры устройства были улучшены.
 machine-upgrade-increased-by-percentage = Параметр [color=yellow]{ $upgraded }[/color] увеличен на { $percent }%.
@@ -9,9 +9,10 @@ machine-upgrade-not-upgraded = Параметр [color=yellow]{ $upgraded }[/col
 machine-part-name-capacitor = Конденсатор
 machine-part-name-manipulator = Манипулятор
 machine-part-name-matter-bin = Ёмкость материи
-machine-part-name-power-cell = Батарея
-two-way-lever-left = сдвинуть рычаг влево
-two-way-lever-right = сдвинуть рычаг вправо
+upgrade-power-draw = потребление энергии
+upgrade-max-charge = максимальный запас энергии
+upgrade-power-supply = производство энергии
+two-way-lever-left = Вы сдвигаете рычаг влево
+two-way-lever-right = Вы сдвигаете рычаг вправо
 two-way-lever-cant = Рычаг не может быть сдвинут в эту сторону!
 recycler-count-items = Переработано объектов: { $items }.
-machine-already-in-use = { CAPITALIZE($machine) } уже используется.

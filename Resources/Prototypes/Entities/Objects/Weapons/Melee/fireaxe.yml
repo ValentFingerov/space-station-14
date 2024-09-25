@@ -1,6 +1,6 @@
 - type: entity
   name: fireaxe
-  parent: [BaseItem, BaseEngineeringContraband]
+  parent: BaseItem
   id: FireAxe
   description: Truly, the weapon of a madman. Who would think to fight fire with an axe?
   components:
@@ -8,31 +8,26 @@
     tags:
     - FireAxe
   - type: Sharp
-  - type: Execution
-    doAfterDuration: 4.0
   - type: Sprite
     sprite: Objects/Weapons/Melee/fireaxe.rsi
     state: icon
   - type: MeleeWeapon
-    wideAnimationRotation: 135
-    swingLeft: true
     attackRate: 0.75
     damage:
       types:
         # axes are kinda like sharp hammers, you know?
         Blunt: 5
-        Slash: 10
-        Structural: 10
-    soundHit:
-      collection: MetalThud
+        Slash: 13
+        Structural: 7
   - type: Wieldable
   - type: IncreaseDamageOnWield
     damage:
       types:
-        Slash: 10
-        Structural: 40
+        Blunt: 2.5
+        Slash: 10.5
+        Structural: 60
   - type: Item
-    size: Ginormous
+    size: 150
   - type: Clothing
     sprite: Objects/Weapons/Melee/fireaxe.rsi
     quickEquip: false
@@ -41,23 +36,14 @@
   - type: Tool
     qualities:
       - Prying
-  - type: ToolTileCompatible
-  - type: Prying
-  - type: UseDelay
-    delay: 1
-  - type: StealTarget
-    stealGroup: FireAxe
-  - type: IgniteOnMeleeHit
-    fireStacks: -4
+  - type: TilePrying
 
 - type: entity
   id: FireAxeFlaming
   name: fire axe
-  parent: [BaseSyndicateContraband, FireAxe]
-  description: Why fight fire with an axe when you can fight with fire and axe? Now featuring rugged rubberized handle!
+  parent: FireAxe
+  description: Why fight fire with an axe when you can fight with fire and axe?
   components:
-  - type: MeleeWeapon
-    wideAnimationRotation: 90
   - type: IgniteOnMeleeHit
     fireStacks: 1
   - type: Sprite
@@ -68,18 +54,3 @@
     quickEquip: false
     slots:
     - back
-# Corvax-HiddenDesc-Start
-  - type: HiddenDescription
-    entries:
-    - label: corvax-hidden-desc-FireAxeFlaming-syndicate
-      whitelistMind:
-        components:
-          - TraitorRole
-          - NukeOperative
-    - label: corvax-hidden-desc-FireAxeFlaming-research
-      jobRequired:
-        - ResearchAssistant
-        - ResearchDirector
-        - Scientist
-        - Borg
-# Corvax-HiddenDesc-End

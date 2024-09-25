@@ -1,6 +1,7 @@
 using Content.Shared.Humanoid;
 using Content.Shared.Humanoid.Markings;
-using Robust.Client.UserInterface;
+using Robust.Client.GameObjects;
+using static Content.Shared.Humanoid.HumanoidAppearanceState;
 
 namespace Content.Client.Humanoid;
 
@@ -10,18 +11,18 @@ namespace Content.Client.Humanoid;
 
 public sealed class HumanoidMarkingModifierBoundUserInterface : BoundUserInterface
 {
-    [ViewVariables]
-    private HumanoidMarkingModifierWindow? _window;
-
-    public HumanoidMarkingModifierBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    public HumanoidMarkingModifierBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
     {
     }
+
+    private HumanoidMarkingModifierWindow? _window;
 
     protected override void Open()
     {
         base.Open();
 
-        _window = this.CreateWindow<HumanoidMarkingModifierWindow>();
+        _window = new();
+        _window.OnClose += Close;
         _window.OnMarkingAdded += SendMarkingSet;
         _window.OnMarkingRemoved += SendMarkingSet;
         _window.OnMarkingColorChange += SendMarkingSetNoResend;
@@ -40,7 +41,7 @@ public sealed class HumanoidMarkingModifierBoundUserInterface : BoundUserInterfa
             return;
         }
 
-        _window.SetState(cast.MarkingSet, cast.Species, cast.Sex, cast.SkinColor, cast.CustomBaseLayers);
+        _window.SetState(cast.MarkingSet, cast.Species, cast.SkinColor, cast.CustomBaseLayers);
     }
 
     private void SendMarkingSet(MarkingSet set)

@@ -2,6 +2,7 @@
 using Content.Server.Administration.Managers;
 using Content.Server.Afk;
 using Content.Shared.Administration;
+using Robust.Server.Player;
 using Robust.Shared.Console;
 using Robust.Shared.Utility;
 
@@ -19,16 +20,6 @@ public sealed class AdminWhoCommand : IConsoleCommand
         var adminMgr = IoCManager.Resolve<IAdminManager>();
         var afk = IoCManager.Resolve<IAfkManager>();
 
-        var seeStealth = true;
-
-        // If null it (hopefully) means it is being called from the console.
-        if (shell.Player != null)
-        {
-            var playerData = adminMgr.GetAdminData(shell.Player);
-
-            seeStealth = playerData != null && playerData.CanStealth();
-        }
-
         var sb = new StringBuilder();
         var first = true;
         foreach (var admin in adminMgr.ActiveAdmins)
@@ -40,17 +31,11 @@ public sealed class AdminWhoCommand : IConsoleCommand
             var adminData = adminMgr.GetAdminData(admin)!;
             DebugTools.AssertNotNull(adminData);
 
-            if (adminData.Stealth && !seeStealth)
-                continue;
-
             sb.Append(admin.Name);
             if (adminData.Title is { } title)
                 sb.Append($": [{title}]");
 
-            if (adminData.Stealth)
-                sb.Append(" (S)");
-
-            if (shell.Player is { } player && adminMgr.HasAdminFlag(player, AdminFlags.Admin))
+            if (shell.Player is IPlayerSession player && adminMgr.HasAdminFlag(player, AdminFlags.Admin))
             {
                 if (afk.IsAfk(admin))
                     sb.Append(" [AFK]");

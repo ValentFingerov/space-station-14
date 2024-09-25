@@ -1,7 +1,7 @@
 - type: entity
   id: Emitter
   name: emitter
-  parent: SmallConstructibleMachine
+  parent: ConstructibleMachine
   description: A heavy duty industrial laser. Shoots non-stop when turned on.
   placement:
     mode: SnapgridCenter
@@ -25,16 +25,17 @@
     anchored: true
   - type: Sprite
     sprite: Structures/Power/Generation/Singularity/emitter.rsi
+    netsync: false
     layers:
     - state: emitter # Corvax-Resprite
     - state: beam
       shader: unshaded
       visible: false
       map: ["enum.EmitterVisualLayers.Lights"]
-    - state: unlocked # Corvax-Resprite
+    - state: unlock # Corvax-Resprite
       shader: unshaded
-      # visible: false # Corvax-Resprite
-      map: ["enum.LockVisualLayers.Lock"]
+#      visible: false # Corvax-Resprite
+      map: ["enum.StorageVisualLayers.Lock"]
   - type: Emitter
   - type: Gun
     showExamineText: false
@@ -53,8 +54,8 @@
         !type:CableDeviceNode
         nodeGroupID: MVPower
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
+    damageContainer: Inorganic
+    damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
       - trigger:
@@ -69,7 +70,7 @@
         behaviors:
         - !type:PlaySoundBehavior
           sound:
-            collection: MetalBreak
+            path: /Audio/Effects/metalbreak.ogg
         - !type:SpawnEntitiesBehavior
           spawn:
             SheetSteel1:
@@ -83,22 +84,9 @@
   - type: Appearance
   - type: Lock
     locked: false
-  - type: LockVisuals
-  - type: LockedAnchorable
-  - type: LockedWiresPanel
   - type: AccessReader
     access: [[ "Engineering" ]]
   - type: Machine
     board: EmitterCircuitboard
   - type: GuideHelp
     guides: [ Singularity, Power ]
-  - type: DeviceNetwork
-    deviceNetId: Wireless
-    receiveFrequencyId: BasicDevice
-  - type: WirelessNetworkConnection
-    range: 200
-  - type: DeviceLinkSink
-    ports:
-      - On
-      - Off
-      - Toggle

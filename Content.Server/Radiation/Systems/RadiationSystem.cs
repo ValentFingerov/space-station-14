@@ -1,5 +1,4 @@
 ﻿using Content.Server.Radiation.Components;
-using Content.Shared.Radiation.Components;
 using Content.Shared.Radiation.Events;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
@@ -21,6 +20,12 @@ public sealed partial class RadiationSystem : EntitySystem
         InitRadBlocking();
     }
 
+    public override void Shutdown()
+    {
+        base.Shutdown();
+        UnsubscribeCvars();
+    }
+
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
@@ -38,14 +43,6 @@ public sealed partial class RadiationSystem : EntitySystem
     {
         var msg = new OnIrradiatedEvent(time, radsPerSecond);
         RaiseLocalEvent(uid, msg);
-    }
-
-    public void SetSourceEnabled(Entity<RadiationSourceComponent?> entity, bool val)
-    {
-        if (!Resolve(entity, ref entity.Comp, false))
-            return;
-
-        entity.Comp.Enabled = val;
     }
 
     /// <summary>

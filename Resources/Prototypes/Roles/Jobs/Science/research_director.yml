@@ -6,14 +6,12 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Science
-      time: 54000 #15 hrs # Corvax-RoleTime
+      time: 54000 # Corvax-RoleTime
 #    - !type:OverallPlaytimeRequirement
-#      time: 144000 #40 hrs
-    - !type:AgeRequirement
-      requiredAge: 21
+#      time: 108000
   weight: 10
   startingGear: ResearchDirectorGear
-  icon: "JobIconResearchDirector"
+  icon: "ResearchDirector"
   requireAdminNotify: true
   supervisors: job-supervisors-captain
   canBeAntag: false
@@ -22,20 +20,16 @@
   - Command
   - Maintenance
   - ResearchDirector
-  - Brig
-  - Cryogenics
-  special:
-  - !type:AddImplantSpecial
-    implants: [ MindShieldImplant ]
-  - !type:AddComponentSpecial
-    components:
-      - type: CommandStaff
 
 - type: startingGear
   id: ResearchDirectorGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitResearchDirector
+    back: ClothingBackpackResearchDirectorFilled
+    shoes: ClothingShoesColorBrown
+    outerClothing: ClothingOuterCoatRnd
     id: RnDPDA
     ears: ClothingHeadsetRD
-  storage:
-    back:
-    - Flash
+  innerclothingskirt: ClothingUniformJumpskirtResearchDirector
+  satchel: ClothingBackpackSatchelResearchDirectorFilled
+  duffelbag: ClothingBackpackDuffelResearchDirectorFilled

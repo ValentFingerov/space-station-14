@@ -1,9 +1,7 @@
-using System.Numerics;
 using Content.Shared.Camera;
 using Content.Shared.Gravity;
 using Robust.Client.Player;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Player;
 using Robust.Shared.Random;
 
@@ -23,9 +21,9 @@ public sealed partial class GravitySystem
 
     private void OnShakeInit(EntityUid uid, GravityShakeComponent component, ComponentInit args)
     {
-        var localPlayer = _playerManager.LocalEntity;
+        var localPlayer = _playerManager.LocalPlayer?.ControlledEntity;
 
-        if (!TryComp(localPlayer, out TransformComponent? xform) ||
+        if (!TryComp<TransformComponent>(localPlayer, out var xform) ||
             xform.GridUid != uid && xform.MapUid != uid)
         {
             return;
@@ -44,9 +42,9 @@ public sealed partial class GravitySystem
         if (!Resolve(uid, ref gravity) || !Timing.IsFirstTimePredicted)
             return;
 
-        var localPlayer = _playerManager.LocalEntity;
+        var localPlayer = _playerManager.LocalPlayer?.ControlledEntity;
 
-        if (!TryComp(localPlayer, out TransformComponent? xform))
+        if (!TryComp<TransformComponent>(localPlayer, out var xform))
             return;
 
         if (xform.GridUid != uid ||

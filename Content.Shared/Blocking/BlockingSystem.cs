@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Content.Shared.Actions;
-using Content.Shared.Damage;
-using Content.Shared.Examine;
+using Content.Shared.Actions.ActionTypes;
+using Content.Shared.Doors.Components;
 using Content.Shared.Hands;
 using Content.Shared.Hands.Components;
 using Content.Shared.Hands.EntitySystems;
@@ -12,31 +12,24 @@ using Content.Shared.Mobs.Components;
 using Content.Shared.Physics;
 using Content.Shared.Popups;
 using Content.Shared.Toggleable;
-using Content.Shared.Verbs;
-using Robust.Shared.Network;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Timing;
-using Robust.Shared.Utility;
 
 namespace Content.Shared.Blocking;
 
 public sealed partial class BlockingSystem : EntitySystem
 {
+    [Dependency] private readonly IPrototypeManager _proto = default!;
     [Dependency] private readonly SharedActionsSystem _actionsSystem = default!;
-    [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
     [Dependency] private readonly FixtureSystem _fixtureSystem = default!;
     [Dependency] private readonly SharedHandsSystem _handsSystem = default!;
     [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
     [Dependency] private readonly EntityLookupSystem _lookup = default!;
     [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-    [Dependency] private readonly ExamineSystemShared _examine = default!;
-    [Dependency] private readonly INetManager _net = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
 
     public override void Initialize()
     {
@@ -51,21 +44,11 @@ public sealed partial class BlockingSystem : EntitySystem
         SubscribeLocalEvent<BlockingComponent, ToggleActionEvent>(OnToggleAction);
 
         SubscribeLocalEvent<BlockingComponent, ComponentShutdown>(OnShutdown);
-
-        SubscribeLocalEvent<BlockingComponent, GetVerbsEvent<ExamineVerb>>(OnVerbExamine);
-        SubscribeLocalEvent<BlockingComponent, MapInitEvent>(OnMapInit);
-    }
-
-    private void OnMapInit(EntityUid uid, BlockingComponent component, MapInitEvent args)
-    {
-        _actionContainer.EnsureAction(uid, ref component.BlockingToggleActionEntity, component.BlockingToggleAction);
-        Dirty(uid, component);
     }
 
     private void OnEquip(EntityUid uid, BlockingComponent component, GotEquippedHandEvent args)
     {
         component.User = args.User;
-        Dirty(uid, component);
 
         //To make sure that this bodytype doesn't get set as anything but the original
         if (TryComp<PhysicsComponent>(args.User, out var physicsComponent) && physicsComponent.BodyType != BodyType.Static && !HasComp<BlockingUserComponent>(args.User))
@@ -88,12 +71,16 @@ public sealed partial class BlockingSystem : EntitySystem
 
     private void OnGetActions(EntityUid uid, BlockingComponent component, GetItemActionsEvent args)
     {
-        args.AddAction(ref component.BlockingToggleActionEntity, component.BlockingToggleAction);
+        if (component.BlockingToggleAction == null && _proto.TryIndex(component.BlockingToggleActionId, out InstantActionPrototype? act))
+            component.BlockingToggleAction = new(act);
+
+        if (component.BlockingToggleAction != null)
+            args.Actions.Add(component.BlockingToggleAction);
     }
 
     private void OnToggleAction(EntityUid uid, BlockingComponent component, ToggleActionEvent args)
     {
-        if (args.Handled)
+        if(args.Handled)
             return;
 
         var blockQuery = GetEntityQuery<BlockingComponent>();
@@ -165,18 +152,11 @@ public sealed partial class BlockingSystem : EntitySystem
                 return false;
             }
 
-            // Don't allow someone to block if they're not holding the shield
-            if(!_handsSystem.IsHolding(user, item, out _))
-            {
-                CantBlockError(user);
-                return false;
-            }
-
             //Don't allow someone to block if someone else is on the same tile
             var playerTileRef = xform.Coordinates.GetTileRef();
             if (playerTileRef != null)
             {
-                var intersecting = _lookup.GetLocalEntitiesIntersecting(playerTileRef.Value, 0f);
+                var intersecting = _lookup.GetEntitiesIntersecting(playerTileRef.Value);
                 var mobQuery = GetEntityQuery<MobStateComponent>();
                 foreach (var uid in intersecting)
                 {
@@ -195,13 +175,9 @@ public sealed partial class BlockingSystem : EntitySystem
                 CantBlockError(user);
                 return false;
             }
-            _actionsSystem.SetToggled(component.BlockingToggleActionEntity, true);
-            if (_gameTiming.IsFirstTimePredicted)
-            {
-                _popupSystem.PopupEntity(msgOther, user, Filter.PvsExcept(user), true);
-                if(_gameTiming.InPrediction)
-                    _popupSystem.PopupEntity(msgUser, user, user);
-            }
+            _actionsSystem.SetToggled(component.BlockingToggleAction, true);
+            _popupSystem.PopupEntity(msgUser, user, user);
+            _popupSystem.PopupEntity(msgOther, user, Filter.PvsExcept(user), true);
         }
 
         if (TryComp<PhysicsComponent>(user, out var physicsComponent))
@@ -215,7 +191,6 @@ public sealed partial class BlockingSystem : EntitySystem
         }
 
         component.IsBlocking = true;
-        Dirty(item, component);
 
         return true;
     }
@@ -261,19 +236,14 @@ public sealed partial class BlockingSystem : EntitySystem
             if (xform.Anchored)
                 _transformSystem.Unanchor(user, xform);
 
-            _actionsSystem.SetToggled(component.BlockingToggleActionEntity, false);
+            _actionsSystem.SetToggled(component.BlockingToggleAction, false);
             _fixtureSystem.DestroyFixture(user, BlockingComponent.BlockFixtureID, body: physicsComponent);
             _physics.SetBodyType(user, blockingUserComponent.OriginalBodyType, body: physicsComponent);
-            if (_gameTiming.IsFirstTimePredicted)
-            {
-                _popupSystem.PopupEntity(msgOther, user, Filter.PvsExcept(user), true);
-                if(_gameTiming.InPrediction)
-                    _popupSystem.PopupEntity(msgUser, user, user);
-            }
+            _popupSystem.PopupEntity(msgUser, user, user);
+            _popupSystem.PopupEntity(msgOther, user, Filter.PvsExcept(user), true);
         }
 
         component.IsBlocking = false;
-        Dirty(item, component);
 
         return true;
     }
@@ -311,44 +281,4 @@ public sealed partial class BlockingSystem : EntitySystem
         component.User = null;
     }
 
-    private void OnVerbExamine(EntityUid uid, BlockingComponent component, GetVerbsEvent<ExamineVerb> args)
-    {
-        if (!args.CanInteract || !args.CanAccess || !_net.IsServer)
-            return;
-
-        var fraction = component.IsBlocking ? component.ActiveBlockFraction : component.PassiveBlockFraction;
-        var modifier = component.IsBlocking ? component.ActiveBlockDamageModifier : component.PassiveBlockDamageModifer;
-
-        var msg = new FormattedMessage();
-        msg.AddMarkupOrThrow(Loc.GetString("blocking-fraction", ("value", MathF.Round(fraction * 100, 1))));
-
-        AppendCoefficients(modifier, msg);
-
-        _examine.AddDetailedExamineVerb(args, component, msg,
-            Loc.GetString("blocking-examinable-verb-text"),
-            "/Textures/Interface/VerbIcons/dot.svg.192dpi.png",
-            Loc.GetString("blocking-examinable-verb-message")
-        );
-    }
-
-    private void AppendCoefficients(DamageModifierSet modifiers, FormattedMessage msg)
-    {
-        foreach (var coefficient in modifiers.Coefficients)
-        {
-            msg.PushNewline();
-            msg.AddMarkupOrThrow(Robust.Shared.Localization.Loc.GetString("blocking-coefficient-value",
-                ("type", coefficient.Key),
-                ("value", MathF.Round(coefficient.Value * 100, 1))
-            ));
-        }
-
-        foreach (var flat in modifiers.FlatReduction)
-        {
-            msg.PushNewline();
-            msg.AddMarkupOrThrow(Robust.Shared.Localization.Loc.GetString("blocking-reduction-value",
-                ("type", flat.Key),
-                ("value", flat.Value)
-            ));
-        }
-    }
 }

@@ -25,9 +25,6 @@
       - FoodBreadJellySlice
       - FoodBreadFrenchToast
       - FoodBreadTwoSlice
-      - FoodBreadVolcanicSlice
-      - FoodBreadTofuSlice
-      - FoodBreadBaguetteSlice
       - FoodCakeBlueberrySlice
       - FoodCakePlainSlice
       - FoodCakeCarrotSlice
@@ -71,9 +68,6 @@
       - FoodPieFrostySlice
       - FoodTartGrape
       - FoodTartCoco
-      - FoodBakedBrownie
-      - FoodPieBananaCreamSlice
-      - FoodTartMimeSlice
     chance: 0.8
     offset: 0.0
     #rare
@@ -86,5 +80,4 @@
       - FoodTartGapple
       - FoodBreadMeatXenoSlice
       - FoodPieXenoSlice
-      - FoodBakedCannabisBrownie
     rareChance: 0.05

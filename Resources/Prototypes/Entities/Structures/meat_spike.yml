@@ -6,14 +6,12 @@
   components:
   - type: InteractionOutline
   - type: Sprite
+    netsync: false
     # temp to make clickmask work
     sprite: Structures/meat_spike.rsi
     state: spike
-    layers:
-    - state: spike
-      map: ["base"]
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -31,9 +29,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
-          params:
-            volume: -4
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -45,16 +41,13 @@
   - type: Anchorable
   - type: Pullable
   - type: Appearance
-  - type: GenericVisualizer
     visuals:
-      enum.KitchenSpikeVisuals.Status:
-        base:
-          Empty: { state: spike }
-          Bloody: { state: spikebloody }
+      - type: GenericEnumVisualizer
+        key: enum.KitchenSpikeVisuals.Status
+        layer: 0
+        states:
+          enum.KitchenSpikeStatus.Empty: spike
+          enum.KitchenSpikeStatus.Bloody: spikebloody
   - type: Construction
     graph: MeatSpike
     node: MeatSpike
-  - type: GuideHelp
-    guides:
-    - Chef
-    - FoodRecipes

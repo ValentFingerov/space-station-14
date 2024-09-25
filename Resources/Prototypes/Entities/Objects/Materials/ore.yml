@@ -5,10 +5,11 @@
   description: A piece of unrefined ore.
   components:
   - type: Sprite
+    netsync: false
     sprite: Objects/Materials/ore.rsi
   - type: Item
     sprite: Objects/Materials/ore.rsi
-    size: Normal
+  - type: ItemStatus
   - type: Tag
     tags:
     - Ore
@@ -23,6 +24,17 @@
           - ItemMask
         restitution: 0.3
         friction: 0.2
+  - type: Damageable
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 200
+      behaviors:
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
 
 - type: entity
   parent: OreBase
@@ -37,15 +49,7 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawGold: 100
-  - type: Extractable
-    grindableSolutionName: goldore
-  - type: SolutionContainerManager
-    solutions:
-      goldore:
-        reagents:
-        - ReagentId: Gold
-          Quantity: 10
+      Gold: 500
 
 - type: entity
   parent: GoldOre
@@ -57,39 +61,8 @@
 
 - type: entity
   parent: OreBase
-  id: DiamondOre
-  name: diamond ore
-  suffix: Full
-  components:
-  - type: Stack
-    stackType: DiamondOre
-  - type: Sprite
-    state: diamond
-  - type: Material
-  - type: PhysicalComposition
-    materialComposition:
-      RawDiamond: 100
-  - type: Extractable
-    grindableSolutionName: diamondore
-  - type: SolutionContainerManager
-    solutions:
-      diamondore:
-        reagents:
-        - ReagentId: Carbon
-          Quantity: 20
-
-- type: entity
-  parent: DiamondOre
-  id: DiamondOre1
-  suffix: Single
-  components:
-  - type: Stack
-    count: 1
-
-- type: entity
-  parent: OreBase
   id: SteelOre
-  name: iron ore
+  name: steel ore
   suffix: Full
   components:
   - type: Stack
@@ -99,15 +72,7 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawIron: 100
-  - type: Extractable
-    grindableSolutionName: ironore
-  - type: SolutionContainerManager
-    solutions:
-      ironore:
-        reagents:
-        - ReagentId: Iron
-          Quantity: 10
+      Steel: 500
 
 - type: entity
   id: SteelOre1
@@ -130,20 +95,7 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawPlasma: 100
-  - type: PointLight
-    radius: 1.2
-    energy: 0.6
-    castShadows: false
-    color: "#e592e7"
-  - type: Extractable
-    grindableSolutionName: plasmaore
-  - type: SolutionContainerManager
-    solutions:
-      plasmaore:
-        reagents:
-        - ReagentId: Plasma
-          Quantity: 10
+      Plasma: 500
 
 - type: entity
   parent: PlasmaOre
@@ -166,15 +118,7 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawSilver: 100
-  - type: Extractable
-    grindableSolutionName: silverore
-  - type: SolutionContainerManager
-    solutions:
-      silverore:
-        reagents:
-        - ReagentId: Silver
-          Quantity: 10
+      Silver: 500
 
 - type: entity
   parent: SilverOre
@@ -197,15 +141,7 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawQuartz: 100
-  - type: Extractable
-    grindableSolutionName: quartzore
-  - type: SolutionContainerManager
-    solutions:
-      quartzaore:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 10
+      Glass: 500
 
 - type: entity
   parent: SpaceQuartz
@@ -228,23 +164,7 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawUranium: 100
-  - type: PointLight
-    radius: 1.2
-    energy: 0.8
-    castShadows: false
-    color: "#9be792"
-  - type: Extractable
-    grindableSolutionName: uraniumore
-  - type: SolutionContainerManager
-    solutions:
-      uraniumore:
-        reagents:
-        - ReagentId: Uranium
-          Quantity: 8
-        - ReagentId: Radium
-          Quantity: 2
-        canReact: false
+      Uranium: 500
 
 - type: entity
   parent: UraniumOre
@@ -253,6 +173,7 @@
   components:
   - type: Stack
     count: 1
+
 
 - type: entity
   parent: OreBase
@@ -267,100 +188,11 @@
   - type: Material
   - type: PhysicalComposition
     materialComposition:
-      RawBananium: 100
-  - type: PointLight
-    radius: 1.2
-    energy: 1
-    castShadows: false
-    color: "#eef066"
-  - type: Extractable
-    grindableSolutionName: bananiumore
-  - type: SolutionContainerManager
-    solutions:
-      bananiumore:
-        reagents:
-        - ReagentId: Nutriment
-          Quantity: 4
-        - ReagentId: Vitamin
-          Quantity: 2
-        - ReagentId: Honk
-          Quantity: 5
+      Bananium: 500
 
 - type: entity
   parent: BananiumOre
   id: BananiumOre1
-  suffix: Single
-  components:
-  - type: Stack
-    count: 1
-
-- type: entity
-  parent: OreBase
-  id: Coal
-  name: coal
-  suffix: Full
-  components:
-  - type: Stack
-    stackType: Coal
-  - type: Sprite
-    state: coal
-  - type: Material
-  - type: Extractable
-    grindableSolutionName: coal
-  - type: SolutionContainerManager
-    solutions:
-      coal:
-        reagents:
-        - ReagentId: Carbon
-          Quantity: 8.4
-        - ReagentId: Ammonia
-          Quantity: 0.8
-        - ReagentId: Hydrogen
-          Quantity: 0.5
-        - ReagentId: Sulfur
-          Quantity: 0.2
-        - ReagentId: Mercury
-          Quantity: 0.1
-  - type: PhysicalComposition
-    materialComposition:
-      Coal: 100
-
-- type: entity
-  parent: Coal
-  id: Coal1
-  suffix: Single
-  components:
-  - type: Stack
-    count: 1
-
-- type: entity
-  parent: OreBase
-  id: SaltOre
-  name: salt
-  suffix: Full
-  components:
-  - type: Stack
-    stackType: SaltOre
-  - type: Sprite
-    state: salt
-  - type: Material
-  - type: PhysicalComposition
-    materialComposition:
-      RawSalt: 100
-  - type: Extractable
-    grindableSolutionName: saltore
-  - type: SolutionContainerManager
-    solutions:
-      saltore:
-        reagents:
-        - ReagentId: TableSalt
-          Quantity: 10
-        - ReagentId: Iodine
-          Quantity: 5
-
-- type: entity
-  parent: SaltOre
-  id: Salt1
   suffix: Single
   components:
   - type: Stack

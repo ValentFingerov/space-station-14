@@ -1,4 +1,3 @@
-using System.Numerics;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Effects.Components;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Events;
 using Content.Shared.Storage;
@@ -32,7 +31,7 @@ public sealed class SpawnArtifactSystem : EntitySystem
         if (component.Spawns is not {} spawns)
             return;
 
-        var artifactCord = _transform.GetMapCoordinates(uid);
+        var artifactCord = Transform(uid).MapPosition;
         foreach (var spawn in EntitySpawnCollection.GetSpawns(spawns, _random))
         {
             var dx = _random.NextFloat(-component.Range, component.Range);

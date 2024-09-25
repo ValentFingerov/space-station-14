@@ -1,4 +1,4 @@
-- type: artifactEffect
+﻿- type: artifactEffect
   id: EffectBadFeeling
   targetDepth: 0
   effectHint: artifact-effect-hint-mental
@@ -108,12 +108,9 @@
   targetDepth: 0
   components:
   - type: PointLight
-    radius: 8
-    energy: 10
-    color: "#daa3fd"
-  - type: TriggerArtifact
-  - type: FlashOnTrigger
-    range: 8
+    radius: 2
+    energy: 5
+    color: "#27153b"
 
 - type: artifactEffect #bornana
   id: EffectBananaSpawn
@@ -124,35 +121,10 @@
     maxSpawns: 20
     spawns:
     - id: FoodBanana
-      amount: 3
-      maxAmount: 6
-  - type: ChemicalPuddleArtifact
-    chemicalSolution:
-      maxVol: 100
-      canReact: false
-    possibleChemicals:
-    - Potassium
-
-- type: artifactEffect
-  id: EffectFloraSpawn
-  targetDepth: 1
-  effectHint: artifact-effect-hint-creation
-  components:
-  - type: SpawnArtifact
-    maxSpawns: 3
-    spawns:
-    - id: RandomFloraTree
-
-- type: artifactEffect
-  id: EffectThrow
-  targetDepth: 0
-  effectHint: artifact-effect-hint-environment
-  components:
-    - type: ThrowArtifact
 
 - type: artifactEffect
   id: EffectChemicalPuddle
-  targetDepth: 0
+  targetDepth: 1
   effectHint: artifact-effect-hint-biochemical
   components:
   - type: ChemicalPuddleArtifact
@@ -188,15 +160,14 @@
   effectHint: artifact-effect-hint-consumption
   components:
   - type: TemperatureArtifact
-    targetTemp: 50
+    targetTemp: 150
 
 - type: artifactEffect
-  id: EffectHeat
+  id: EffectThrow
   targetDepth: 1
-  effectHint: artifact-effect-hint-release
+  effectHint: artifact-effect-hint-environment
   components:
-    - type: TemperatureArtifact
-      targetTemp: 500
+  - type: ThrowArtifact
 
 - type: artifactEffect
   id: EffectFoamMild
@@ -215,7 +186,6 @@
     - Mercury
     - VentCrud
     - WeldingFuel
-    - JuiceThatMakesYouWeh
 
 - type: artifactEffect
   id: EffectInstrumentSpawn
@@ -252,91 +222,9 @@
     - charge-artifact-popup
 
 - type: artifactEffect
-  id: EffectRadiate
-  targetDepth: 1
-  effectHint: artifact-effect-hint-release
-  components:
-  - type: RadiationSource
-    intensity: 1
-    slope: 0.3
-
-- type: artifactEffect
-  id: EffectKnock
-  targetDepth: 1
-  effectHint: artifact-effect-hint-electrical-interference
-  components:
-    - type: KnockArtifact
-
-- type: artifactEffect
-  id: EffectMagnet
-  targetDepth: 1
-  effectHint: artifact-effect-hint-magnet
-  components:
-  - type: GravityWell
-    maxRange: 3
-    baseRadialAcceleration: 1
-    baseTangentialAcceleration: 3
-
-- type: artifactEffect
-  id: EffectAntiMagnet
-  targetDepth: 1
-  effectHint: artifact-effect-hint-magnet
-  components:
-  - type: GravityWell
-    maxRange: 3
-    baseRadialAcceleration: -1
-    baseTangentialAcceleration: -3
-
-- type: artifactEffect
-  id: EffectInvisibility
-  targetDepth: 2
-  effectHint: artifact-effect-hint-visual
-  components:
-  - type: Stealth
-    hadOutline: true
-  - type: StealthOnMove
-    passiveVisibilityRate: -0.10
-    movementVisibilityRate: 0.10
-
-- type: artifactEffect
-  id: EffectExplosionScary
-  targetDepth: 2
-  effectHint: artifact-effect-hint-environment
-  components:
-  - type: TriggerArtifact
-  - type: ExplodeOnTrigger
-  - type: Explosive
-    deleteAfterExplosion: false
-    explosionType: Radioactive
-    totalIntensity: 300
-    intensitySlope: 2
-    maxIntensity: 1.5
-    canCreateVacuum: false
-
-- type: artifactEffect
-  id: EffectRareMaterialSpawn
-  targetDepth: 2
-  effectHint: artifact-effect-hint-creation
-  components:
-  - type: SpawnArtifact
-    spawns:
-    - id: SilverOre1
-      prob: 0.3
-      maxAmount: 3
-    - id: PlasmaOre1
-      prob: 0.3
-      maxAmount: 3
-    - id: GoldOre1
-      prob: 0.3
-      maxAmount: 3
-    - id: UraniumOre1
-      prob: 0.3
-      maxAmount: 3
-
-- type: artifactEffect
   id: EffectAngryCarpSpawn
   targetDepth: 2
-  effectHint: artifact-effect-hint-creation
+  effectHint: artifact-effect-hint-environment
   components:
   - type: SpawnArtifact
     maxSpawns: 5
@@ -345,70 +233,6 @@
       orGroup: carp
     - id: MobCarpMagic
       orGroup: carp
-
-- type: artifactEffect
-  id: EffectFaunaSpawn
-  targetDepth: 2
-  effectHint: artifact-effect-hint-creation
-  components:
-  - type: SpawnArtifact
-    maxSpawns: 5
-    spawns:
-    - id: MobAdultSlimesYellowAngry
-      orGroup: fauna
-    - id: MobAngryBee
-      orGroup: fauna
-    - id: MobBearSpace
-      orGroup: fauna
-    - id: MobBee
-      orGroup: fauna
-      maxAmount: 5
-    - id: MobCat
-      orGroup: fauna
-      maxAmount: 2
-    - id: MobCatKitten
-      orGroup: fauna
-      maxAmount: 2
-    - id: MobCorgiPuppy
-      orGroup: fauna
-      maxAmount: 2
-    - id: MobFox
-      orGroup: fauna
-      maxAmount: 1
-    - id: MobGoat
-      orGroup: fauna
-      maxAmount: 3
-    - id: MobKangaroo
-      orGroup: fauna
-      maxAmount: 1
-    - id: MobKangarooSpace
-      orGroup: fauna
-    - id: MobMothroach
-      orGroup: fauna
-      maxAmount: 2
-    - id: MobMonkeySyndicateAgent #so lucky
-      orGroup: fauna
-      maxAmount: 1
-      prob: 0.03
-    - id: MobMouse
-      orGroup: fauna
-    - id: MobParrot
-      orGroup: fauna
-      maxAmount: 1
-    - id: MobPenguin
-      orGroup: fauna
-      maxAmount: 2
-    - id: MobPig
-      orGroup: fauna
-      maxAmount: 1
-    - id: MobPurpleSnake
-      orGroup: fauna
-    - id: MobSpiderSpace
-      orGroup: fauna
-    - id: MobTick
-      orGroup: fauna
-    - id: MobXenoRavager
-      orGroup: fauna
 
 - type: artifactEffect
   id: EffectCashSpawn
@@ -430,6 +254,21 @@
       prob: 0.1
 
 - type: artifactEffect
+  id: EffectRadiate
+  targetDepth: 2
+  effectHint: artifact-effect-hint-release
+  components:
+  - type: RadiationSource
+    intensity: 2
+
+- type: artifactEffect
+  id: EffectKnock
+  targetDepth: 2
+  effectHint: artifact-effect-hint-electrical-interference
+  components:
+  - type: KnockArtifact
+
+- type: artifactEffect
   id: EffectShatterWindows
   targetDepth: 2
   effectHint: artifact-effect-hint-environment
@@ -441,7 +280,7 @@
       - Window
     damage:
       types:
-        Structural: 200
+        Structural: 100
 
 - type: artifactEffect
   id: EffectGas
@@ -449,13 +288,6 @@
   effectHint: artifact-effect-hint-environment
   components:
   - type: GasArtifact
-    possibleGas:
-    - CarbonDioxide
-    - Plasma
-    - Tritium
-    - Ammonia
-    - NitrousOxide
-    - Frezon
 
 - type: artifactEffect
   id: EffectBlink
@@ -470,6 +302,8 @@
   effectHint: artifact-effect-hint-biochemical
   components:
   - type: FoamArtifact
+    spreadDuration: 0.5
+    duration: 5
     reagents:
     - Dermaline
     - Arithrazine
@@ -506,43 +340,13 @@
     - Siderlac
 
 - type: artifactEffect
-  id: EffectEmp
-  targetDepth: 2
-  effectHint: artifact-effect-hint-electrical-interference
-  components:
-  - type: EmpArtifact
-
-- type: artifactEffect
-  id: EffectPolyMonkey
-  targetDepth: 2
-  effectHint: artifact-effect-hint-polymorph
-  components:
-  - type: PolyOthersArtifact
-
-- type: artifactEffect
-  id: EffectPolyLizard
-  targetDepth: 2
-  effectHint: artifact-effect-hint-polymorph
-  components:
-  - type: PolyOthersArtifact
-    polymorphPrototypeName: ArtifactLizard
-
-- type: artifactEffect
-  id: EffectPolyLuminous
-  targetDepth: 3
-  effectHint: artifact-effect-hint-polymorph
-  components:
-  - type: PolyOthersArtifact
-    polymorphPrototypeName: ArtifactLuminous
-
-- type: artifactEffect
   id: EffectHealAll
   targetDepth: 3
   effectHint: artifact-effect-hint-environment
   components:
   - type: DamageNearbyArtifact
-    damageChance: 1
-    radius: 8
+    damageChance: 0.75
+    radius: 5
     whitelist:
       components:
       - MobState
@@ -550,15 +354,6 @@
       groups:
         Brute: -300
         Burn: -300
-
-- type: artifactEffect
-  id: EffectRadiateStrong
-  targetDepth: 3
-  effectHint: artifact-effect-hint-release
-  components:
-  - type: RadiationSource
-    intensity: 2
-    slope: 0.3
 
 - type: artifactEffect
   id: EffectMaterialSpawn
@@ -587,13 +382,59 @@
     - shuffle-artifact-popup
 
 - type: artifactEffect
+  id: EffectT4PartsSpawn
+  targetDepth: 3
+  effectHint: artifact-effect-hint-creation
+  components:
+  - type: SpawnArtifact
+    maxSpawns: 10
+    spawns:
+    - id: QuadraticCapacitorStockPart
+      prob: 0.5
+      maxAmount: 3
+    - id: FemtoManipulatorStockPart
+      prob: 0.5
+      maxAmount: 3
+    - id: BluespaceMatterBinStockPart
+      prob: 0.5
+      maxAmount: 3
+
+- type: artifactEffect
+  id: EffectRareMaterialSpawn
+  targetDepth: 3
+  effectHint: artifact-effect-hint-creation
+  components:
+  - type: SpawnArtifact
+    spawns:
+    - id: SilverOre1
+      prob: 0.3
+      maxAmount: 3
+    - id: PlasmaOre1
+      prob: 0.3
+      maxAmount: 3
+    - id: GoldOre1
+      prob: 0.3
+      maxAmount: 3
+    - id: UraniumOre1
+      prob: 0.3
+      maxAmount: 3
+
+- type: artifactEffect
+  id: EffectHeat
+  targetDepth: 3
+  effectHint: artifact-effect-hint-release
+  components:
+  - type: TemperatureArtifact
+    targetTemp: 450
+
+- type: artifactEffect
   id: EffectFoamDangerous
   targetDepth: 3
   effectHint: artifact-effect-hint-biochemical
   components:
   - type: FoamArtifact
-    minFoamAmount: 20
-    maxFoamAmount: 30
+    spreadDuration: 0.5
+    duration: 5
     reagents:
     - Tritium
     - Plasma
@@ -613,9 +454,6 @@
   effectHint: artifact-effect-hint-release
   components:
   - type: IgniteArtifact
-    range: 7
-    minFireStack: 3
-    maxFireStack: 6
 
 - type: artifactEffect
   id: EffectMitosis
@@ -628,39 +466,8 @@
     - id: RandomArtifactSpawner
 
 - type: artifactEffect
-  id: EffectAnomaly
-  targetDepth: 3
-  effectHint: artifact-effect-hint-creation
-  components:
-  - type: SpawnArtifact
-    maxSpawns: 1
-    spawns:
-    - id: RandomAnomalySpawner
-
-- type: artifactEffect
-  id: EffectBoom
-  targetDepth: 3
-  effectHint: artifact-effect-hint-environment
-  components:
-  - type: TriggerArtifact
-  - type: ExplodeOnTrigger
-  - type: Explosive
-    deleteAfterExplosion: false
-    explosionType: Default
-    totalIntensity: 500
-    intensitySlope: 2.5
-    maxIntensity: 50
-
-- type: artifactEffect
-  id: EffectPortal
-  targetDepth: 3
-  effectHint: artifact-effect-hint-displacement
-  components:
-  - type: PortalArtifact
-
-- type: artifactEffect
   id: EffectSingulo
-  targetDepth: 10
+  targetDepth: 100
   effectHint: artifact-effect-hint-destruction
   components:
   - type: SpawnArtifact
@@ -669,11 +476,8 @@
     - id: Singularity
 
 - type: artifactEffect
-  id: EffectTesla
-  targetDepth: 10
-  effectHint: artifact-effect-hint-destruction
+  id: EffectEmp
+  targetDepth: 3
+  effectHint: artifact-effect-hint-electrical-interference
   components:
-  - type: SpawnArtifact
-    maxSpawns: 1
-    spawns:
-    - id: TeslaEnergyBall
+  - type: EmpArtifact

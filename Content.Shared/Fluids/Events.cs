@@ -6,19 +6,19 @@ using Robust.Shared.Serialization;
 namespace Content.Shared.Fluids;
 
 [Serializable, NetSerializable]
-public sealed partial class AbsorbantDoAfterEvent : DoAfterEvent
+public sealed class AbsorbantDoAfterEvent : DoAfterEvent
 {
     [DataField("solution", required: true)]
-    public string TargetSolution = default!;
+    public readonly string TargetSolution = default!;
 
     [DataField("message", required: true)]
-    public string Message = default!;
+    public readonly string Message = default!;
 
     [DataField("sound", required: true)]
-    public SoundSpecifier Sound = default!;
+    public readonly SoundSpecifier Sound = default!;
 
     [DataField("transferAmount", required: true)]
-    public FixedPoint2 TransferAmount;
+    public readonly FixedPoint2 TransferAmount;
 
     private AbsorbantDoAfterEvent()
     {
@@ -33,16 +33,4 @@ public sealed partial class AbsorbantDoAfterEvent : DoAfterEvent
     }
 
     public override DoAfterEvent Clone() => this;
-}
-
-/// <summary>
-/// Raised when trying to spray something, for example a fire extinguisher.
-/// </summary>
-[ByRefEvent]
-public record struct SprayAttemptEvent(EntityUid User, bool Cancelled = false)
-{
-    public void Cancel()
-    {
-        Cancelled = true;
-    }
 }

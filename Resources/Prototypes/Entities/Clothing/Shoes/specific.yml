@@ -9,27 +9,8 @@
   - type: Clothing
     sprite: Clothing/Shoes/Specific/chef.rsi
 
-# stuff common to all clown & jester shoes
 - type: entity
-  abstract: true
-  parent: [ClothingShoesBaseButcherable, ClothingSlotBase]
-  id: ClothingShoesClownBase
-  components:
-  - type: WaddleWhenWorn
-  - type: ItemSlots
-    slots:
-      item:
-        name: clothing-boots-sidearm
-        whitelist:
-          tags:
-          - Knife
-          - ToySidearm
-        blacklist:
-          components:
-          - Sharp
-
-- type: entity
-  parent: ClothingShoesClownBase
+  parent: ClothingShoesBaseButcherable
   id: ClothingShoesClown
   name: clown shoes
   description: "The prankster's standard-issue clowning shoes. Damn they're huge!"
@@ -45,30 +26,9 @@
   - type: Tag
     tags:
     - ClownShoes
-    - WhitelistChameleon
 
 - type: entity
-  parent: ClothingShoesClown
-  id: ClothingShoesClownBanana
-  name: banana clown shoes
-  description: "When humor and footwear combine into new levels of absurdity."
-  components:
-  - type: Sprite
-    sprite: Clothing/Shoes/Specific/clown_banana.rsi
-  - type: Clothing
-    sprite: Clothing/Shoes/Specific/clown_banana.rsi
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepSlip
-  - type: Construction
-    graph: BananaClownShoes
-    node: shoes
-  - type: Skates
-    minimumSpeed: 20
-    acceleration: 5
-
-- type: entity
-  parent: ClothingShoesClownBase
+  parent: ClothingShoesBaseButcherable
   id: ClothingShoesBling
   name: bling clown shoes
   description: Made of refined bananium and shined with the pulp of a fresh banana peel. These make a flashy statement.
@@ -81,11 +41,11 @@
     footstepSoundCollection:
       collection: FootstepClown
   - type: PointLight
+    netsync: false
     enabled: true
     radius: 3
     energy: 2
     color: "#FFD800"
-    netsync: false
 
 - type: entity
   parent: ClothingShoesBaseButcherable
@@ -109,14 +69,9 @@
   - type: Clothing
     sprite: Clothing/Shoes/Specific/galoshes.rsi
   - type: NoSlip
-  - type: SlowedOverSlippery
-    slowdownModifier: 0.7
-  - type: SpeedModifierContactCapClothing # Corvax-MRP
-    maxContactSprintSlowdown: 0.9
-    maxContactWalkSlowdown: 0.9
 
 - type: entity
-  parent: [ClothingShoesBaseButcherable, BaseMajorContraband]
+  parent: ClothingShoesBaseButcherable
   id: ClothingShoesSpaceNinja
   name: space ninja shoes
   description: A pair of nano-enhanced boots with built-in magnetic suction cups.
@@ -126,25 +81,6 @@
   - type: Clothing
     sprite: Clothing/Shoes/Specific/spaceninja.rsi
   - type: NoSlip
-  - type: Magboots # always have gravity because le suction cups
-  - type: ClothingSpeedModifier
-    # ninja are masters of sneaking around relatively quickly, won't break cloak
-    walkModifier: 1.1
-    sprintModifier: 1.3
-# Corvax-HiddenDesc-Start
-  - type: HiddenDescription
-    entries:
-    - label: corvax-hidden-desc-NoSlip-ninja
-      whitelistMind:
-        components:
-          - NinjaRole
-    - label: corvax-hidden-desc-NoSlip-research
-      jobRequired:
-        - ResearchAssistant
-        - ResearchDirector
-        - Scientist
-        - Borg
-# Corvax-HiddenDesc-End
 
 - type: entity
   parent: ClothingShoesBaseButcherable
@@ -178,50 +114,17 @@
     - type: Tag
       tags: [] # ignore "WhitelistChameleon" tag
     - type: Sprite
-      sprite: Clothing/Shoes/color.rsi
-      layers:
-      - state: icon
-        color: "#3f3f3f"
-      - state: soles-icon
+      sprite: Clothing/Shoes/Color/black.rsi
+      netsync: false
     - type: Clothing
-      sprite: Clothing/Shoes/color.rsi
-      clothingVisuals:
-        shoes:
-        - state: equipped-FEET
-          color: "#1d1d1d"
-        - state: soles-equipped-FEET
-    - type: Item
-      inhandVisuals:
-        left:
-        - state: inhand-left
-          color: "#3f3f3f"
-        - state: soles-inhand-left
-        right:
-        - state: inhand-right
-          color: "#3f3f3f"
-        - state: soles-inhand-right
+      sprite: Clothing/Shoes/Color/black.rsi
     - type: ChameleonClothing
       slot: [FEET]
       default: ClothingShoesColorBlack
     - type: UserInterface
       interfaces:
-        enum.ChameleonUiKey.Key:
+        - key: enum.ChameleonUiKey.Key
           type: ChameleonBoundUserInterface
-# Corvax-HiddenDesc-Start
-    - type: HiddenDescription
-      entries:
-      - label: corvax-hidden-desc-Chameleon-syndicate
-        whitelistMind:
-          components:
-            - TraitorRole
-            - NukeOperative
-      - label: corvax-hidden-desc-Chameleon-research
-        jobRequired:
-          - ResearchAssistant
-          - ResearchDirector
-          - Scientist
-          - Borg
-# Corvax-HiddenDesc-End
 
 - type: entity
   parent: ClothingShoesChameleon
@@ -231,32 +134,6 @@
   description: Stylish black shoes.
   components:
   - type: NoSlip
-# Corvax-HiddenDesc-Start
-  - type: HiddenDescription
-    entries:
-    - label: corvax-hidden-desc-Chameleon-syndicate
-      whitelistMind:
-        components:
-          - TraitorRole
-          - NukeOperative
-    - label: corvax-hidden-desc-NoSlip-syndicate
-      whitelistMind:
-        components:
-          - TraitorRole
-          - NukeOperative
-    - label: corvax-hidden-desc-Chameleon-research
-      jobRequired:
-        - ResearchAssistant
-        - ResearchDirector
-        - Scientist
-        - Borg
-    - label: corvax-hidden-desc-NoSlip-research
-      jobRequired:
-        - ResearchAssistant
-        - ResearchDirector
-        - Scientist
-        - Borg
-# Corvax-HiddenDesc-End
 
 - type: entity
   parent: ClothingShoesClown
@@ -284,49 +161,3 @@
   - type: Clothing
     sprite: Clothing/Shoes/Specific/cluwne.rsi
   - type: Unremoveable
-
-- type: entity
-  parent: ClothingShoesClown
-  id: ClothingShoesClownLarge
-  name: large clown shoes
-  description: "When you need to stand out in a room full of clowns!"
-  components:
-  - type: Sprite
-    state: "icon"
-    sprite: Clothing/Shoes/Specific/large_clown.rsi
-  - type: Clothing
-    sprite: Clothing/Shoes/Specific/large_clown.rsi
-    clothingVisuals:
-      shoes:
-      - state: equipped-FEET
-        offset: "0, -0.02"
-  - type: Item
-    size: Small
-    sprite: Clothing/Shoes/Specific/large_clown.rsi
-  - type: ClothingSpeedModifier
-    walkModifier: 0.85
-    sprintModifier: 0.8
-
-- type: entity
-  parent: ClothingShoesBaseButcherable
-  id: ClothingShoesSkates
-  name: roller skates
-  description: "Get your skates on!"
-  components:
-  - type: Sprite
-    sprite: Clothing/Shoes/Specific/skates.rsi
-  - type: Clothing
-    sprite: Clothing/Shoes/Specific/skates.rsi
-    clothingVisuals:
-      shoes:
-      - state: equipped-FEET
-        offset: "0, -0.04"
-  - type: Item
-    sprite: Clothing/Shoes/Specific/skates.rsi
-  - type: ClothingSpeedModifier
-    walkModifier: 1.1
-    sprintModifier: 1.1
-  - type: Skates
-  - type: FootstepModifier
-    footstepSoundCollection:
-      collection: FootstepSkates

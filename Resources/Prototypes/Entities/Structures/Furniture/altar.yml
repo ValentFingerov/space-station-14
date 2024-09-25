@@ -7,10 +7,11 @@
   components:
   - type: Anchorable
   - type: Transform
+    noRot: true
   - type: Prayable
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: Wood
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: PlaceableSurface
   - type: Fixtures
     fixtures:
@@ -24,6 +25,7 @@
         layer:
         - TableLayer
   - type: Sprite
+    netsync: false
     snapCardinals: true
   - type: Climbable
   - type: Clickable
@@ -53,7 +55,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -64,8 +66,6 @@
             max: 3
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
-  - type: StealTarget
-    stealGroup: AltarNanotrasen
 
 - type: entity
   id: AltarChaos
@@ -187,7 +187,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: WoodDestroyHeavy
+          path: /Audio/Effects/woodhit.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           MaterialWoodPlank:
@@ -382,7 +382,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:

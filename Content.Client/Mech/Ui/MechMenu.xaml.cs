@@ -12,20 +12,21 @@ public sealed partial class MechMenu : FancyWindow
 {
     [Dependency] private readonly IEntityManager _ent = default!;
 
-    private EntityUid _mech;
+    private readonly EntityUid _mech;
 
     public event Action<EntityUid>? OnRemoveButtonPressed;
 
-    public MechMenu()
+    public MechMenu(EntityUid mech)
     {
         RobustXamlLoader.Load(this);
         IoCManager.InjectDependencies(this);
-    }
 
-    public void SetEntity(EntityUid uid)
-    {
-        MechView.SetEntity(uid);
-        _mech = uid;
+        _mech = mech;
+
+        if (!_ent.TryGetComponent<SpriteComponent>(mech, out var sprite))
+            return;
+
+        MechView.Sprite = sprite;
     }
 
     public void UpdateMechStats()
@@ -37,17 +38,9 @@ public sealed partial class MechMenu : FancyWindow
         IntegrityDisplayBar.Value = integrityPercent.Float();
         IntegrityDisplay.Text = Loc.GetString("mech-integrity-display", ("amount", (integrityPercent*100).Int()));
 
-        if (mechComp.MaxEnergy != 0f)
-        {
-            var energyPercent = mechComp.Energy / mechComp.MaxEnergy;
-            EnergyDisplayBar.Value = energyPercent.Float();
-            EnergyDisplay.Text = Loc.GetString("mech-energy-display", ("amount", (energyPercent*100).Int()));
-        }
-        else
-        {
-            EnergyDisplayBar.Value = 0f;
-            EnergyDisplay.Text = Loc.GetString("mech-energy-missing");
-        }
+        var energyPercent = mechComp.Energy / mechComp.MaxEnergy;
+        EnergyDisplayBar.Value = energyPercent.Float();
+        EnergyDisplay.Text = Loc.GetString("mech-energy-display", ("amount", (energyPercent*100).Int()));
 
         SlotDisplay.Text = Loc.GetString("mech-slot-display",
             ("amount", mechComp.MaxEquipmentAmount - mechComp.EquipmentContainer.ContainedEntities.Count));
@@ -61,13 +54,14 @@ public sealed partial class MechMenu : FancyWindow
         EquipmentControlContainer.Children.Clear();
         foreach (var ent in mechComp.EquipmentContainer.ContainedEntities)
         {
-            if (!_ent.TryGetComponent<MetaDataComponent>(ent, out var metaData))
+            if (!_ent.TryGetComponent<SpriteComponent>(ent, out var sprite) ||
+                !_ent.TryGetComponent<MetaDataComponent>(ent, out var metaData))
                 continue;
 
             var uicomp = _ent.GetComponentOrNull<UIFragmentComponent>(ent);
             var ui = uicomp?.Ui?.GetUIFragmentRoot();
 
-            var control = new MechEquipmentControl(ent, metaData.EntityName, ui);
+            var control = new MechEquipmentControl(metaData.EntityName, sprite, ui);
 
             control.OnRemoveButtonPressed += () => OnRemoveButtonPressed?.Invoke(ent);
 

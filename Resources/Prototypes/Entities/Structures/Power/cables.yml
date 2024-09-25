@@ -11,12 +11,11 @@
   - type: Transform
     anchored: true
     noRot: true
-  # TODO: Remove both of these, same with CollideOnAnchor
   - type: Physics
     bodyType: Static
     canCollide: false
-  - type: Fixtures
   - type: Sprite
+    netsync: false
     drawdepth: ThinWire
     visible: false
   - type: Damageable
@@ -32,6 +31,8 @@
         acts: ["Destruction"]
   - type: SubFloorHide
   - type: CollideOnAnchor
+  - type: AmbientSound
+    enabled: false  # Leaving as false because 90% of them are set to this.
   - type: Appearance
   - type: Electrified
     onHandInteract: false
@@ -43,10 +44,7 @@
     lowVoltageNode: power
   - type: CableVis
     node: power
-  - type: RCDDeconstructable
-    cost: 2
-    delay: 0
-    fx: EffectRCDConstruct0
+   
 
 - type: entity
   parent: CableBase
@@ -90,10 +88,8 @@
         acts: [ "Destruction" ]
   - type: CableVisualizer
     statePrefix: hvcable_
-  # TODO make this change on power
   - type: AmbientSound
-    enabled: false
-    volume: -14
+    volume: -15
     range: 2
     sound:
       path: /Audio/Ambience/Objects/emf_buzz.ogg
@@ -141,6 +137,11 @@
         acts: [ "Destruction" ]
   - type: CableVisualizer
     statePrefix: mvcable_
+  - type: AmbientSound
+    volume: -16
+    range: 2
+    sound:
+      path: /Audio/Ambience/Objects/emf_buzz.ogg
 
 - type: entity
   parent: CableBase
@@ -188,3 +189,8 @@
         acts: [ "Destruction" ]
   - type: CableVisualizer
     statePrefix: lvcable_
+  - type: AmbientSound
+    volume: -17
+    range: 2
+    sound:
+      path: /Audio/Ambience/Objects/emf_buzz.ogg

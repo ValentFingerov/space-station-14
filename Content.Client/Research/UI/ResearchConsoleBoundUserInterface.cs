@@ -1,62 +1,94 @@
 using Content.Shared.Research.Components;
 using Content.Shared.Research.Prototypes;
+using Content.Shared.Research.Systems;
 using JetBrains.Annotations;
-using Robust.Client.UserInterface;
-using Robust.Shared.Prototypes;
+using Robust.Client.GameObjects;
 
-namespace Content.Client.Research.UI;
-
-[UsedImplicitly]
-public sealed class ResearchConsoleBoundUserInterface : BoundUserInterface
+namespace Content.Client.Research.UI
 {
-    [ViewVariables]
-    private ResearchConsoleMenu? _consoleMenu;
-
-    public ResearchConsoleBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    [UsedImplicitly]
+    public sealed class ResearchConsoleBoundUserInterface : BoundUserInterface
     {
-    }
+        public int Points { get; private set; }
+        public int PointsPerSecond { get; private set; }
+        private ResearchConsoleMenu? _consoleMenu;
+        private TechnologyDatabaseComponent? _technologyDatabase;
+        private readonly IEntityManager _entityManager;
+        private readonly SharedResearchSystem _research;
 
-    protected override void Open()
-    {
-        base.Open();
-
-        var owner = Owner;
-
-        _consoleMenu = this.CreateWindow<ResearchConsoleMenu>();
-        _consoleMenu.SetEntity(owner);
-
-        _consoleMenu.OnTechnologyCardPressed += id =>
+        public ResearchConsoleBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
-            SendMessage(new ConsoleUnlockTechnologyMessage(id));
-        };
+            SendMessage(new ConsoleServerSyncMessage());
+            _entityManager = IoCManager.Resolve<IEntityManager>();
+            _research = _entityManager.System<SharedResearchSystem>();
+        }
 
-        _consoleMenu.OnServerButtonPressed += () =>
+        protected override void Open()
         {
-            SendMessage(new ConsoleServerSelectionMessage());
-        };
-    }
+            base.Open();
 
-    public override void OnProtoReload(PrototypesReloadedEventArgs args)
-    {
-        base.OnProtoReload(args);
+            if (!_entityManager.TryGetComponent(Owner.Owner, out _technologyDatabase))
+                return;
 
-        if (!args.WasModified<TechnologyPrototype>())
-            return;
+            _consoleMenu = new ResearchConsoleMenu(this);
 
-        if (State is not ResearchConsoleBoundInterfaceState rState)
-            return;
+            _consoleMenu.OnClose += Close;
 
-        _consoleMenu?.UpdatePanels(rState);
-        _consoleMenu?.UpdateInformationPanel(rState);
-    }
+            _consoleMenu.ServerSyncButton.OnPressed += (_) =>
+            {
+                SendMessage(new ConsoleServerSyncMessage());
+            };
 
-    protected override void UpdateState(BoundUserInterfaceState state)
-    {
-        base.UpdateState(state);
+            _consoleMenu.ServerSelectionButton.OnPressed += (_) =>
+            {
+                SendMessage(new ConsoleServerSelectionMessage());
+            };
 
-        if (state is not ResearchConsoleBoundInterfaceState castState)
-            return;
-        _consoleMenu?.UpdatePanels(castState);
-        _consoleMenu?.UpdateInformationPanel(castState);
+            _consoleMenu.UnlockButton.OnPressed += (_) =>
+            {
+                if (_consoleMenu.TechnologySelected != null)
+                {
+                    SendMessage(new ConsoleUnlockTechnologyMessage(_consoleMenu.TechnologySelected.ID));
+                }
+            };
+
+            _consoleMenu.OpenCentered();
+        }
+
+        public bool IsTechnologyUnlocked(TechnologyPrototype technology)
+        {
+            if (_technologyDatabase == null)
+                return false;
+
+            return _research.IsTechnologyUnlocked(_technologyDatabase.Owner, technology, _technologyDatabase);
+        }
+
+        public bool CanUnlockTechnology(TechnologyPrototype technology)
+        {
+            if (_technologyDatabase == null)
+                return false;
+
+            return _research.ArePrerequesitesUnlocked(_technologyDatabase.Owner, technology, _technologyDatabase);
+        }
+
+        protected override void UpdateState(BoundUserInterfaceState state)
+        {
+            base.UpdateState(state);
+
+            var castState = (ResearchConsoleBoundInterfaceState)state;
+            Points = castState.Points;
+            PointsPerSecond = castState.PointsPerSecond;
+            // We update the user interface here.
+            _consoleMenu?.PopulatePoints();
+            _consoleMenu?.Populate();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (!disposing)
+                return;
+            _consoleMenu?.Dispose();
+        }
     }
 }

@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Numerics;
 using Content.Client.CombatMode;
 using Content.Client.Examine;
 using Content.Client.Gameplay;
@@ -7,9 +6,7 @@ using Content.Client.Verbs;
 using Content.Client.Verbs.UI;
 using Content.Shared.CCVar;
 using Content.Shared.Examine;
-using Content.Shared.IdentityManagement;
 using Content.Shared.Input;
-using Content.Shared.Verbs;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
@@ -93,14 +90,11 @@ namespace Content.Client.ContextMenu.UI
 
             var entitySpriteStates = GroupEntities(entities);
             var orderedStates = entitySpriteStates.ToList();
-            orderedStates.Sort((x, y) => string.Compare(
-                Identity.Name(x.First(), _entityManager),
-                Identity.Name(y.First(), _entityManager),
-                StringComparison.CurrentCulture));
+            orderedStates.Sort((x, y) => string.CompareOrdinal(_entityManager.GetComponent<MetaDataComponent>(x.First()).EntityPrototype?.Name, _entityManager.GetComponent<MetaDataComponent>(y.First()).EntityPrototype?.Name));
             Elements.Clear();
             AddToUI(orderedStates);
 
-            var box = UIBox2.FromDimensions(_userInterfaceManager.MousePositionScaled.Position, new Vector2(1, 1));
+            var box = UIBox2.FromDimensions(_userInterfaceManager.MousePositionScaled.Position, (1, 1));
             _context.RootMenu.Open(box);
         }
 
@@ -138,18 +132,10 @@ namespace Content.Client.ContextMenu.UI
                 var func = args.Function;
                 var funcId = _inputManager.NetworkBindMap.KeyFunctionID(func);
 
-                var message = new ClientFullInputCmdMessage(
-                    _gameTiming.CurTick,
-                    _gameTiming.TickFraction,
-                    funcId)
-                {
-                    State = BoundKeyState.Down,
-                    Coordinates = _entityManager.GetComponent<TransformComponent>(entity.Value).Coordinates,
-                    ScreenCoordinates = args.PointerLocation,
-                    Uid = entity.Value,
-                };
+                var message = new FullInputCmdMessage(_gameTiming.CurTick, _gameTiming.TickFraction, funcId,
+                    BoundKeyState.Down, _entityManager.GetComponent<TransformComponent>(entity.Value).Coordinates, args.PointerLocation, entity.Value);
 
-                var session = _playerManager.LocalSession;
+                var session = _playerManager.LocalPlayer?.Session;
                 if (session != null)
                 {
                     inputSys.HandleInputCommand(session, func, message);
@@ -171,7 +157,7 @@ namespace Content.Client.ContextMenu.UI
             if (_combatMode.IsInCombatMode(args.Session?.AttachedEntity))
                 return false;
 
-            var coords = _xform.ToMapCoordinates(args.Coordinates);
+            var coords = args.Coordinates.ToMap(_entityManager);
 
             if (_verbSystem.TryGetEntityMenuEntities(coords, out var entities))
                 OpenRootMenu(entities);
@@ -190,25 +176,13 @@ namespace Content.Client.ContextMenu.UI
             if (!_context.RootMenu.Visible)
                 return;
 
-            if (_playerManager.LocalEntity is not { } player ||
+            if (_playerManager.LocalPlayer?.ControlledEntity is not { } player ||
                 !player.IsValid())
                 return;
 
             // Do we need to do in-range unOccluded checks?
-            var visibility = _verbSystem.Visibility;
-
-            if (!_eyeManager.CurrentEye.DrawFov)
-            {
-                visibility &= ~MenuVisibility.NoFov;
-            }
-
-            var ev = new MenuVisibilityEvent()
-            {
-                Visibility = visibility,
-            };
-
-            _entityManager.EventBus.RaiseLocalEvent(player, ref ev);
-            visibility = ev.Visibility;
+            var ignoreFov = !_eyeManager.CurrentEye.DrawFov ||
+                (_verbSystem.Visibility & MenuVisibility.NoFov) == MenuVisibility.NoFov;
 
             _entityManager.TryGetComponent(player, out ExaminerComponent? examiner);
             var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -222,7 +196,7 @@ namespace Content.Client.ContextMenu.UI
                     continue;
                 }
 
-                if ((visibility & MenuVisibility.NoFov) == MenuVisibility.NoFov)
+                if (ignoreFov)
                     continue;
 
                 var pos = new MapCoordinates(_xform.GetWorldPosition(xform, xformQuery), xform.MapID);

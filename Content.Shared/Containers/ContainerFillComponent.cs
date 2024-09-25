@@ -1,5 +1,4 @@
 using Content.Shared.Storage;
-using Content.Shared.Storage.Components;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
@@ -19,10 +18,10 @@ namespace Content.Shared.Containers;
 ///     cref="EntitySpawnCollection.GetSpawns"/>, which is also used by several other systems.
 /// </remarks>
 [RegisterComponent]
-public sealed partial class ContainerFillComponent : Component
+public sealed class ContainerFillComponent : Component
 {
     [DataField("containers", customTypeSerializer:typeof(ContainerFillSerializer))]
-    public Dictionary<string, List<string>> Containers = new();
+    public readonly Dictionary<string, List<string>> Containers = new();
 
     /// <summary>
     ///     If true, entities spawned via the construction system will not have entities spawned into containers managed

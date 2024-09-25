@@ -1,20 +1,20 @@
 using Content.Shared.Actions;
+using Content.Shared.Actions.ActionTypes;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Shared.VendingMachines
 {
-    [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
-    public sealed partial class VendingMachineComponent : Component
+    [RegisterComponent, NetworkedComponent]
+    public sealed class VendingMachineComponent : Component
     {
         /// <summary>
         /// PrototypeID for the vending machine's inventory, see <see cref="VendingMachineInventoryPrototype"/>
         /// </summary>
-        [DataField("pack", customTypeSerializer: typeof(PrototypeIdSerializer<VendingMachineInventoryPrototype>), required: true)]
+        [DataField("pack", customTypeSerializer: typeof(PrototypeIdSerializer<VendingMachineInventoryPrototype>))]
         public string PackPrototypeId = string.Empty;
 
         /// <summary>
@@ -105,13 +105,8 @@ namespace Content.Shared.VendingMachines
         /// <summary>
         ///     The action available to the player controlling the vending machine
         /// </summary>
-        [DataField("action", customTypeSerializer: typeof(PrototypeIdSerializer<EntityPrototype>))]
-        [AutoNetworkedField]
-        public string? Action = "ActionVendingThrow";
-
-        [DataField("actionEntity")]
-        [AutoNetworkedField]
-        public EntityUid? ActionEntity;
+        [DataField("action", customTypeSerializer: typeof(PrototypeIdSerializer<InstantActionPrototype>))]
+        public string? Action = "VendingThrow";
 
         public float NonLimitedEjectForce = 7.5f;
 
@@ -120,14 +115,6 @@ namespace Content.Shared.VendingMachines
         public float EjectAccumulator = 0f;
         public float DenyAccumulator = 0f;
         public float DispenseOnHitAccumulator = 0f;
-
-        /// <summary>
-        /// The quality of the stock in the vending machine on spawn.
-        /// Represents the percentage chance (0.0f = 0%, 1.0f = 100%) each set of items in the machine is fully-stocked.
-        /// If not fully stocked, the stock will have a random value between 0 (inclusive) and max stock (exclusive).
-        /// </summary>
-        [DataField]
-        public float InitialStockQuality = 1.0f;
 
         /// <summary>
         ///     While disabled by EMP it randomly ejects items
@@ -259,7 +246,7 @@ namespace Content.Shared.VendingMachines
         StatusKey,
     }
 
-    public sealed partial class VendingMachineSelfDispenseEvent : InstantActionEvent
+    public sealed class VendingMachineSelfDispenseEvent : InstantActionEvent
     {
 
     };

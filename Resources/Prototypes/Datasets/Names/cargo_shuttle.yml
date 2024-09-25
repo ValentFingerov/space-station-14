@@ -1,5 +1,5 @@
 - type: dataset
-  id: ShuttleNames
+  id: CargoShuttleNames
   values:
   - Большой Денежный Шаттл
   - Замена Двигателя

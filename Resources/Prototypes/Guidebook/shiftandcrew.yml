@@ -1,12 +1,14 @@
-- type: guideEntry
+﻿- type: guideEntry
   id: Jobs
   name: guide-entry-jobs
   text: "/ServerInfo/Guidebook/Jobs.xml"
   children:
-  - Cargo
-  - Command
+  - Botany
   - Engineering
-  - Medical
   - Science
   - Security
-  - Service
+
+- type: guideEntry
+  id: Survival
+  name: guide-entry-survival
+  text: "/ServerInfo/Guidebook/Survival.xml"

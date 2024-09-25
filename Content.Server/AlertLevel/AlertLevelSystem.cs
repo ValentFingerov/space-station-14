@@ -1,20 +1,17 @@
 using System.Linq;
+using Content.Server.Chat;
 using Content.Server.Chat.Systems;
 using Content.Server.Station.Systems;
-using Content.Shared.CCVar;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
-using Robust.Shared.Configuration;
+using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server.AlertLevel;
 
 public sealed class AlertLevelSystem : EntitySystem
 {
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly ChatSystem _chatSystem = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly StationSystem _stationSystem = default!;
 
     // Until stations are a prototype, this is how it's going to have to be.
@@ -23,15 +20,26 @@ public sealed class AlertLevelSystem : EntitySystem
     public override void Initialize()
     {
         SubscribeLocalEvent<StationInitializedEvent>(OnStationInitialize);
-        SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnPrototypeReload);
+
+        _prototypeManager.PrototypesReloaded += OnPrototypeReload;
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+
+        _prototypeManager.PrototypesReloaded -= OnPrototypeReload;
     }
 
     public override void Update(float time)
     {
-        var query = EntityQueryEnumerator<AlertLevelComponent>();
-
-        while (query.MoveNext(out var station, out var alert))
+        foreach (var station in _stationSystem.Stations)
         {
+            if (!TryComp(station, out AlertLevelComponent? alert))
+            {
+                continue;
+            }
+
             if (alert.CurrentDelay <= 0)
             {
                 if (alert.ActiveDelay)
@@ -48,10 +56,9 @@ public sealed class AlertLevelSystem : EntitySystem
 
     private void OnStationInitialize(StationInitializedEvent args)
     {
-        if (!TryComp<AlertLevelComponent>(args.Station, out var alertLevelComponent))
-            return;
+        var alertLevelComponent = AddComp<AlertLevelComponent>(args.Station);
 
-        if (!_prototypeManager.TryIndex(alertLevelComponent.AlertLevelPrototype, out AlertLevelPrototype? alerts))
+        if (!_prototypeManager.TryIndex(DefaultAlertLevelSet, out AlertLevelPrototype? alerts))
         {
             return;
         }
@@ -76,8 +83,7 @@ public sealed class AlertLevelSystem : EntitySystem
             return;
         }
 
-        var query = EntityQueryEnumerator<AlertLevelComponent>();
-        while (query.MoveNext(out var uid, out var comp))
+        foreach (var comp in EntityQuery<AlertLevelComponent>())
         {
             comp.AlertLevels = alerts;
 
@@ -89,21 +95,11 @@ public sealed class AlertLevelSystem : EntitySystem
                     defaultLevel = comp.AlertLevels.Levels.Keys.First();
                 }
 
-                SetLevel(uid, defaultLevel, true, true, true);
+                SetLevel(comp.Owner, defaultLevel, true, true, true);
             }
         }
 
         RaiseLocalEvent(new AlertLevelPrototypeReloadedEvent());
-    }
-
-    public string GetLevel(EntityUid station, AlertLevelComponent? alert = null)
-    {
-        if (!Resolve(station, ref alert))
-        {
-            return string.Empty;
-        }
-
-        return alert.CurrentLevel;
     }
 
     public float GetAlertLevelDelay(EntityUid station, AlertLevelComponent? alert = null)
@@ -145,7 +141,7 @@ public sealed class AlertLevelSystem : EntitySystem
                 return;
             }
 
-            component.CurrentDelay = _cfg.GetCVar(CCVars.GameAlertLevelChangeDelay);
+            component.CurrentDelay = AlertLevelComponent.Delay;
             component.ActiveDelay = true;
         }
 
@@ -178,7 +174,7 @@ public sealed class AlertLevelSystem : EntitySystem
             if (detail.Sound != null)
             {
                 var filter = _stationSystem.GetInOwningStation(station);
-                _audio.PlayGlobal(detail.Sound, filter, true, detail.Sound.Params);
+                SoundSystem.Play(detail.Sound.GetSound(), filter, detail.Sound.Params);
             }
             else
             {

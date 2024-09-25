@@ -15,14 +15,7 @@ public static class Identity
     /// </summary>
     public static string Name(EntityUid uid, IEntityManager ent, EntityUid? viewer=null)
     {
-        if (!uid.IsValid())
-            return string.Empty;
-
-        var meta = ent.GetComponent<MetaDataComponent>(uid);
-        if (meta.EntityLifeStage <= EntityLifeStage.Initializing)
-            return meta.EntityName; // Identity component and such will not yet have initialized and may throw NREs
-
-        var uidName = meta.EntityName;
+        var uidName = ent.GetComponent<MetaDataComponent>(uid).EntityName;
 
         if (!ent.TryGetComponent<IdentityComponent>(uid, out var identity))
             return uidName;
@@ -41,7 +34,7 @@ public static class Identity
             return uidName;
         }
 
-        return $"{uidName} ({identName})";
+        return uidName + $" ({identName})";
     }
 
     /// <summary>
@@ -61,7 +54,7 @@ public static class Identity
     {
         // Would check for uid == viewer here but I think it's better for you to see yourself
         // how everyone else will see you, otherwise people will probably get confused and think they aren't disguised
-        return ent.HasComponent<GhostComponent>(viewer);
+        return ent.HasComponent<SharedGhostComponent>(viewer);
     }
 
 }

@@ -7,20 +7,17 @@ using Content.Client.UserInterface.Controls;
 using Content.Client.UserInterface.Systems.DecalPlacer;
 using Content.Client.UserInterface.Systems.Sandbox.Windows;
 using Content.Shared.Input;
-using Content.Shared.Silicons.StationAi;
 using JetBrains.Annotations;
 using Robust.Client.Console;
 using Robust.Client.Debugging;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
-using Robust.Client.Player;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controllers;
 using Robust.Client.UserInterface.Controllers.Implementations;
-using Robust.Shared.Console;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
-using Robust.Shared.Player;
+using Robust.Shared.Players;
 using Robust.Shared.Utility;
 using static Robust.Client.UserInterface.Controls.BaseButton;
 
@@ -30,12 +27,9 @@ namespace Content.Client.UserInterface.Systems.Sandbox;
 [UsedImplicitly]
 public sealed class SandboxUIController : UIController, IOnStateChanged<GameplayState>, IOnSystemChanged<SandboxSystem>
 {
-    [Dependency] private readonly IConsoleHost _console = default!;
     [Dependency] private readonly IEyeManager _eye = default!;
     [Dependency] private readonly IInputManager _input = default!;
     [Dependency] private readonly ILightManager _light = default!;
-    [Dependency] private readonly IClientAdminManager _admin = default!;
-    [Dependency] private readonly IPlayerManager _player = default!;
 
     [UISystemDependency] private readonly DebugPhysicsSystem _debugPhysics = default!;
     [UISystemDependency] private readonly MarkerSystem _marker = default!;
@@ -59,28 +53,13 @@ public sealed class SandboxUIController : UIController, IOnStateChanged<Gameplay
         CheckSandboxVisibility();
 
         _input.SetInputCommand(ContentKeyFunctions.OpenEntitySpawnWindow,
-            InputCmdHandler.FromDelegate(_ =>
-            {
-                if (!_admin.CanAdminPlace())
-                    return;
-                EntitySpawningController.ToggleWindow();
-            }));
+            InputCmdHandler.FromDelegate(_ => EntitySpawningController.ToggleWindow()));
         _input.SetInputCommand(ContentKeyFunctions.OpenSandboxWindow,
             InputCmdHandler.FromDelegate(_ => ToggleWindow()));
         _input.SetInputCommand(ContentKeyFunctions.OpenTileSpawnWindow,
-            InputCmdHandler.FromDelegate(_ =>
-            {
-                if (!_admin.CanAdminPlace())
-                    return;
-                TileSpawningController.ToggleWindow();
-            }));
+            InputCmdHandler.FromDelegate(_ => TileSpawningController.ToggleWindow()));
         _input.SetInputCommand(ContentKeyFunctions.OpenDecalSpawnWindow,
-            InputCmdHandler.FromDelegate(_ =>
-            {
-                if (!_admin.CanAdminPlace())
-                    return;
-                DecalPlacerController.ToggleWindow();
-            }));
+            InputCmdHandler.FromDelegate(_ => DecalPlacerController.ToggleWindow()));
 
         CommandBinds.Builder
             .Bind(ContentKeyFunctions.EditorCopyObject, new PointerInputCmdHandler(Copy))
@@ -121,21 +100,6 @@ public sealed class SandboxUIController : UIController, IOnStateChanged<Gameplay
         _window.ShowMarkersButton.Pressed = _marker.MarkersVisible;
         _window.ShowBbButton.Pressed = (_debugPhysics.Flags & PhysicsDebugFlags.Shapes) != 0x0;
 
-        _window.AiOverlayButton.OnPressed += args =>
-        {
-            var player = _player.LocalEntity;
-
-            if (player == null)
-                return;
-
-            var pnent = EntityManager.GetNetEntity(player.Value);
-
-            // Need NetworkedAddComponent but engine PR.
-            if (args.Button.Pressed)
-                _console.ExecuteCommand($"addcomp {pnent.Id} StationAiOverlay");
-            else
-                _console.ExecuteCommand($"rmcomp {pnent.Id} StationAiOverlay");
-        };
         _window.RespawnButton.OnPressed += _ => _sandbox.Respawn();
         _window.SpawnTilesButton.OnPressed += _ => TileSpawningController.ToggleWindow();
         _window.SpawnEntitiesButton.OnPressed += _ => EntitySpawningController.ToggleWindow();
@@ -208,12 +172,10 @@ public sealed class SandboxUIController : UIController, IOnStateChanged<Gameplay
             return;
         if (_sandbox.SandboxAllowed && _window.IsOpen != true)
         {
-            UIManager.ClickSound();
             _window.OpenCentered();
         }
         else
         {
-            UIManager.ClickSound();
             _window.Close();
         }
     }

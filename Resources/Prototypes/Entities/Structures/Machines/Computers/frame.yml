@@ -25,8 +25,8 @@
   - type: Sprite
     drawdepth: Objects
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: Electronic
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -90,9 +90,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
-          params:
-            volume: -6
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:

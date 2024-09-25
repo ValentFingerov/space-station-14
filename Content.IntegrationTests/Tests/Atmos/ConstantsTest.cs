@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Content.Server.Atmos.EntitySystems;
 using Content.Shared.Atmos;
+using NUnit.Framework;
 using Robust.Shared.GameObjects;
 
 namespace Content.IntegrationTests.Tests.Atmos
@@ -12,21 +15,18 @@ namespace Content.IntegrationTests.Tests.Atmos
         [Test]
         public async Task TotalGasesTest()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
-            var entityManager = server.ResolveDependency<IEntityManager>();
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{NoClient = true});
+            var server = pairTracker.Pair.Server;
 
             await server.WaitPost(() =>
             {
-                var atmosSystem = entityManager.System<AtmosphereSystem>();
+                var atmosSystem = EntitySystem.Get<AtmosphereSystem>();
 
-                Assert.Multiple(() =>
-                {
-                    Assert.That(atmosSystem.Gases.Count(), Is.EqualTo(Atmospherics.TotalNumberOfGases));
-                    Assert.That(Enum.GetValues(typeof(Gas)), Has.Length.EqualTo(Atmospherics.TotalNumberOfGases));
-                });
+                Assert.That(atmosSystem.Gases.Count(), Is.EqualTo(Atmospherics.TotalNumberOfGases));
+
+                Assert.That(Enum.GetValues(typeof(Gas)).Length, Is.EqualTo(Atmospherics.TotalNumberOfGases));
             });
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

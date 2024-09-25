@@ -3,91 +3,77 @@ using Robust.Shared.Serialization;
 
 namespace Content.Shared.Atmos.Monitor;
 
-
+// mostly based around floats and percentages, no literals
+// except for the range boundaries
 [Prototype("alarmThreshold")]
-public sealed partial class AtmosAlarmThresholdPrototype : IPrototype
+[Serializable, NetSerializable]
+public sealed class AtmosAlarmThreshold : IPrototype, ISerializationHooks
 {
     [IdDataField]
-    public string ID { get; private set; } = default!;
-
+    public string ID { get; } = default!;
     [DataField("ignore")]
     public bool Ignore;
 
     [DataField("upperBound")]
-    public AlarmThresholdSetting UpperBound = AlarmThresholdSetting.Disabled;
+    private AlarmThresholdSetting _UpperBound;
 
-    [DataField("lowerBound")]
-    public AlarmThresholdSetting LowerBound = AlarmThresholdSetting.Disabled;
-
-    [DataField("upperWarnAround")]
-    public AlarmThresholdSetting UpperWarningPercentage = AlarmThresholdSetting.Disabled;
-
-    [DataField("lowerWarnAround")]
-    public AlarmThresholdSetting LowerWarningPercentage = AlarmThresholdSetting.Disabled;
-}
-
-[Serializable, NetSerializable, DataDefinition]
-public sealed partial class AtmosAlarmThreshold
-{
-    [DataField("ignore")]
-    public bool Ignore;
-
-    [DataField("upperBound")]
-    private AlarmThresholdSetting _upperBound = AlarmThresholdSetting.Disabled;
-
-    [DataField("lowerBound")]
-    private AlarmThresholdSetting _lowerBound = AlarmThresholdSetting.Disabled;
-
-    [DataField("upperWarnAround")]
-    public AlarmThresholdSetting UpperWarningPercentage = AlarmThresholdSetting.Disabled;
-
-    [DataField("lowerWarnAround")]
-    public AlarmThresholdSetting LowerWarningPercentage = AlarmThresholdSetting.Disabled;
-
-    public AlarmThresholdSetting UpperBound
-    {
-        get => _upperBound;
-        set
+    public AlarmThresholdSetting UpperBound { get { return _UpperBound; } private set
         {
             // Because the warnings are stored as percentages of the bounds,
             // Make a copy of the calculated bounds, so that the real warning amount
             // doesn't change value when user changes the bounds
             var oldWarning = UpperWarningBound;
-            _upperBound = value;
+            _UpperBound = value;
             UpperWarningBound = oldWarning;
         }
     }
 
-    public AlarmThresholdSetting LowerBound
-    {
-        get => _lowerBound;
-        set
+    [DataField("lowerBound")]
+    public AlarmThresholdSetting _LowerBound;
+
+    public AlarmThresholdSetting LowerBound { get { return _LowerBound; } private set
         {
             // Because the warnings are stored as percentages of the bounds,
             // Make a copy of the calculated bounds, so that the real warning amount
             // doesn't change value when user changes the bounds
             var oldWarning = LowerWarningBound;
-            _lowerBound = value;
+            _LowerBound = value;
             LowerWarningBound = oldWarning;
         }
     }
 
+    // upper warning percentage
+    // must always cause UpperWarningBound
+    // to be smaller
+    [DataField("upperWarnAround")]
+    public AlarmThresholdSetting UpperWarningPercentage { get; private set; }
+
+    // lower warning percentage
+    // must always cause LowerWarningBound
+    // to be larger
+    [DataField("lowerWarnAround")]
+    public AlarmThresholdSetting LowerWarningPercentage { get; private set; }
+
     [ViewVariables]
     public AlarmThresholdSetting UpperWarningBound
     {
-        get => CalculateWarningBound(AtmosMonitorThresholdBound.Upper);
-        set => UpperWarningPercentage = CalculateWarningPercentage(AtmosMonitorThresholdBound.Upper, value);
+        get { return CalculateWarningBound(AtmosMonitorThresholdBound.Upper); }
+        set { UpperWarningPercentage = CalculateWarningPercentage(AtmosMonitorThresholdBound.Upper, value); }
     }
 
     [ViewVariables]
     public AlarmThresholdSetting LowerWarningBound
     {
-        get => CalculateWarningBound(AtmosMonitorThresholdBound.Lower);
-        set => LowerWarningPercentage = CalculateWarningPercentage(AtmosMonitorThresholdBound.Lower, value);
+        get { return CalculateWarningBound(AtmosMonitorThresholdBound.Lower); }
+        set { LowerWarningPercentage = CalculateWarningPercentage(AtmosMonitorThresholdBound.Lower, value); }
     }
 
     public AtmosAlarmThreshold()
     {
+        UpperBound = new AlarmThresholdSetting();
+        LowerBound = new AlarmThresholdSetting();
+        UpperWarningPercentage = new AlarmThresholdSetting();
+        LowerWarningPercentage = new AlarmThresholdSetting();
     }
 
     public AtmosAlarmThreshold(AtmosAlarmThreshold other)
@@ -99,13 +85,12 @@ public sealed partial class AtmosAlarmThreshold
         LowerWarningPercentage = other.LowerWarningPercentage;
     }
 
-    public AtmosAlarmThreshold(AtmosAlarmThresholdPrototype proto)
+    void ISerializationHooks.AfterDeserialization()
     {
-        Ignore = proto.Ignore;
-        UpperBound = proto.UpperBound;
-        LowerBound = proto.LowerBound;
-        UpperWarningPercentage = proto.UpperWarningPercentage;
-        LowerWarningPercentage = proto.LowerWarningPercentage;
+        UpperBound = new AlarmThresholdSetting{ Enabled = UpperBound.Value != 0, Value = UpperBound.Value };
+        LowerBound = new AlarmThresholdSetting{ Enabled = LowerBound.Value != 0, Value = LowerBound.Value };
+        UpperWarningPercentage = new AlarmThresholdSetting{ Enabled = UpperWarningPercentage.Value != 0, Value = UpperWarningPercentage.Value };
+        LowerWarningPercentage = new AlarmThresholdSetting{ Enabled = LowerWarningPercentage.Value != 0, Value = LowerWarningPercentage.Value };
     }
 
     // utility function to check a threshold against some calculated value
@@ -253,41 +238,38 @@ public sealed partial class AtmosAlarmThreshold
                 break;
         }
     }
-}
 
-[DataDefinition, Serializable]
-public readonly partial struct AlarmThresholdSetting
-{
-    [DataField("enabled")]
-    public bool Enabled { get; init; } = true;
-
-    [DataField("threshold")]
-    public float Value { get; init; } = 1;
-
-    public static AlarmThresholdSetting Disabled = new() {Enabled = false, Value = 0};
-
-    public AlarmThresholdSetting()
+    [DataDefinition, Serializable]
+    public struct AlarmThresholdSetting
     {
-    }
+        [DataField("enabled")]
+        public bool Enabled { get; set; } = false;
+        [DataField("threshold")]
+        public float Value { get; set; } = 0;
 
-    public static bool operator <=(float a, AlarmThresholdSetting b)
-    {
-        return b.Enabled && a <= b.Value;
-    }
+        public AlarmThresholdSetting()
+        {
+        }
 
-    public static bool operator >=(float a, AlarmThresholdSetting b)
-    {
-        return b.Enabled && a >= b.Value;
-    }
+        public static bool operator <=(float a, AlarmThresholdSetting b)
+        {
+            return b.Enabled && a <= b.Value;
+        }
 
-    public AlarmThresholdSetting WithThreshold(float threshold)
-    {
-        return this with {Value = threshold};
-    }
+        public static bool operator >=(float a, AlarmThresholdSetting b)
+        {
+            return b.Enabled && a >= b.Value;
+        }
 
-    public AlarmThresholdSetting WithEnabled(bool enabled)
-    {
-        return this with {Enabled = enabled};
+        public AlarmThresholdSetting WithThreshold(float threshold)
+        {
+            return new AlarmThresholdSetting{ Enabled = Enabled, Value = threshold };
+        }
+
+        public AlarmThresholdSetting WithEnabled(bool enabled)
+        {
+            return new AlarmThresholdSetting{ Enabled = enabled, Value = Value };
+        }
     }
 }
 

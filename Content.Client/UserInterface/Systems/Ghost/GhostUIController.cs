@@ -105,15 +105,9 @@ public sealed class GhostUIController : UIController, IOnSystemChanged<GhostSyst
         UpdateGui();
     }
 
-    private void OnWarpClicked(NetEntity player)
+    private void OnWarpClicked(EntityUid player)
     {
         var msg = new GhostWarpToTargetRequestEvent(player);
-        _net.SendSystemNetworkMessage(msg);
-    }
-
-    private void OnGhostnadoClicked()
-    {
-        var msg = new GhostnadoRequestEvent();
         _net.SendSystemNetworkMessage(msg);
     }
 
@@ -126,7 +120,6 @@ public sealed class GhostUIController : UIController, IOnSystemChanged<GhostSyst
         Gui.ReturnToBodyPressed += ReturnToBody;
         Gui.GhostRolesPressed += GhostRolesPressed;
         Gui.TargetWindow.WarpClicked += OnWarpClicked;
-        Gui.TargetWindow.OnGhostnadoClicked += OnGhostnadoClicked;
 
         UpdateGui();
     }

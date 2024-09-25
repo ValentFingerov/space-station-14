@@ -1,27 +1,37 @@
 using Content.Shared.StationRecords;
-using Robust.Client.UserInterface;
+using Robust.Client.GameObjects;
 
 namespace Content.Client.StationRecords;
 
 public sealed class GeneralStationRecordConsoleBoundUserInterface : BoundUserInterface
 {
-    [ViewVariables]
     private GeneralStationRecordConsoleWindow? _window = default!;
 
-    public GeneralStationRecordConsoleBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
-    {
-    }
+    public GeneralStationRecordConsoleBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
+    {}
 
     protected override void Open()
     {
         base.Open();
 
-        _window = this.CreateWindow<GeneralStationRecordConsoleWindow>();
-        _window.OnKeySelected += key =>
-            SendMessage(new SelectStationRecord(key));
-        _window.OnFiltersChanged += (type, filterValue) =>
-            SendMessage(new SetStationRecordFilter(type, filterValue));
-        _window.OnDeleted += id => SendMessage(new DeleteStationRecord(id));
+        _window = new();
+        _window.OnKeySelected += OnKeySelected;
+        _window.OnFiltersChanged += OnFiltersChanged;
+        _window.OnClose += Close;
+
+        _window.OpenCentered();
+    }
+
+    private void OnKeySelected(StationRecordKey? key)
+    {
+        SendMessage(new SelectGeneralStationRecord(key));
+    }
+
+    private void OnFiltersChanged(
+        GeneralStationRecordFilterType type, string filterValue)
+    {
+        GeneralStationRecordsFilterMsg msg = new(type, filterValue);
+        SendMessage(msg);
     }
 
     protected override void UpdateState(BoundUserInterfaceState state)
@@ -29,8 +39,17 @@ public sealed class GeneralStationRecordConsoleBoundUserInterface : BoundUserInt
         base.UpdateState(state);
 
         if (state is not GeneralStationRecordConsoleState cast)
+        {
             return;
+        }
 
         _window?.UpdateState(cast);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+
+        _window?.Close();
     }
 }

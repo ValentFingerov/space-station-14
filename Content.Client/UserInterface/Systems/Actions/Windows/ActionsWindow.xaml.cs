@@ -10,11 +10,6 @@ public sealed partial class ActionsWindow : DefaultWindow
 {
     public MultiselectOptionButton<Filters> FilterButton { get; private set; }
 
-    /// <summary>
-    /// Whether the displayed actions or search filter needs updating.
-    /// </summary>
-    public bool UpdateNeeded;
-
     public ActionsWindow()
     {
         RobustXamlLoader.Load(this);
@@ -26,7 +21,7 @@ public sealed partial class ActionsWindow : DefaultWindow
 
         foreach (var filter in Enum.GetValues<Filters>())
         {
-            FilterButton.AddItem(Loc.GetString($"ui-actionmenu-{filter.ToString().ToLower()}"), filter);
+            FilterButton.AddItem(filter.ToString(), filter);
         }
     }
 

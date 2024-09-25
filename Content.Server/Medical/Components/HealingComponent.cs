@@ -1,7 +1,8 @@
 using Content.Shared.Damage;
 using Content.Shared.Damage.Prototypes;
+using Content.Shared.DoAfter;
 using Robust.Shared.Audio;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.List;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Server.Medical.Components
 {
@@ -9,7 +10,7 @@ namespace Content.Server.Medical.Components
     /// Applies a damage change to the target when used in an interaction.
     /// </summary>
     [RegisterComponent]
-    public sealed partial class HealingComponent : Component
+    public sealed class HealingComponent : Component
     {
         [DataField("damage", required: true)]
         [ViewVariables(VVAccess.ReadWrite)]
@@ -35,8 +36,8 @@ namespace Content.Server.Medical.Components
         ///     HealingComponent this filters what damage container type this component should work on. If null,
         ///     all damage container types are supported.
         /// </remarks>
-        [DataField("damageContainers", customTypeSerializer: typeof(PrototypeIdListSerializer<DamageContainerPrototype>))]
-        public List<string>? DamageContainers;
+        [DataField("damageContainer", customTypeSerializer: typeof(PrototypeIdSerializer<DamageContainerPrototype>))]
+        public string? DamageContainerID;
 
         /// <summary>
         /// How long it takes to apply the damage.

@@ -1,4 +1,4 @@
-- type: entity
+﻿- type: entity
   name: green glowstick
   parent: BaseItem
   id: GlowstickBase
@@ -60,9 +60,7 @@
           maxDuration: 10 # 300.0
           startValue: 5.0
           endValue: 1.5
-    - type: Tag
-      tags:
-      - Trash
+          property: Radius
 
 - type: entity
   name: red glowstick
@@ -71,7 +69,9 @@
   components:
     - type: ExpendableLight
       spentName: expendable-light-spent-red-glowstick-name
+      glowDuration: 10 # time in seconds
       glowColorLit: "#FF0000"
+      fadeOutDuration: 5
     - type: PointLight
       color: "#FF0000"
 
@@ -115,7 +115,7 @@
   name: light pulse test
   parent: BaseItem
   id: LightBehaviourTest1
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: Objects/Misc/glowstick.rsi
@@ -146,7 +146,7 @@
   name: color cycle test
   parent: BaseItem
   id: LightBehaviourTest2
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: Objects/Misc/glowstick.rsi
@@ -178,7 +178,7 @@
   name: multi-behaviour light test
   parent: BaseItem
   id: LightBehaviourTest3
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: Objects/Misc/glowstick.rsi
@@ -201,7 +201,7 @@
           minDuration: 0.2
           maxDuration: 1.0
           maxValue: 0.2
-          property: AnimatedEnable
+          property: Enabled
           isLooped: true
           enabled: true
         - !type:ColorCycleBehaviour
@@ -218,7 +218,7 @@
   name: light fade in test
   parent: BaseItem
   id: LightBehaviourTest4
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: Objects/Misc/glowstick.rsi
@@ -249,7 +249,7 @@
   name: light pulse radius test
   parent: BaseItem
   id: LightBehaviourTest5
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: Objects/Misc/glowstick.rsi
@@ -274,13 +274,14 @@
           minValue: 2.0
           maxValue: 10.0
           isLooped: true
+          property: Radius
           enabled: true
 
 - type: entity
   name: light randomize radius test
   parent: BaseItem
   id: LightBehaviourTest6
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
     - type: Sprite
       sprite: Objects/Misc/glowstick.rsi
@@ -305,4 +306,5 @@
           minValue: 10.0
           maxValue: 25.0
           isLooped: true
+          property: Radius
           enabled: true

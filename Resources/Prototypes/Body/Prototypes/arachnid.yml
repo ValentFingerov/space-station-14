@@ -1,6 +1,6 @@
 ﻿- type: body
   id: Arachnid
-  name: "arachnid"
+  name: "Arachnid"
   root: torso
   slots:
     head:
@@ -19,10 +19,10 @@
         liver: OrganArachnidLiver
         kidneys: OrganArachnidKidneys
       connections:
-      - right arm
       - left arm
-      - right leg
+      - right arm
       - left leg
+      - right leg
     right arm:
       part: RightArmArachnid
       connections:

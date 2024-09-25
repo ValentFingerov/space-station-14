@@ -7,10 +7,10 @@
         - to: makeshiftShield
           steps:
             - material: Cable
-              amount: 5
+              amount: 15
               doAfter: 2
             - material: Steel
-              amount: 5
+              amount: 30
               doAfter: 2
 
     - node: makeshiftShield

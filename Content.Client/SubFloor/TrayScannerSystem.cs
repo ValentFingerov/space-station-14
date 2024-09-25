@@ -1,3 +1,4 @@
+using Content.Client.Hands;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Inventory;
 using Content.Shared.SubFloor;
@@ -23,8 +24,6 @@ public sealed class TrayScannerSystem : SharedTrayScannerSystem
     private const string TRayAnimationKey = "trays";
     private const double AnimationLength = 0.3;
 
-    public const LookupFlags Flags = LookupFlags.Static | LookupFlags.Sundries | LookupFlags.Approximate;
-
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
@@ -33,7 +32,7 @@ public sealed class TrayScannerSystem : SharedTrayScannerSystem
             return;
 
         // TODO: Multiple viewports or w/e
-        var player = _player.LocalEntity;
+        var player = _player.LocalPlayer?.ControlledEntity;
         var xformQuery = GetEntityQuery<TransformComponent>();
 
         if (!xformQuery.TryGetComponent(player, out var playerXform))
@@ -42,7 +41,7 @@ public sealed class TrayScannerSystem : SharedTrayScannerSystem
         var playerPos = _transform.GetWorldPosition(playerXform, xformQuery);
         var playerMap = playerXform.MapID;
         var range = 0f;
-        HashSet<Entity<SubFloorHideComponent>> inRange;
+        HashSet<SubFloorHideComponent> inRange;
         var scannerQuery = GetEntityQuery<TrayScannerComponent>();
 
         // TODO: Should probably sub to player attached changes / inventory changes but inventory's
@@ -74,28 +73,36 @@ public sealed class TrayScannerSystem : SharedTrayScannerSystem
             canSee = true;
         }
 
-        inRange = new HashSet<Entity<SubFloorHideComponent>>();
-
         if (canSee)
         {
-            _lookup.GetEntitiesInRange(playerMap, playerPos, range, inRange, flags: Flags);
+            inRange = _lookup.GetComponentsInRange<SubFloorHideComponent>(playerMap, playerPos, range);
 
-            foreach (var (uid, comp) in inRange)
+            foreach (var comp in inRange)
             {
-                if (comp.IsUnderCover)
-                    EnsureComp<TrayRevealedComponent>(uid);
+                var uid = comp.Owner;
+                if (!comp.IsUnderCover || !comp.BlockAmbience | !comp.BlockInteractions)
+                    continue;
+
+                EnsureComp<TrayRevealedComponent>(uid);
             }
         }
+        else
+        {
+            inRange = new HashSet<SubFloorHideComponent>();
+        }
 
-        var revealedQuery = AllEntityQuery<TrayRevealedComponent, SpriteComponent>();
+        var revealedQuery = AllEntityQuery<TrayRevealedComponent, SpriteComponent, TransformComponent>();
         var subfloorQuery = GetEntityQuery<SubFloorHideComponent>();
 
-        while (revealedQuery.MoveNext(out var uid, out _, out var sprite))
+        while (revealedQuery.MoveNext(out var uid, out _, out var sprite, out var xform))
         {
             // Revealing
             // Add buffer range to avoid flickers.
             if (subfloorQuery.TryGetComponent(uid, out var subfloor) &&
-                inRange.Contains((uid, subfloor)))
+                xform.MapID != MapId.Nullspace &&
+                xform.MapID == playerMap &&
+                xform.Anchored &&
+                inRange.Contains(subfloor))
             {
                 // Due to the fact client is predicting this server states will reset it constantly
                 if ((!_appearance.TryGetData(uid, SubFloorVisuals.ScannerRevealed, out bool value) || !value) &&

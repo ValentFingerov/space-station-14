@@ -1,15 +1,16 @@
 using Content.Server.Light.Components;
 using Content.Shared.Clothing.Components;
 using Content.Shared.Clothing.EntitySystems;
-using Content.Shared.IgnitionSource;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Item;
-using Content.Shared.Light.Components;
+using Content.Shared.Light.Component;
 using Content.Shared.Tag;
+using Content.Shared.Temperature;
 using Content.Shared.Verbs;
 using JetBrains.Annotations;
 using Robust.Server.GameObjects;
-using Robust.Shared.Audio.Systems;
+using Robust.Shared.Audio;
+using Robust.Shared.Player;
 using Robust.Shared.Utility;
 
 namespace Content.Server.Light.EntitySystems
@@ -22,7 +23,6 @@ namespace Content.Server.Light.EntitySystems
         [Dependency] private readonly TagSystem _tagSystem = default!;
         [Dependency] private readonly SharedAudioSystem _audio = default!;
         [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
-        [Dependency] private readonly MetaDataSystem _metaData = default!;
 
         public override void Initialize()
         {
@@ -35,18 +35,15 @@ namespace Content.Server.Light.EntitySystems
 
         public override void Update(float frameTime)
         {
-            var query = EntityQueryEnumerator<ExpendableLightComponent>();
-            while (query.MoveNext(out var uid, out var light))
+            foreach (var light in EntityManager.EntityQuery<ExpendableLightComponent>())
             {
-                UpdateLight((uid, light), frameTime);
+                UpdateLight(light, frameTime);
             }
         }
 
-        private void UpdateLight(Entity<ExpendableLightComponent> ent, float frameTime)
+        private void UpdateLight(ExpendableLightComponent component, float frameTime)
         {
-            var component = ent.Comp;
-            if (!component.Activated)
-                return;
+            if (!component.Activated) return;
 
             component.StateExpiryTime -= frameTime;
 
@@ -58,25 +55,25 @@ namespace Content.Server.Light.EntitySystems
                         component.CurrentState = ExpendableLightState.Fading;
                         component.StateExpiryTime = component.FadeOutDuration;
 
-                        UpdateVisualizer(ent);
+                        UpdateVisualizer(component);
 
                         break;
 
                     default:
                     case ExpendableLightState.Fading:
                         component.CurrentState = ExpendableLightState.Dead;
-                        var meta = MetaData(ent);
-                        _metaData.SetEntityName(ent, Loc.GetString(component.SpentName), meta);
-                        _metaData.SetEntityDescription(ent, Loc.GetString(component.SpentDesc), meta);
+                        var meta = MetaData(component.Owner);
+                        meta.EntityName = Loc.GetString(component.SpentName);
+                        meta.EntityDescription = Loc.GetString(component.SpentDesc);
 
-                        _tagSystem.AddTag(ent, "Trash");
+                        _tagSystem.AddTag(component.Owner, "Trash");
 
-                        UpdateSounds(ent);
-                        UpdateVisualizer(ent);
+                        UpdateSounds(component);
+                        UpdateVisualizer(component);
 
-                        if (TryComp<ItemComponent>(ent, out var item))
+                        if (TryComp<ItemComponent>(component.Owner, out var item))
                         {
-                            _item.SetHeldPrefix(ent, "unlit", component: item);
+                            _item.SetHeldPrefix(component.Owner, "unlit", item);
                         }
 
                         break;
@@ -87,24 +84,20 @@ namespace Content.Server.Light.EntitySystems
         /// <summary>
         ///     Enables the light if it is not active. Once active it cannot be turned off.
         /// </summary>
-        public bool TryActivate(Entity<ExpendableLightComponent> ent)
+        public bool TryActivate(ExpendableLightComponent component)
         {
-            var component = ent.Comp;
             if (!component.Activated && component.CurrentState == ExpendableLightState.BrandNew)
             {
-                if (TryComp<ItemComponent>(ent, out var item))
+                if (TryComp<ItemComponent>(component.Owner, out var item))
                 {
-                    _item.SetHeldPrefix(ent, "lit", component: item);
+                    _item.SetHeldPrefix(component.Owner, "lit", item);
                 }
-
-                var ignite = new IgnitionEvent(true);
-                RaiseLocalEvent(ent, ref ignite);
 
                 component.CurrentState = ExpendableLightState.Lit;
                 component.StateExpiryTime = component.GlowDuration;
 
-                UpdateSounds(ent);
-                UpdateVisualizer(ent);
+                UpdateSounds(component);
+                UpdateVisualizer(component);
 
                 return true;
             }
@@ -112,80 +105,78 @@ namespace Content.Server.Light.EntitySystems
             return false;
         }
 
-        private void UpdateVisualizer(Entity<ExpendableLightComponent> ent, AppearanceComponent? appearance = null)
+        private void UpdateVisualizer(ExpendableLightComponent component, AppearanceComponent? appearance = null)
         {
-            var component = ent.Comp;
-            if (!Resolve(ent, ref appearance, false))
-                return;
+            if (!Resolve(component.Owner, ref appearance, false)) return;
 
-            _appearance.SetData(ent, ExpendableLightVisuals.State, component.CurrentState, appearance);
+            _appearance.SetData(appearance.Owner, ExpendableLightVisuals.State, component.CurrentState, appearance);
 
             switch (component.CurrentState)
             {
                 case ExpendableLightState.Lit:
-                    _appearance.SetData(ent, ExpendableLightVisuals.Behavior, component.TurnOnBehaviourID, appearance);
+                    _appearance.SetData(appearance.Owner, ExpendableLightVisuals.Behavior, component.TurnOnBehaviourID, appearance);
                     break;
 
                 case ExpendableLightState.Fading:
-                    _appearance.SetData(ent, ExpendableLightVisuals.Behavior, component.FadeOutBehaviourID, appearance);
+                    _appearance.SetData(appearance.Owner, ExpendableLightVisuals.Behavior, component.FadeOutBehaviourID, appearance);
                     break;
 
                 case ExpendableLightState.Dead:
-                    _appearance.SetData(ent, ExpendableLightVisuals.Behavior, string.Empty, appearance);
-                    var ignite = new IgnitionEvent(false);
-                    RaiseLocalEvent(ent, ref ignite);
+                    _appearance.SetData(appearance.Owner, ExpendableLightVisuals.Behavior, string.Empty, appearance);
+                    var isHotEvent = new IsHotEvent() {IsHot = true};
+                    RaiseLocalEvent(component.Owner, isHotEvent);
                     break;
             }
         }
 
-        private void UpdateSounds(Entity<ExpendableLightComponent> ent)
+        private void UpdateSounds(ExpendableLightComponent component)
         {
-            var component = ent.Comp;
+            var uid = component.Owner;
 
             switch (component.CurrentState)
             {
                 case ExpendableLightState.Lit:
-                    _audio.PlayPvs(component.LitSound, ent);
+                    _audio.PlayPvs(component.LitSound, uid);
                     break;
                 case ExpendableLightState.Fading:
                     break;
                 default:
-                    _audio.PlayPvs(component.DieSound, ent);
+                    _audio.PlayPvs(component.DieSound, uid);
                     break;
             }
 
-            if (TryComp<ClothingComponent>(ent, out var clothing))
+            if (TryComp<ClothingComponent>(uid, out var clothing))
             {
-                _clothing.SetEquippedPrefix(ent, component.Activated ? "Activated" : string.Empty, clothing);
+                _clothing.SetEquippedPrefix(uid, component.Activated ? "Activated" : string.Empty, clothing);
             }
         }
 
         private void OnExpLightInit(EntityUid uid, ExpendableLightComponent component, ComponentInit args)
         {
-            if (TryComp<ItemComponent>(uid, out var item))
+            if (TryComp<ItemComponent?>(uid, out var item))
             {
-                _item.SetHeldPrefix(uid, "unlit", component: item);
+                _item.SetHeldPrefix(uid, "unlit", item);
             }
 
             component.CurrentState = ExpendableLightState.BrandNew;
             EntityManager.EnsureComponent<PointLightComponent>(uid);
         }
 
-        private void OnExpLightUse(Entity<ExpendableLightComponent> ent, ref UseInHandEvent args)
+        private void OnExpLightUse(EntityUid uid, ExpendableLightComponent component, UseInHandEvent args)
         {
-            if (args.Handled)
-                return;
-
-            if (TryActivate(ent))
+            if (args.Handled) return;
+            var isHotEvent = new IsHotEvent() {IsHot = true};
+            RaiseLocalEvent(uid, isHotEvent);
+            if (TryActivate(component))
                 args.Handled = true;
         }
 
-        private void AddIgniteVerb(Entity<ExpendableLightComponent> ent, ref GetVerbsEvent<ActivationVerb> args)
+        private void AddIgniteVerb(EntityUid uid, ExpendableLightComponent component, GetVerbsEvent<ActivationVerb> args)
         {
             if (!args.CanAccess || !args.CanInteract)
                 return;
 
-            if (ent.Comp.CurrentState != ExpendableLightState.BrandNew)
+            if (component.CurrentState != ExpendableLightState.BrandNew)
                 return;
 
             // Ignite the flare or make the glowstick glow.
@@ -194,7 +185,7 @@ namespace Content.Server.Light.EntitySystems
             {
                 Text = Loc.GetString("expendable-light-start-verb"),
                 Icon = new SpriteSpecifier.Texture(new ("/Textures/Interface/VerbIcons/light.svg.192dpi.png")),
-                Act = () => TryActivate(ent)
+                Act = () => TryActivate(component)
             };
             args.Verbs.Add(verb);
         }

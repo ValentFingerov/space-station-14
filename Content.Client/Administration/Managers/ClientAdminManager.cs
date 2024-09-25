@@ -2,10 +2,8 @@ using Content.Shared.Administration;
 using Content.Shared.Administration.Managers;
 using Robust.Client.Console;
 using Robust.Client.Player;
-using Robust.Client.UserInterface;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
-using Robust.Shared.Player;
 using Robust.Shared.Utility;
 
 namespace Content.Client.Administration.Managers
@@ -16,14 +14,11 @@ namespace Content.Client.Administration.Managers
         [Dependency] private readonly IClientNetManager _netMgr = default!;
         [Dependency] private readonly IClientConGroupController _conGroup = default!;
         [Dependency] private readonly IResourceManager _res = default!;
-        [Dependency] private readonly ILogManager _logManager = default!;
-        [Dependency] private readonly IUserInterfaceManager _userInterface = default!;
 
         private AdminData? _adminData;
         private readonly HashSet<string> _availableCommands = new();
 
         private readonly AdminCommandPermissions _localCommandPermissions = new();
-        private ISawmill _sawmill = default!;
 
         public event Action? AdminStatusUpdated;
 
@@ -96,20 +91,17 @@ namespace Content.Client.Administration.Managers
             }
 
             _availableCommands.UnionWith(message.AvailableCommands);
-            _sawmill.Debug($"Have {message.AvailableCommands.Length} commands available");
+            Logger.DebugS("admin", $"Have {message.AvailableCommands.Length} commands available");
 
             _adminData = message.Admin;
             if (_adminData != null)
             {
                 var flagsText = string.Join("|", AdminFlagsHelper.FlagsToNames(_adminData.Flags));
-                _sawmill.Info($"Updated admin status: {_adminData.Active}/{_adminData.Title}/{flagsText}");
-
-                if (_adminData.Active)
-                    _userInterface.DebugMonitors.SetMonitor(DebugMonitor.Coords, true);
+                Logger.InfoS("admin", $"Updated admin status: {_adminData.Active}/{_adminData.Title}/{flagsText}");
             }
             else
             {
-                _sawmill.Info("Updated admin status: Not admin");
+                Logger.InfoS("admin", "Updated admin status: Not admin");
             }
 
             AdminStatusUpdated?.Invoke();
@@ -121,31 +113,13 @@ namespace Content.Client.Administration.Managers
         void IPostInjectInit.PostInject()
         {
             _conGroup.Implementation = this;
-            _sawmill = _logManager.GetSawmill("admin");
         }
 
         public AdminData? GetAdminData(EntityUid uid, bool includeDeAdmin = false)
         {
-            if (uid == _player.LocalEntity && (_adminData?.Active ?? includeDeAdmin))
-                return _adminData;
-
-            return null;
-        }
-
-        public AdminData? GetAdminData(ICommonSession session, bool includeDeAdmin = false)
-        {
-            if (_player.LocalUser == session.UserId && (_adminData?.Active ?? includeDeAdmin))
-                return _adminData;
-
-            return null;
-        }
-
-        public AdminData? GetAdminData(bool includeDeAdmin = false)
-        {
-            if (_player.LocalSession is { } session)
-                return GetAdminData(session, includeDeAdmin);
-
-            return null;
+            return uid == _player.LocalPlayer?.ControlledEntity
+                ? _adminData
+                : null;
         }
     }
 }

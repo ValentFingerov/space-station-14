@@ -1,7 +1,7 @@
 {
   "version": 1,
   "license": "CC-BY-SA-3.0",
-  "copyright": "Resprited by https://github.com/GamaYouNow. vox states by Flareguy",
+  "copyright": "Taken from tgstation at commit https://github.com/tgstation/tgstation/commit/2fea0a59470c476cf3f927833d3918d89cbe6af8",
   "size": {
     "x": 32,
     "y": 32
@@ -14,10 +14,7 @@
       "name": "icon-on"
     },
     {
-      "name": "icon-flash"
-    },
-    {
-      "name": "off-equipped-HELMET",
+      "name": "equipped-HELMET",
       "directions": 4
     },
     {
@@ -25,19 +22,11 @@
       "directions": 4
     },
     {
-      "name": "off-equipped-HELMET-vox",
+      "name": "inhand-left",
       "directions": 4
     },
     {
-      "name": "on-equipped-HELMET-vox",
-      "directions": 4
-    },
-    {
-      "name": "off-inhand-left",
-      "directions": 4
-    },
-    {
-      "name": "off-inhand-right",
+      "name": "inhand-right",
       "directions": 4
     },
     {

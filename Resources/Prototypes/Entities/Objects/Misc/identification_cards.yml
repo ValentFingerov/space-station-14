@@ -3,7 +3,7 @@
   id: IDCardStandard
   name: identification card
   description: A card necessary to access various areas aboard the station.
-  abstract: true
+  noSpawn: true
   components:
   - type: Sprite
     sprite: Objects/Misc/id_cards.rsi
@@ -12,18 +12,13 @@
     - idcard
     sprite: Objects/Misc/id_cards.rsi
   - type: Item
-    size: Small
     heldPrefix: default
-    storedRotation: -90
   - type: Access
   - type: IdCard
   - type: StationRecordKeyStorage
   - type: Tag
     tags:
     - DoorBumpOpener
-    - WhitelistChameleon
-  - type: StealTarget
-    stealGroup: IDCard
 
 #IDs with layers
 
@@ -100,7 +95,7 @@
     - state: idintern-service
 
 - type: entity
-  parent: [IDCardStandard, BaseGrandTheftContraband]
+  parent: IDCardStandard
   id: CaptainIDCard
   name: captain ID card
   components:
@@ -117,8 +112,6 @@
     - DoorBumpOpener
     - WhitelistChameleon
     - HighRiskItem
-  - type: StealTarget
-    stealGroup: CaptainIDCard
 
 - type: entity
   parent: IDCardStandard
@@ -223,10 +216,8 @@
   components:
     - type: Sprite
       layers:
-        - state: silver
+        - state: default
         - state: idquartermaster
-    - type: Item
-      heldPrefix: silver
     - type: PresetIdCard
       job: Quartermaster
 
@@ -301,19 +292,6 @@
     - state: idbartender
   - type: PresetIdCard
     job: Bartender
-
-- type: entity
-  parent: IDCardStandard
-  id: PunPunIDCard
-  name: pun pun ID card
-  components:
-    - type: Sprite
-      layers:
-        - state: default
-        - state: idbartender
-    - type: PresetIdCard
-      job: Bartender
-      name: Pun Pun
 
 - type: entity
   parent: IDCardStandard
@@ -435,21 +413,6 @@
 
 - type: entity
   parent: IDCardStandard
-  id: VisitorIDCard
-  name: visitor ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: default
-    - state: idvisitor
-  - type: IdCard
-    jobTitle: Visitor
-    jobIcon: JobIconVisitor
-  - type: PresetIdCard
-    job: Visitor
-
-- type: entity
-  parent: IDCardStandard
   id: BrigmedicIDCard
   name: brigmedic ID card
   components:
@@ -465,88 +428,43 @@
   components:
   - type: Sprite
     layers:
-    - state: centcom
+    - state: gold
     - state: idcentcom
   - type: Item
-    heldPrefix: blue
-  - type: PresetIdCard
-    job: CentralCommandOfficial
+    heldPrefix: gold
+  - type: IdCard
+    jobTitle: Central Commander
+  - type: Access
+    groups:
+    - AllAccess
 
 - type: entity
-  parent: IDCardStandard
+  parent: CentcomIDCard
   id: ERTLeaderIDCard
-  name: ERT leader ID card
+  name: ERT ID card
   components:
   - type: Sprite
     layers:
     - state: gold
-    - state: ert_commander
-  - type: PresetIdCard
-    job: ERTLeader
+    - state: ert_commander # we have the sprites but don't need individual ID entities for now.
   - type: Item
     heldPrefix: gold
 
 - type: entity
   parent: IDCardStandard
-  id: ERTChaplainIDCard
-  name: ERT chaplain ID card
+  id: CentcomIDCardSyndie
+  name: Centcom ID card
   components:
   - type: Sprite
     layers:
-    - state: gold
-    - state: ert_chaplain # we have the sprite for the id but dont have chaplain ERT equipment for now.
-  - type: PresetIdCard
-    job: ERTChaplain
+    - state: centcom
   - type: Item
     heldPrefix: blue
-
-- type: entity
-  parent: IDCardStandard
-  id: ERTEngineerIDCard
-  name: ERT engineer ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: gold
-    - state: ert_engineer
-  - type: PresetIdCard
-    job: ERTEngineer
-
-- type: entity
-  parent: IDCardStandard
-  id: ERTJanitorIDCard
-  name: ERT janitor ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: gold
-    - state: ert_janitor
-  - type: PresetIdCard
-    job: ERTJanitor
-
-- type: entity
-  parent: IDCardStandard
-  id: ERTMedicIDCard
-  name: ERT medic ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: gold
-    - state: ert_medic
-  - type: PresetIdCard
-    job: ERTMedical
-
-- type: entity
-  parent: IDCardStandard
-  id: ERTSecurityIDCard
-  name: ERT security ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: gold
-    - state: ert_security
-  - type: PresetIdCard
-    job: ERTSecurity
+  - type: IdCard
+    jobTitle: Central Commander
+  - type: Access
+    tags:
+    - Maintenance
 
 - type: entity
   parent: IDCardStandard
@@ -561,77 +479,30 @@
       job: Musician
 
 - type: entity
-  parent: IDCardStandard
+  parent: CentcomIDCard
   id: CentcomIDCardDeathsquad
-  name: death squad ID card
+  name: Deathsquad ID card
   components:
   - type: Sprite
     layers:
     - state: centcom
   - type: Item
     heldPrefix: blue
-  - type: PresetIdCard
-    job: DeathSquad
+  - type: IdCard
+    jobTitle: Centcom Agent
 
 - type: entity
-  name: passenger ID card
-  parent: IDCardStandard
+  parent: PassengerIDCard
   id: AgentIDCard
   suffix: Agent
   components:
-  - type: PresetIdCard
-    job: Passenger
-  - type: Access
-    tags:
-    - Maintenance
-    - SyndicateAgent
-  - type: Sprite
-    layers:
-    - state: default
-    - state: idpassenger
   - type: AgentIDCard
   - type: ActivatableUI
     key: enum.AgentIDCardUiKey.Key
-    inHandsOnly: true
-  - type: Tag
-    tags:
-    - DoorBumpOpener
-  - type: ChameleonClothing
-    slot: [idcard]
-    default: PassengerIDCard
   - type: UserInterface
     interfaces:
-      enum.AgentIDCardUiKey.Key:
+      - key: enum.AgentIDCardUiKey.Key
         type: AgentIDCardBoundUserInterface
-      enum.ChameleonUiKey.Key:
-        type: ChameleonBoundUserInterface
-# Corvax-HiddenDesc-Start
-  - type: HiddenDescription
-    entries:
-    - label: corvax-hidden-desc-AgentIDCard-syndicate
-      whitelistMind:
-        components:
-          - TraitorRole
-          - NukeOperative
-    - label: corvax-hidden-desc-AgentIDCard-research
-      jobRequired:
-        - ResearchAssistant
-        - ResearchDirector
-        - Scientist
-        - Borg
-# Corvax-HiddenDesc-End
-
-- type: entity
-  name: passenger ID card
-  parent: AgentIDCard
-  id: NukieAgentIDCard
-  suffix: Nukie
-  components:
-  - type: Access
-    tags:
-    - Maintenance
-    - SyndicateAgent
-    - NuclearOperative
 
 - type: entity
   parent: IDCardStandard
@@ -648,7 +519,7 @@
 - type: entity
   parent: IDCardStandard
   id: SyndicateIDCard
-  name: syndicate ID card
+  name: Syndicate ID card
   components:
   - type: Sprite
     layers:
@@ -656,20 +527,6 @@
   - type: Access
     tags:
     - NuclearOperative
-    - SyndicateAgent
-
-- type: entity
-  parent: IDCardStandard
-  id: PirateIDCard
-  name: pirate ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: pirate
-  - type: Access
-    tags:
-    - NuclearOperative
-    - SyndicateAgent
 
 - type: entity
   parent: IDCardStandard
@@ -735,15 +592,14 @@
   parent: CentcomIDCard
   id: CBURNIDcard
   name: CBURN ID card
-  suffix: CBURN
   components:
   - type: Sprite
     layers:
-    - state: centcom
+    - state: gold
+    - state: idcentcom
   - type: Item
-    heldPrefix: blue
-  - type: PresetIdCard
-    job: CBURN
+    heldPrefix: gold
+
 
 - type: entity
   parent: IDCardStandard
@@ -758,70 +614,3 @@
   - type: IdCard
     jobTitle: Cluwne
   - type: Unremoveable
-
-- type: entity
-  parent: EngineeringIDCard
-  id: SeniorEngineerIDCard
-  name: senior engineer ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: default
-    - state: idseniorengineer
-
-- type: entity
-  parent: ResearchIDCard
-  id: SeniorResearcherIDCard
-  name: senior researcher ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: default
-    - state: idseniorresearcher
-
-- type: entity
-  parent: MedicalIDCard
-  id: SeniorPhysicianIDCard
-  name: senior physician ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: default
-    - state: idseniorphysician
-
-- type: entity
-  parent: SecurityIDCard
-  id: SeniorOfficerIDCard
-  name: senior officer ID card
-  components:
-  - type: Sprite
-    layers:
-    - state: default
-    - state: idseniorofficer
-
-- type: entity
-  parent: IDCardStandard
-  id: UniversalIDCard
-  name: universal ID card
-  suffix: Admin
-  description: An ID card that gives you access beyond your wildest dreams.
-  components:
-  - type: Sprite
-    sprite: Objects/Misc/id_cards.rsi
-    layers:
-    - state: admin
-    - state: idadmin
-  - type: Clothing
-    sprite: Objects/Misc/id_cards.rsi
-  - type: Item
-    heldPrefix: green
-  - type: IdCard
-    jobTitle: Universal
-    jobIcon: JobIconAdmin
-  - type: Access
-    groups:
-    - AllAccess
-    tags:
-    - CentralCommand
-    - NuclearOperative
-    - SyndicateAgent

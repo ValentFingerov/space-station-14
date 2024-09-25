@@ -6,7 +6,7 @@ namespace Content.Shared.Ensnaring.Components;
 /// Use this on something you want to use to ensnare an entity with
 /// </summary>
 [RegisterComponent, NetworkedComponent]
-public sealed partial class EnsnaringComponent : Component
+public sealed class EnsnaringComponent : Component
 {
     /// <summary>
     /// How long it should take to free someone else.
@@ -37,13 +37,6 @@ public sealed partial class EnsnaringComponent : Component
     public float SprintSpeed = 0.9f;
 
     /// <summary>
-    /// How much stamina does the ensnare sap
-    /// </summary>
-    [ViewVariables(VVAccess.ReadWrite)]
-    [DataField("staminaDamage")]
-    public float StaminaDamage = 55f;
-
-    /// <summary>
     /// Should this ensnare someone when thrown?
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
@@ -58,7 +51,7 @@ public sealed partial class EnsnaringComponent : Component
     public EntityUid? Ensnared;
 
     /// <summary>
-    /// Should breaking out be possible when moving?
+    /// Should movement cancel breaking out?
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite)]
     [DataField("canMoveBreakout")]
@@ -86,14 +79,7 @@ public sealed class EnsnareEvent : EntityEventArgs
 /// </summary>
 public sealed class EnsnareRemoveEvent : CancellableEntityEventArgs
 {
-    public readonly float WalkSpeed;
-    public readonly float SprintSpeed;
 
-    public EnsnareRemoveEvent(float walkSpeed, float sprintSpeed)
-    {
-        WalkSpeed = walkSpeed;
-        SprintSpeed = sprintSpeed;
-    }
 }
 
 /// <summary>

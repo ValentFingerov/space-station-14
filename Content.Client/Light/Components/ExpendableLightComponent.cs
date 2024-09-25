@@ -1,5 +1,5 @@
 using Content.Client.Light.EntitySystems;
-using Content.Shared.Light.Components;
+using Content.Shared.Light.Component;
 using Robust.Shared.Audio;
 
 namespace Content.Client.Light.Components;
@@ -8,7 +8,7 @@ namespace Content.Client.Light.Components;
 /// Component that represents a handheld expendable light which can be activated and eventually dies over time.
 /// </summary>
 [RegisterComponent]
-public sealed partial class ExpendableLightComponent : SharedExpendableLightComponent
+public sealed class ExpendableLightComponent : SharedExpendableLightComponent
 {
     /// <summary>
     /// The icon state used by expendable lights when the they have been completely expended.
@@ -44,7 +44,7 @@ public sealed partial class ExpendableLightComponent : SharedExpendableLightComp
     /// The sound that plays when the expendable light is lit.
     /// </summary>
     [Access(typeof(ExpendableLightSystem))]
-    public EntityUid? PlayingStream;
+    public IPlayingAudioStream? PlayingStream;
 }
 
 public enum ExpendableLightVisualLayers : byte

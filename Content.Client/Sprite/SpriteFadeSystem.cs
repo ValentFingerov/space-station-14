@@ -3,7 +3,6 @@ using Content.Shared.Sprite;
 using Robust.Client.GameObjects;
 using Robust.Client.Player;
 using Robust.Client.State;
-using Robust.Shared.Physics;
 
 namespace Content.Client.Sprite;
 
@@ -16,7 +15,6 @@ public sealed class SpriteFadeSystem : EntitySystem
 
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IStateManager _stateManager = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
 
     private readonly HashSet<FadingSpriteComponent> _comps = new();
 
@@ -41,16 +39,16 @@ public sealed class SpriteFadeSystem : EntitySystem
     {
         base.FrameUpdate(frameTime);
 
-        var player = _playerManager.LocalEntity;
+        var player = _playerManager.LocalPlayer?.ControlledEntity;
         var spriteQuery = GetEntityQuery<SpriteComponent>();
         var change = ChangeRate * frameTime;
 
-        if (TryComp(player, out TransformComponent? playerXform) &&
+        if (TryComp<TransformComponent>(player, out var playerXform) &&
             _stateManager.CurrentState is GameplayState state &&
             spriteQuery.TryGetComponent(player, out var playerSprite))
         {
             var fadeQuery = GetEntityQuery<SpriteFadeComponent>();
-            var mapPos = _transform.GetMapCoordinates(_playerManager.LocalEntity!.Value, xform: playerXform);
+            var mapPos = playerXform.MapPosition;
 
             // Also want to handle large entities even if they may not be clickable.
             foreach (var ent in state.GetClickableEntities(mapPos))
@@ -79,13 +77,12 @@ public sealed class SpriteFadeSystem : EntitySystem
             }
         }
 
-        var query = AllEntityQuery<FadingSpriteComponent>();
-        while (query.MoveNext(out var uid, out var comp))
+        foreach (var comp in EntityQuery<FadingSpriteComponent>(true))
         {
             if (_comps.Contains(comp))
                 continue;
 
-            if (!spriteQuery.TryGetComponent(uid, out var sprite))
+            if (!spriteQuery.TryGetComponent(comp.Owner, out var sprite))
                 continue;
 
             var newColor = Math.Min(sprite.Color.A + change, comp.OriginalAlpha);
@@ -96,7 +93,7 @@ public sealed class SpriteFadeSystem : EntitySystem
             }
             else
             {
-                RemCompDeferred<FadingSpriteComponent>(uid);
+                RemCompDeferred<FadingSpriteComponent>(comp.Owner);
             }
         }
 

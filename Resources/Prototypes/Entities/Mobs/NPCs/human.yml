@@ -1,5 +1,5 @@
 - type: entity
-  name: civilian
+  name: Civilian
   parent: BaseMobHuman
   id: MobCivilian
   description: A miserable pile of secrets.
@@ -7,87 +7,37 @@
   - type: InputMover
   - type: MobMover
   - type: Loadout
-    prototypes: [LimitedPassengerGear]
-  - type: NpcFactionMember
+    prototypes: [PassengerGear]
+  - type: Faction
     factions:
     - NanoTrasen
 
 - type: entity
-  name: salvager
-  parent: BaseMobHuman
-  id: MobSalvager
-  components:
-    - type: NpcFactionMember
-      factions:
-        - Syndicate
-    - type: Loadout
-      prototypes:
-        - SalvageSpecialistGear
-    - type: InputMover
-    - type: MobMover
-    - type: HTN
-      rootTask:
-        task: SimpleHumanoidHostileCompound
-
-- type: entity
-  name: spirate
+  name: Spirate
   parent: BaseMobHuman
   id: MobSpirate
   description: Yarr!
   components:
-  - type: NpcFactionMember
+  - type: Faction
     factions:
       - Syndicate
-  - type: Loadout
-    prototypes:
-      - PirateGear
   - type: InputMover
   - type: MobMover
   - type: HTN
-    rootTask:
-      task: SimpleHumanoidHostileCompound
-
-- type: entity
-  name: syndicate footsoldier
-  parent: BaseMobHuman
-  id: MobSyndicateFootsoldier
-  components:
-    - type: NpcFactionMember
-      factions:
-        - Syndicate
-    - type: Loadout
-      prototypes:
-        - SyndicateFootsoldierGearRuin
-    - type: InputMover
-    - type: MobMover
-    - type: HTN
-      rootTask:
-        task: SimpleHumanoidHostileCompound
-
-- type: entity
-  name: syndicate shuttle pilot
-  parent: MobSyndicateFootsoldier
-  id: MobSyndicateFootsoldierPilot
+    rootTask: RangedCombatCompound
 
 - type: entity
   parent: BaseMobHuman
   suffix: Dead
   save: false # mobs are currently not saveable.
   id: SalvageHumanCorpse
-  name: unidentified corpse
-  description: I think they're dead.
+  name: unidentified human
+  description: We barely knew ye.
   components:
-  - type: RandomHumanoidAppearance
-    randomizeName: false
   - type: Damageable
     damage:
       types:
-        Bloodloss: 49
-        Asphyxiation: 76
-        Slash: 56
-        Blunt: 19
-  - type: Inventory
-    templateId: corpse
+        Blunt: 200
 
 - type: entity
   parent: MobHuman
@@ -96,5 +46,3 @@
   description: A polymorphed unfortunate.
   components:
   - type: Cluwne
-  - type: Speech
-    speechVerb: Cluwne

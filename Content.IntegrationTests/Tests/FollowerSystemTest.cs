@@ -1,6 +1,10 @@
-using Content.Server.GameTicking;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Content.Shared.Follower;
+using NUnit.Framework;
 using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Map;
 
@@ -15,35 +19,32 @@ public sealed class FollowerSystemTest
     [Test]
     public async Task FollowerMapDeleteTest()
     {
-        await using var pair = await PoolManager.GetServerClient();
-        var server = pair.Server;
-
-        var entMan = server.ResolveDependency<IEntityManager>();
-        var mapMan = server.ResolveDependency<IMapManager>();
-        var sysMan = server.ResolveDependency<IEntitySystemManager>();
-        var logMan = server.ResolveDependency<ILogManager>();
-        var mapSys = server.System<SharedMapSystem>();
-        var logger = logMan.RootSawmill;
+        await using var pairTracker = await PoolManager.GetServerClient(new (){NoClient = true});
+        var server = pairTracker.Pair.Server;
 
         await server.WaitPost(() =>
         {
+            var mapMan = IoCManager.Resolve<IMapManager>();
+            var entMan = IoCManager.Resolve<IEntityManager>();
+            var sysMan = IoCManager.Resolve<IEntitySystemManager>();
+            var logger = IoCManager.Resolve<ILogManager>().RootSawmill;
             var followerSystem = sysMan.GetEntitySystem<FollowerSystem>();
 
             // Create a map to spawn the observers on.
-            mapSys.CreateMap(out var map);
+            var map = mapMan.CreateMap();
 
             // Spawn an observer to be followed.
-            var followed = entMan.SpawnEntity(GameTicker.ObserverPrototypeName, new MapCoordinates(0, 0, map));
+            var followed = entMan.SpawnEntity("MobObserver", new MapCoordinates(0, 0, map));
             logger.Info($"Spawned followed observer: {entMan.ToPrettyString(followed)}");
 
             // Spawn an observer to follow another observer.
-            var follower = entMan.SpawnEntity(GameTicker.ObserverPrototypeName, new MapCoordinates(0, 0, map));
+            var follower = entMan.SpawnEntity("MobObserver", new MapCoordinates(0, 0, map));
             logger.Info($"Spawned follower observer: {entMan.ToPrettyString(follower)}");
 
             followerSystem.StartFollowingEntity(follower, followed);
 
-            entMan.DeleteEntity(mapSys.GetMap(map));
+            entMan.DeleteEntity(mapMan.GetMapEntityId(map));
         });
-        await pair.CleanReturnAsync();
+        await pairTracker.CleanReturnAsync();
     }
 }

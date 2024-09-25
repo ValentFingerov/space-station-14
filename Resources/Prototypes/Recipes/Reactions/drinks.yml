@@ -10,8 +10,6 @@
 
 - type: reaction
   id: AlliesCocktail
-  requiredMixerCategories:
-  - Shake
   reactants:
     Martini:
       amount: 2
@@ -22,8 +20,6 @@
 
 - type: reaction
   id: Amasec
-  requiredMixerCategories:
-  - Shake
   reactants:
     Wine:
       amount: 2
@@ -36,8 +32,6 @@
 
 - type: reaction
   id: Andalusia
-  requiredMixerCategories:
-  - Stir
   reactants:
     Rum:
       amount: 1
@@ -59,16 +53,6 @@
       amount: 2
   products:
     Antifreeze: 4
-
-- type: reaction
-  id: ArnoldPalmer
-  reactants:
-    IcedTea:
-      amount: 1
-    Lemonade:
-      amount: 1
-  products:
-    ArnoldPalmer: 2
 
 - type: reaction
   id: AtomicBomb
@@ -93,32 +77,6 @@
     B52: 3
 
 - type: reaction
-  id: BudgetInsulsDrink
-  reactants:
-    Tequila:
-      amount: 1
-    VodkaRedBool:
-      amount: 2
-  products:
-    BudgetInsulsDrink: 3
-
-- type: reaction
-  id: BlueHawaiian
-  requiredMixerCategories:
-  - Shake
-  reactants:
-    CoconutRum:
-      amount: 2
-    JuicePineapple:
-      amount: 1
-    JuiceLemon:
-      amount: 1
-    BlueCuracao:
-      amount: 1
-  products:
-    BlueHawaiian: 5
-
-- type: reaction
   id: CogChamp
   reactants:
     Cognac:
@@ -131,27 +89,7 @@
     CogChamp: 3
   sound:
     path: /Audio/Magic/Cults/ClockCult/steam_whoosh.ogg
-
-- type: reaction
-  id: BahamaMama
-  requiredMixerCategories:
-  - Shake
-  reactants:
-    Ice:
-      amount: 1
-    JuiceOrange:
-      amount: 1
-    JuicePineapple:
-      amount: 1
-    Rum:
-      amount: 1
-    CoconutRum:
-      amount: 1
-    Grenadine:
-      amount: 1
-  products:
-    BahamaMama: 6
-
+    
 - type: reaction
   id: Barefoot
   reactants:
@@ -178,8 +116,6 @@
 
 - type: reaction
   id: BeepskySmash
-  requiredMixerCategories:
-  - Shake
   reactants:
     Iron:
       amount: 1
@@ -189,6 +125,16 @@
       amount: 1
   products:
     BeepskySmash: 2
+
+- type: reaction
+  id: Bilk
+  reactants:
+    Beer:
+      amount: 1
+    Milk:
+      amount: 1
+  products:
+    Bilk: 2
 
 - type: reaction
   id: BlackRussian
@@ -202,8 +148,6 @@
 
 - type: reaction
   id: BloodyMary
-  requiredMixerCategories:
-  - Stir
   reactants:
     JuiceLime:
       amount: 1
@@ -249,53 +193,17 @@
     CafeLatte: 2
 
 - type: reaction
-  id: CoconutRum
-  reactants:
-    Rum:
-      amount: 2
-    CoconutWater:
-      amount: 1
-  products:
-    CoconutRum: 3
-
-- type: reaction
-  id: Cosmopolitan
-  reactants:
-    Vodka:
-      amount: 1
-    JuiceBerry:
-      amount: 1
-    JuiceLime:
-      amount: 1
-  products:
-    Cosmopolitan: 3
-
-- type: reaction
-  id: CreamOfCoconut
-  reactants:
-    CoconutWater:
-      amount: 1
-    Sugar:
-      amount: 1
-    Milk:
-      amount: 1
-  products:
-    CreamOfCoconut: 3
-
-- type: reaction
   id: CubaLibre
   reactants:
     Cola:
-      amount: 2
-    Rum:
       amount: 1
+    Rum:
+      amount: 2
   products:
     CubaLibre: 3
 
 - type: reaction
   id: DemonsBlood
-  requiredMixerCategories:
-  - Stir
   reactants:
     Rum:
       amount: 1
@@ -310,8 +218,6 @@
 
 - type: reaction
   id: DevilsKiss
-  requiredMixerCategories:
-  - Stir
   reactants:
     Rum:
       amount: 1
@@ -324,8 +230,6 @@
 
 - type: reaction
   id: DoctorsDelight
-  requiredMixerCategories:
-  - Stir
   reactants:
     Cream:
       amount: 2
@@ -342,8 +246,6 @@
 
 - type: reaction
   id: DriestMartini
-  requiredMixerCategories:
-  - Shake
   reactants:
     Gin:
       amount: 1
@@ -354,8 +256,6 @@
 
 - type: reaction
   id: ErikaSurprise
-  requiredMixerCategories:
-  - Shake
   reactants:
     Ale:
       amount: 2
@@ -371,19 +271,6 @@
     ErikaSurprise: 6
 
 - type: reaction
-  id: EthanolBreakdown
-  source: true
-  requiredMixerCategories:
-  - Electrolysis
-  reactants:
-    Ethanol:
-      amount: 9
-  products:
-    Hydrogen: 6
-    Carbon: 2
-    Oxygen: 1
-
-- type: reaction
   id: FourteenLoko
   reactants:
     Coffee:
@@ -397,8 +284,6 @@
 
 - type: reaction
   id: GargleBlaster
-  requiredMixerCategories:
-  - Shake
   reactants:
     Cognac:
       amount: 1
@@ -429,23 +314,21 @@
   id: GinTonic
   reactants:
     Gin:
-      amount: 1
-    TonicWater:
       amount: 2
+    TonicWater:
+      amount: 1
   products:
     GinTonic: 3
 
 - type: reaction
-  id: Gildlager
-  requiredMixerCategories:
-  - Shake
+  id: Goldschlager
   reactants:
     Gold:
       amount: 1
     Vodka:
       amount: 10
   products:
-    Gildlager: 10
+    Goldschlager: 10
 
 - type: reaction
   id: Grog
@@ -453,19 +336,18 @@
     Rum:
       amount: 1
     Water:
-      amount: 2
-    Sugar:
       amount: 1
   products:
-    Grog: 4
+    Grog: 2
 
 - type: reaction
   id: HippiesDelight
   reactants:
     GargleBlaster:
       amount: 1
-    THC:
+    THCOil:
       amount: 1
+      # TODO replace THCOil with Mushroom Hallucinogen once added
   products:
     HippiesDelight: 2
 
@@ -480,17 +362,6 @@
       amount: 1
   products:
     Hooch: 3
-
-- type: reaction
-  id: HotCocoa
-  minTemp: 350
-  reactants:
-    Water:
-      amount: 1
-    CocoaPowder:
-      amount: 1
-  products:
-    HotCocoa: 2
 
 - type: reaction
   id: IceCream
@@ -555,16 +426,6 @@
     IcedTea: 3
 
 - type: reaction
-  id: IrishBool
-  reactants:
-    EnergyDrink:
-      amount: 1
-    IrishCarBomb:
-      amount: 1
-  products:
-    IrishBool: 2
-
-- type: reaction
   id: IrishCarBomb
   reactants:
     Ale:
@@ -576,15 +437,13 @@
 
 - type: reaction
   id: IrishCoffee
-  requiredMixerCategories:
-  - Stir
   reactants:
     Coffee:
-      amount: 1
+      amount: 2
     IrishCream:
-      amount: 1
+      amount: 2
   products:
-    IrishCoffee: 2
+    IrishCoffee: 4
 
 - type: reaction
   id: IrishCream
@@ -598,8 +457,6 @@
 
 - type: reaction
   id: KiraSpecial
-  requiredMixerCategories:
-  - Stir
   reactants:
     JuiceLime:
       amount: 1
@@ -612,8 +469,6 @@
 
 - type: reaction
   id: Lemonade
-  requiredMixerCategories:
-  - Stir
   reactants:
     JuiceLemon:
       amount: 1
@@ -626,8 +481,6 @@
 
 - type: reaction
   id: LemonLime
-  requiredMixerCategories:
-  - Stir
   reactants:
     JuiceLemon:
       amount: 1
@@ -640,8 +493,6 @@
 
 - type: reaction
   id: LongIslandIcedTea
-  requiredMixerCategories:
-  - Stir
   reactants:
     CubaLibre:
       amount: 3
@@ -656,8 +507,6 @@
 
 - type: reaction
   id: Manhattan
-  requiredMixerCategories:
-  - Shake
   reactants:
     Whiskey:
       amount: 2
@@ -698,8 +547,6 @@
 
 - type: reaction
   id: Martini
-  requiredMixerCategories:
-  - Shake
   reactants:
     Gin:
       amount: 2
@@ -721,8 +568,6 @@
 
 - type: reaction
   id: Mojito
-  requiredMixerCategories:
-  - Shake
   reactants:
     JuiceLime:
       amount: 1
@@ -770,8 +615,6 @@
 
 - type: reaction
   id: Patron
-  requiredMixerCategories:
-  - Shake
   reactants:
     Tequila:
       amount: 10
@@ -779,36 +622,6 @@
       amount: 1
   products:
     Patron: 10
-
-- type: reaction
-  id: Painkiller
-  requiredMixerCategories:
-  - Shake
-  reactants:
-    JuicePineapple:
-      amount: 3
-    CoconutRum:
-      amount: 1
-    JuiceOrange:
-      amount: 1
-    CreamOfCoconut:
-      amount: 1
-  products:
-    Painkiller: 6
-
-- type: reaction
-  id: PinaColada
-  reactants:
-    JuicePineapple:
-      amount: 3
-    JuiceLime:
-      amount: 1
-    Rum:
-      amount: 1
-    CreamOfCoconut:
-      amount: 1
-  products:
-    PinaColada: 6
 
 - type: reaction
   id: Posca
@@ -853,28 +666,6 @@
     RootBeerFloat: 3
 
 - type: reaction
-  id: RoyRogers
-  reactants:
-    Cola:
-      amount: 2
-    Grenadine:
-      amount: 1
-  products:
-    RoyRogers: 3
-
-- type: reaction
-  id: Rubberneck
-  reactants:
-    EnergyDrink:
-      amount: 2
-    Moonshine:
-      amount: 1
-    Sugar:
-      amount: 1
-  products:
-    Rubberneck: 4
-
-- type: reaction
   id: Sbiten
   reactants:
     Vodka:
@@ -886,25 +677,13 @@
 
 - type: reaction
   id: ScrewdriverCocktail
-  requiredMixerCategories:
-  - Shake
   reactants:
     JuiceOrange:
-      amount: 2
-    Vodka:
       amount: 1
+    Vodka:
+      amount: 2
   products:
     ScrewdriverCocktail: 3
-
-- type: reaction
-  id: ShirleyTemple
-  reactants:
-    SolDry:
-      amount: 2
-    Grenadine:
-      amount: 1
-  products:
-    ShirleyTemple: 3
 
 - type: reaction
   id: Silencer
@@ -984,16 +763,6 @@
     SyndicateBomb: 2
 
 - type: reaction
-  id: Tea
-  reactants:
-    TeaPowder:
-      amount: 1
-    Water:
-      amount: 5
-  products:
-    Tea: 6
-
-- type: reaction
   id: TequilaSunrise
   reactants:
     JuiceOrange:
@@ -1015,8 +784,6 @@
 
 - type: reaction
   id: ToxinsSpecial
-  requiredMixerCategories:
-  - Shake
   reactants:
     Rum:
       amount: 2
@@ -1029,8 +796,6 @@
 
 - type: reaction
   id: VodkaMartini
-  requiredMixerCategories:
-  - Shake
   reactants:
     Vermouth:
       amount: 1
@@ -1040,22 +805,12 @@
     VodkaMartini: 3
 
 - type: reaction
-  id: VodkaRedBool
-  reactants:
-    Vodka:
-      amount: 1
-    EnergyDrink:
-      amount: 2
-  products:
-    VodkaRedBool: 3
-
-- type: reaction
   id: VodkaTonic
   reactants:
     Vodka:
-      amount: 1
-    TonicWater:
       amount: 2
+    TonicWater:
+      amount: 1
   products:
     VodkaTonic: 3
 
@@ -1063,23 +818,11 @@
   id: WhiskeyCola
   reactants:
     Cola:
-      amount: 2
-    Whiskey:
       amount: 1
+    Whiskey:
+      amount: 2
   products:
     WhiskeyCola: 3
-
-- type: reaction
-  id: WatermelonWakeup
-  reactants:
-    JuiceWatermelon:
-      amount: 1
-    Whiskey:
-      amount: 1
-    EnergyDrink:
-      amount: 1
-  products:
-    WatermelonWakeup: 3
 
 - type: reaction
   id: WhiteRussian
@@ -1095,32 +838,22 @@
   id: WhiskeySoda
   reactants:
     SodaWater:
-      amount: 2
-    Whiskey:
       amount: 1
+    Whiskey:
+      amount: 2
   products:
     WhiskeySoda: 3
-
-- type: reaction
-  id: XenoBasher
-  reactants:
-    ManlyDorf:
-      amount: 2
-    EnergyDrink:
-      amount: 1
-  products:
-    XenoBasher: 3
 
 - type: reaction
   id: HotRamen
   minTemp: 323.15
   reactants:
     DryRamen:
-      amount: 5
+      amount: 3
     Water:
-      amount: 2
+      amount: 1
   products:
-    HotRamen: 6
+    HotRamen: 3
 
 - type: reaction
   id: Pilk
@@ -1145,39 +878,3 @@
       amount: 1
   products:
     TheMartinez: 6
-
-- type: reaction
-  id: WaterBreakdown
-  source: true
-  requiredMixerCategories:
-  - Electrolysis
-  reactants:
-    Water:
-      amount: 3
-  products:
-    Hydrogen: 2
-    Oxygen: 1
-
-- type: reaction
-  id: WhiteGilgamesh
-  reactants:
-    Beer:
-      amount: 2
-    Milk:
-      amount: 1
-  products:
-    WhiteGilgamesh: 3
-
-- type: reaction
-  id: Cola
-  reactants:
-    Ipecac:
-      amount: 1
-    Oxygen:
-      amount: 1
-    Water:
-      amount: 1
-    Sugar:
-      amount: 1
-  products:
-    Cola: 4

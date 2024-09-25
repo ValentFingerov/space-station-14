@@ -1,12 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Numerics;
-using Content.Client.DisplacementMap;
 using Content.Client.Inventory;
 using Content.Shared.Clothing;
 using Content.Shared.Clothing.Components;
 using Content.Shared.Clothing.EntitySystems;
-using Content.Shared.DisplacementMap;
 using Content.Shared.Humanoid;
 using Content.Shared.Inventory;
 using Content.Shared.Inventory.Events;
@@ -14,17 +11,13 @@ using Content.Shared.Item;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
-using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.TypeSerializers.Implementations;
-using Robust.Shared.Utility;
 using static Robust.Client.GameObjects.SpriteComponent;
 
 namespace Content.Client.Clothing;
 
 public sealed class ClientClothingSystem : ClothingSystem
 {
-    public const string Jumpsuit = "jumpsuit";
-
     /// <summary>
     /// This is a shitty hotfix written by me (Paul) to save me from renaming all files.
     /// For some context, im currently refactoring inventory. Part of that is slots not being indexed by a massive enum anymore, but by strings.
@@ -37,7 +30,7 @@ public sealed class ClientClothingSystem : ClothingSystem
         {"ears", "EARS"},
         {"mask", "MASK"},
         {"outerClothing", "OUTERCLOTHING"},
-        {Jumpsuit, "INNERCLOTHING"},
+        {"jumpsuit", "INNERCLOTHING"},
         {"neck", "NECK"},
         {"back", "BACKPACK"},
         {"belt", "BELT"},
@@ -51,7 +44,7 @@ public sealed class ClientClothingSystem : ClothingSystem
 
     [Dependency] private readonly IResourceCache _cache = default!;
     [Dependency] private readonly InventorySystem _inventorySystem = default!;
-    [Dependency] private readonly DisplacementMapSystem _displacement = default!;
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
 
     public override void Initialize()
     {
@@ -66,22 +59,27 @@ public sealed class ClientClothingSystem : ClothingSystem
 
     private void OnAppearanceUpdate(EntityUid uid, InventoryComponent component, ref AppearanceChangeEvent args)
     {
-        // May need to update displacement maps if the sex changed. Also required to properly set the stencil on init
-        if (args.Sprite == null)
+        // May need to update jumpsuit stencils if the sex changed. Also required to properly set the stencil on init
+        // when sex is first loaded from the profile.
+        if (!TryComp(uid, out SpriteComponent? sprite) || !sprite.LayerMapTryGet(HumanoidVisualLayers.StencilMask, out var layer))
             return;
 
-        var enumerator = _inventorySystem.GetSlotEnumerator((uid, component));
-        while (enumerator.NextItem(out var item, out var slot))
+        if (!TryComp(uid, out HumanoidAppearanceComponent? humanoid)
+            || humanoid.Sex != Sex.Female
+            || !_inventorySystem.TryGetSlotEntity(uid, "jumpsuit", out var suit, component)
+            || !TryComp(suit, out ClothingComponent? clothing))
         {
-            RenderEquipment(uid, item, slot.Name, component);
+            sprite.LayerSetVisible(layer, false);
+            return;
         }
 
-        // No clothing equipped -> make sure the layer is hidden, though this should already be handled by on-unequip.
-        if (args.Sprite.LayerMapTryGet(HumanoidVisualLayers.StencilMask, out var layer))
+        sprite.LayerSetState(layer, clothing.FemaleMask switch
         {
-            DebugTools.Assert(!args.Sprite[layer].Visible);
-            args.Sprite.LayerSetVisible(layer, false);
-        }
+            FemaleClothingMask.NoMask => "female_none",
+            FemaleClothingMask.UniformTop => "female_top",
+            _ => "female_full",
+        });
+        sprite.LayerSetVisible(layer, true);
     }
 
     private void OnGetVisuals(EntityUid uid, ClothingComponent item, GetEquipmentVisualsEvent args)
@@ -115,7 +113,6 @@ public sealed class ClientClothingSystem : ClothingSystem
                 i++;
             }
 
-            item.MappedLayer = key;
             args.Layers.Add((key, layer));
         }
     }
@@ -138,7 +135,7 @@ public sealed class ClientClothingSystem : ClothingSystem
         else if (TryComp(uid, out SpriteComponent? sprite))
             rsi = sprite.BaseRSI;
 
-        if (rsi == null)
+        if (rsi == null || rsi.Path == null)
             return false;
 
         var correctedSlot = slot;
@@ -156,9 +153,13 @@ public sealed class ClientClothingSystem : ClothingSystem
 
         // species specific
         if (speciesId != null && rsi.TryGetState($"{state}-{speciesId}", out _))
+        {
             state = $"{state}-{speciesId}";
+        }
         else if (!rsi.TryGetState(state, out _))
+        {
             return false;
+        }
 
         var layer = new PrototypeLayerData();
         layer.RsiPath = rsi.Path.ToString();
@@ -170,17 +171,15 @@ public sealed class ClientClothingSystem : ClothingSystem
 
     private void OnVisualsChanged(EntityUid uid, InventoryComponent component, VisualsChangedEvent args)
     {
-        var item = GetEntity(args.Item);
-
-        if (!TryComp(item, out ClothingComponent? clothing) || clothing.InSlot == null)
+        if (!TryComp(args.Item, out ClothingComponent? clothing) || clothing.InSlot == null)
             return;
 
-        RenderEquipment(uid, item, clothing.InSlot, component, null, clothing);
+        RenderEquipment(uid, args.Item, clothing.InSlot, component, null, clothing);
     }
 
     private void OnDidUnequip(EntityUid uid, SpriteComponent component, DidUnequipEvent args)
     {
-        if (!TryComp(uid, out InventorySlotsComponent? inventorySlots))
+        if (!TryComp(uid, out InventoryComponent? inventory) || !TryComp(uid, out InventorySlotsComponent? inventorySlots))
             return;
 
         if (!inventorySlots.VisualLayerKeys.TryGetValue(args.Slot, out var revealedLayers))
@@ -195,15 +194,17 @@ public sealed class ClientClothingSystem : ClothingSystem
         revealedLayers.Clear();
     }
 
-    public void InitClothing(EntityUid uid, InventoryComponent component)
+    public void InitClothing(EntityUid uid, InventoryComponent? component = null, SpriteComponent? sprite = null)
     {
-        if (!TryComp(uid, out SpriteComponent? sprite))
+        if (!Resolve(uid, ref sprite, ref component) || !_inventorySystem.TryGetSlots(uid, out var slots, component))
             return;
 
-        var enumerator = _inventorySystem.GetSlotEnumerator((uid, component));
-        while (enumerator.NextItem(out var item, out var slot))
+        foreach (var slot in slots)
         {
-            RenderEquipment(uid, item, slot.Name, component, sprite);
+            if (!_inventorySystem.TryGetSlotContainer(uid, slot.Name, out var containerSlot, out _, component) ||
+                !containerSlot.ContainedEntity.HasValue) continue;
+
+            RenderEquipment(uid, containerSlot.ContainedEntity.Value, slot.Name, component, sprite);
         }
     }
 
@@ -222,6 +223,22 @@ public sealed class ClientClothingSystem : ClothingSystem
            !Resolve(equipment, ref clothingComponent, false))
         {
             return;
+        }
+
+        if (slot == "jumpsuit" && sprite.LayerMapTryGet(HumanoidVisualLayers.StencilMask, out var suitLayer))
+        {
+            if (TryComp(equipee, out HumanoidAppearanceComponent? humanoid) && humanoid.Sex == Sex.Female)
+            {
+                sprite.LayerSetState(suitLayer, clothingComponent.FemaleMask switch
+                {
+                    FemaleClothingMask.NoMask => "female_none",
+                    FemaleClothingMask.UniformTop => "female_top",
+                    _ => "female_full",
+                });
+                sprite.LayerSetVisible(suitLayer, true);
+            }
+            else
+                sprite.LayerSetVisible(suitLayer, false);
         }
 
         if (!_inventorySystem.TryGetSlot(equipee, slot, out var slotDef, inventory))
@@ -256,31 +273,12 @@ public sealed class ClientClothingSystem : ClothingSystem
         // bookmark to determine where in the list of layers we should insert the clothing layers.
         bool slotLayerExists = sprite.LayerMapTryGet(slot, out var index);
 
-        // Select displacement maps
-        var displacementData = inventory.Displacements.GetValueOrDefault(slot); //Default unsexed map
-
-        var equipeeSex = CompOrNull<HumanoidAppearanceComponent>(equipee)?.Sex;
-        if (equipeeSex != null)
-        {
-            switch (equipeeSex)
-            {
-                case Sex.Male:
-                    if (inventory.MaleDisplacements.Count > 0)
-                        displacementData = inventory.MaleDisplacements.GetValueOrDefault(slot);
-                    break;
-                case Sex.Female:
-                    if (inventory.FemaleDisplacements.Count > 0)
-                        displacementData = inventory.FemaleDisplacements.GetValueOrDefault(slot);
-                    break;
-            }
-        }
-
         // add the new layers
         foreach (var (key, layerData) in ev.Layers)
         {
             if (!revealedLayers.Add(key))
             {
-                Log.Warning($"Duplicate key for clothing visuals: {key}. Are multiple components attempting to modify the same layer? Equipment: {ToPrettyString(equipment)}");
+                Logger.Warning($"Duplicate key for clothing visuals: {key}. Are multiple components attempting to modify the same layer? Equipment: {ToPrettyString(equipment)}");
                 continue;
             }
 
@@ -290,17 +288,12 @@ public sealed class ClientClothingSystem : ClothingSystem
                 // note that every insertion requires reshuffling & remapping all the existing layers.
                 sprite.AddBlankLayer(index);
                 sprite.LayerMapSet(key, index);
-
-                if (layerData.Color != null)
-                    sprite.LayerSetColor(key, layerData.Color.Value);
-                if (layerData.Scale != null)
-                    sprite.LayerSetScale(key, layerData.Scale.Value);
             }
             else
                 index = sprite.LayerMapReserveBlank(key);
 
             if (sprite[index] is not Layer layer)
-                continue;
+                return;
 
             // In case no RSI is given, use the item's base RSI as a default. This cuts down on a lot of unnecessary yaml entries.
             if (layerData.RsiPath == null
@@ -311,17 +304,13 @@ public sealed class ClientClothingSystem : ClothingSystem
                 layer.SetRsi(clothingSprite.BaseRSI);
             }
 
+            // Another "temporary" fix for clothing stencil masks.
+            // Sprite layer redactor when
+            if (slot == "jumpsuit")
+                layerData.Shader ??= "StencilDraw";
+
             sprite.LayerSetData(index, layerData);
             layer.Offset += slotDef.Offset;
-
-            if (displacementData is not null)
-            {
-                //Checking that the state is not tied to the current race. In this case we don't need to use the displacement maps.
-                if (layerData.State is not null && inventory.SpeciesId is not null && layerData.State.EndsWith(inventory.SpeciesId))
-                    continue;
-
-                _displacement.TryAddDisplacement(displacementData, sprite, index, key, revealedLayers);
-            }
         }
 
         RaiseLocalEvent(equipment, new EquipmentVisualsUpdatedEvent(equipee, slot, revealedLayers), true);

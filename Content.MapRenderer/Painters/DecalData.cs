@@ -2,4 +2,17 @@
 
 namespace Content.MapRenderer.Painters;
 
-public readonly record struct DecalData(Decal Decal, float X, float Y);
+public sealed class DecalData
+{
+    public DecalData(Decal decal, float x, float y)
+    {
+        Decal = decal;
+        X = x;
+        Y = y;
+    }
+
+    public Decal Decal;
+
+    public float X;
+    public float Y;
+}

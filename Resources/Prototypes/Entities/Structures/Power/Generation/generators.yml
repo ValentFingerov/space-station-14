@@ -33,6 +33,7 @@
   - type: Sprite
     sprite: Structures/Power/power.rsi
     state: generator
+    netsync: false
     snapCardinals: true
   - type: NodeContainer
     examinable: true
@@ -40,11 +41,6 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: HVPower
-  - type: PowerMonitoringDevice
-    group: Generator
-    loadNode: output
-    sprite: Structures/Power/power.rsi
-    state: generator
   - type: PowerSupplier
     supplyRate: 3000
     supplyRampRate: 500
@@ -52,9 +48,8 @@
   - type: Anchorable
   - type: Pullable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
-  - type: PacifismDangerousAttack
   - type: Destructible
     thresholds:
     - trigger:
@@ -71,7 +66,7 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:ExplodeBehavior
   - type: Explosive
     explosionType: Default
@@ -81,12 +76,6 @@
     totalIntensity: 200
   - type: StaticPrice
     price: 500
-  - type: Electrified
-    onHandInteract: false
-    onInteractUsing: false
-    onBump: false
-    requirePower: true
-    highVoltageNode: output
 
 # Base Wallmount Generator
 
@@ -106,11 +95,11 @@
     sound:
       path: /Audio/Ambience/Objects/hdd_buzz.ogg
   - type: PointLight
+    netsync: false
     radius: 1.5
     energy: 1.6
     color: "#3db83b"
     castShadows: false
-    netsync: false
   - type: Fixtures
   - type: Transform
     anchored: true
@@ -119,6 +108,7 @@
     canCollide: false
   - type: Sprite
     drawdepth: WallMountedItems
+    netsync: false
     sprite: Structures/Power/Generation/wallmount_generator.rsi
     layers:
     - state: panel
@@ -130,11 +120,6 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: HVPower
-  - type: PowerMonitoringDevice
-    group: Generator
-    loadNode: output
-    sprite: Structures/Power/Generation/wallmount_generator.rsi
-    state: static
   - type: PowerSupplier
     supplyRate: 3000
     supplyRampRate: 500
@@ -144,7 +129,7 @@
 # Construction Frames
 
 - type: entity
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   id: BaseGeneratorWallmountFrame
   name: wallmount generator frame
   description: A construction frame for a wallmount generator.
@@ -160,6 +145,7 @@
     anchored: true
   - type: Sprite
     drawdepth: WallMountedItems
+    netsync: false
     sprite: Structures/Power/Generation/wallmount_generator.rsi
     layers:
     - state: panel
@@ -179,12 +165,42 @@
     supplyRate: 3000
 
 - type: entity
-  parent: BaseGenerator
-  id: GeneratorBasic15kW
-  suffix: Basic, 15kW
+  parent: [ BaseGenerator, ConstructibleMachine ]
+  id: GeneratorPlasma
+  suffix: Plasma, 5kW
   components:
-    - type: PowerSupplier
-      supplyRate: 15000
+  - type: PowerSupplier
+    supplyRate: 5000 # 260 sec / sheet
+  - type: Sprite
+    sprite: Structures/Power/Generation/portable_generator.rsi
+    state: portgen0_1
+  - type: Wires
+    BoardName: "GeneratorPlasma"
+    LayoutId: GeneratorPlasma
+  - type: Machine
+    board: GeneratorPlasmaMachineCircuitboard
+  - type: UpgradePowerSupplier
+    powerSupplyMultiplier: 1.25
+    scaling: Exponential
+
+- type: entity
+  parent: [ BaseGenerator, ConstructibleMachine ]
+  id: GeneratorUranium
+  suffix: Uranium, 15kW
+  components:
+  - type: PowerSupplier
+    supplyRate: 15000 # 85 sec / sheet
+  - type: Sprite
+    sprite: Structures/Power/Generation/portable_generator.rsi
+    state: portgen1_1
+  - type: Wires
+    BoardName: "GeneratorUranium"
+    LayoutId: GeneratorUranium
+  - type: Machine
+    board: GeneratorUraniumMachineCircuitboard
+  - type: UpgradePowerSupplier
+    powerSupplyMultiplier: 1.25
+    scaling: Exponential
 
 - type: entity
   parent: BaseGeneratorWallmount
@@ -196,14 +212,6 @@
   - type: Construction
     graph: WallmountGenerator
     node: generator
-  - type: StaticPrice
-    price: 14
-  - type: ContainerFill
-    containers:
-      board: [ WallmountGeneratorElectronics ]
-  - type: ContainerContainer
-    containers:
-      board: !type:Container
 
 - type: entity
   parent: BaseGeneratorWallmount
@@ -217,14 +225,6 @@
   - type: Construction
     graph: WallmountGenerator
     node: APU
-  - type: StaticPrice
-    price: 38
-  - type: ContainerFill
-    containers:
-      board: [ WallmountGeneratorAPUElectronics ]
-  - type: ContainerContainer
-    containers:
-      board: !type:Container
 
 # RTG - no fuel requirement
 
@@ -240,17 +240,10 @@
   - type: Sprite
     sprite: Structures/Power/Generation/rtg.rsi
     state: rtg
-  - type: PowerMonitoringDevice
-    sprite: Structures/Power/Generation/rtg.rsi
-    state: rtg
   - type: AmbientSound
     range: 5
     sound:
       path: /Audio/Ambience/Objects/buzzing.ogg
-  - type: GuideHelp
-    guides:
-    - RTG
-    - Power
   - type: Destructible
     thresholds:
       - trigger:
@@ -265,7 +258,7 @@
         behaviors:
           - !type:PlaySoundBehavior
             sound:
-              collection: MetalBreak
+              path: /Audio/Effects/metalbreak.ogg
           - !type:SpawnEntitiesBehavior
             spawn:
               GeneratorRTGDamaged:
@@ -286,13 +279,11 @@
   - type: PowerSupplier
     supplyRate: 10000
   - type: Sprite
+    netsync: false
     sprite: Structures/Power/Generation/rtg.rsi
     layers:
       - state: rtg_damaged
       - state: rtg_glow
-  - type: PowerMonitoringDevice
-    sprite: Structures/Power/Generation/rtg.rsi
-    state: rtg_damaged
   - type: RadiationSource # ideally only when opened.
     intensity: 2
   - type: Destructible
@@ -309,7 +300,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:

@@ -2,7 +2,6 @@
   id: Grassa1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassa1
@@ -11,7 +10,6 @@
   id: Grassa2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassa2
@@ -20,7 +18,6 @@
   id: Grassa3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassa3
@@ -29,7 +26,6 @@
   id: Grassa4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassa4
@@ -38,7 +34,6 @@
   id: Grassa5
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassa5
@@ -47,7 +42,6 @@
   id: Grassb1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassb1
@@ -56,7 +50,6 @@
   id: Grassb2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassb2
@@ -65,7 +58,6 @@
   id: Grassb3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassb3
@@ -74,7 +66,6 @@
   id: Grassb4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassb4
@@ -83,7 +74,6 @@
   id: Grassb5
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassb5
@@ -92,7 +82,6 @@
   id: Grassc1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassc1
@@ -101,7 +90,6 @@
   id: Grassc2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassc2
@@ -110,7 +98,6 @@
   id: Grassc3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassc3
@@ -119,7 +106,6 @@
   id: Grassc4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassc4
@@ -128,7 +114,6 @@
   id: Grassd1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassd1
@@ -137,7 +122,6 @@
   id: Grassd2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassd2
@@ -146,7 +130,6 @@
   id: Grassd3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grassd3
@@ -155,7 +138,6 @@
   id: Grasse1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grasse1
@@ -164,7 +146,6 @@
   id: Grasse2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grasse2
@@ -173,7 +154,6 @@
   id: Grasse3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grass.rsi
     state: grasse3
@@ -182,7 +162,6 @@
   id: grasssnow
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow
@@ -191,7 +170,6 @@
   id: grasssnow01
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow01
@@ -200,7 +178,6 @@
   id: grasssnow02
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow02
@@ -209,7 +186,6 @@
   id: grasssnow03
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow03
@@ -218,7 +194,6 @@
   id: grasssnow04
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow04
@@ -227,7 +202,6 @@
   id: grasssnow05
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow05
@@ -236,7 +210,6 @@
   id: grasssnow06
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow06
@@ -245,7 +218,6 @@
   id: grasssnow07
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow07
@@ -254,7 +226,6 @@
   id: grasssnow08
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow08
@@ -263,7 +234,6 @@
   id: grasssnow09
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow09
@@ -272,7 +242,6 @@
   id: grasssnow10
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow10
@@ -281,7 +250,6 @@
   id: grasssnow11
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow11
@@ -290,7 +258,6 @@
   id: grasssnow12
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow12
@@ -299,7 +266,6 @@
   id: grasssnow13
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnow13
@@ -308,7 +274,6 @@
   id: grasssnowa1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowa1
@@ -317,7 +282,6 @@
   id: grasssnowa2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowa2
@@ -326,7 +290,6 @@
   id: grasssnowa3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowa3
@@ -335,7 +298,6 @@
   id: grasssnowb1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowb1
@@ -344,7 +306,6 @@
   id: grasssnowb2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowb2
@@ -353,7 +314,6 @@
   id: grasssnowb3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowb3
@@ -362,7 +322,6 @@
   id: grasssnowc1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowc1
@@ -371,7 +330,6 @@
   id: grasssnowc2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowc2
@@ -380,7 +338,6 @@
   id: grasssnowc3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_grasssnow.rsi
     state: grasssnowc3
@@ -389,7 +346,6 @@
   id: Busha1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: busha1
@@ -398,7 +354,6 @@
   id: Busha2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: busha2
@@ -407,7 +362,6 @@
   id: Busha3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: busha3
@@ -416,7 +370,6 @@
   id: Bushb1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushb1
@@ -425,7 +378,6 @@
   id: Bushb2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushb2
@@ -434,7 +386,6 @@
   id: Bushb3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushb3
@@ -443,7 +394,6 @@
   id: Bushc1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushc1
@@ -452,7 +402,6 @@
   id: Bushc2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushc2
@@ -461,7 +410,6 @@
   id: Bushc3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushc3
@@ -470,7 +418,6 @@
   id: Bushd1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushd1
@@ -479,7 +426,6 @@
   id: Bushd2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushd2
@@ -488,7 +434,6 @@
   id: Bushd3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushd3
@@ -497,7 +442,6 @@
   id: Bushd4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushd4
@@ -506,7 +450,6 @@
   id: Bushe1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushe1
@@ -515,7 +458,6 @@
   id: Bushe2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushe2
@@ -524,7 +466,6 @@
   id: Bushe3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushe3
@@ -533,7 +474,6 @@
   id: Bushe4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushe4
@@ -542,7 +482,6 @@
   id: Bushf1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushf1
@@ -551,7 +490,6 @@
   id: Bushf2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushf2
@@ -560,7 +498,6 @@
   id: Bushf3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushf3
@@ -569,7 +506,6 @@
   id: Bushg1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushg1
@@ -578,7 +514,6 @@
   id: Bushg2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushg2
@@ -587,7 +522,6 @@
   id: Bushg3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushg3
@@ -596,7 +530,6 @@
   id: Bushg4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushg4
@@ -605,7 +538,6 @@
   id: Bushh1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushh1
@@ -614,7 +546,6 @@
   id: Bushh2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushh2
@@ -623,7 +554,6 @@
   id: Bushh3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushh3
@@ -632,7 +562,6 @@
   id: Bushi1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushi1
@@ -641,7 +570,6 @@
   id: Bushi2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushi2
@@ -650,7 +578,6 @@
   id: Bushi3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushi3
@@ -659,7 +586,6 @@
   id: Bushi4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushi4
@@ -668,7 +594,6 @@
   id: Bushj1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushj1
@@ -677,7 +602,6 @@
   id: Bushj2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushj2
@@ -686,7 +610,6 @@
   id: Bushj3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushj3
@@ -695,7 +618,6 @@
   id: Bushk1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushk1
@@ -704,7 +626,6 @@
   id: Bushk2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushk2
@@ -713,7 +634,6 @@
   id: Bushk3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushk3
@@ -722,7 +642,6 @@
   id: Bushl1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushl1
@@ -731,7 +650,6 @@
   id: Bushl2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushl2
@@ -740,7 +658,6 @@
   id: Bushl3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushl3
@@ -749,7 +666,6 @@
   id: Bushl4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushl4
@@ -758,7 +674,6 @@
   id: Bushm1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushm1
@@ -767,7 +682,6 @@
   id: Bushm2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushm2
@@ -776,7 +690,6 @@
   id: Bushm3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushm3
@@ -785,7 +698,6 @@
   id: Bushm4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushm4
@@ -794,7 +706,6 @@
   id: Bushn1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushes.rsi
     state: bushn1
@@ -803,7 +714,6 @@
   id: bushsnowa1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushessnow.rsi
     state: bushsnowa1
@@ -812,7 +722,6 @@
   id: bushsnowa2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushessnow.rsi
     state: bushsnowa2
@@ -821,7 +730,6 @@
   id: bushsnowa3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushessnow.rsi
     state: bushsnowa3
@@ -830,7 +738,6 @@
   id: bushsnowb1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushessnow.rsi
     state: bushsnowb1
@@ -839,7 +746,6 @@
   id: bushsnowb2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushessnow.rsi
     state: bushsnowb2
@@ -848,7 +754,6 @@
   id: bushsnowb3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_bushessnow.rsi
     state: bushsnowb3
@@ -857,7 +762,6 @@
   id: Rock01
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock01
@@ -866,7 +770,6 @@
   id: Rock02
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock02
@@ -875,7 +778,6 @@
   id: Rock03
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock03
@@ -884,7 +786,6 @@
   id: Rock04
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock04
@@ -893,7 +794,6 @@
   id: Rock05
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock05
@@ -902,7 +802,6 @@
   id: Rock06
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock06
@@ -911,7 +810,6 @@
   id: Rock07
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_rocks.rsi
     state: rock07
@@ -920,7 +818,6 @@
   id: Flowersbr1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersbr1
@@ -929,7 +826,6 @@
   id: Flowersbr2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersbr2
@@ -938,7 +834,6 @@
   id: Flowersbr3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersbr3
@@ -947,7 +842,6 @@
   id: Flowerspv1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowerspv1
@@ -956,7 +850,6 @@
   id: Flowerspv2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowerspv2
@@ -965,7 +858,6 @@
   id: Flowerspv3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowerspv3
@@ -974,7 +866,6 @@
   id: Flowersy1
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersy1
@@ -983,7 +874,6 @@
   id: Flowersy2
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersy2
@@ -992,7 +882,6 @@
   id: Flowersy3
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersy3
@@ -1001,7 +890,6 @@
   id: Flowersy4
   tags: ["flora"]
   snapCardinals: true
-  defaultSnap: false
   sprite:
     sprite: Decals/Flora/flora_flowers.rsi
     state: flowersy4

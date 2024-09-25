@@ -3,14 +3,12 @@ using Content.Server.Power.Events;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Triggers.Components;
 using Content.Shared.Interaction;
 using Content.Shared.Tools.Components;
-using Content.Shared.Tools.Systems;
 
 namespace Content.Server.Xenoarchaeology.XenoArtifacts.Triggers.Systems;
 
 public sealed class ArtifactElectricityTriggerSystem : EntitySystem
 {
     [Dependency] private readonly ArtifactSystem _artifactSystem = default!;
-    [Dependency] private readonly SharedToolSystem _toolSystem = default!;
 
     public override void Initialize()
     {
@@ -22,20 +20,18 @@ public sealed class ArtifactElectricityTriggerSystem : EntitySystem
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
-
-        List<Entity<ArtifactComponent>> toUpdate = new();
-        var query = EntityQueryEnumerator<ArtifactElectricityTriggerComponent, PowerConsumerComponent, ArtifactComponent>();
-        while (query.MoveNext(out var uid, out var trigger, out var power, out var artifact))
+        List<ArtifactComponent> toUpdate = new();
+        foreach (var (trigger, power, artifact) in EntityQuery<ArtifactElectricityTriggerComponent, PowerConsumerComponent, ArtifactComponent>())
         {
             if (power.ReceivedPower <= trigger.MinPower)
                 continue;
 
-            toUpdate.Add((uid, artifact));
+            toUpdate.Add(artifact);
         }
 
         foreach (var a in toUpdate)
         {
-            _artifactSystem.TryActivateArtifact(a, null, a);
+            _artifactSystem.TryActivateArtifact(a.Owner, null,  a);
         }
     }
 
@@ -44,7 +40,7 @@ public sealed class ArtifactElectricityTriggerSystem : EntitySystem
         if (args.Handled)
             return;
 
-        if (!_toolSystem.HasQuality(args.Used, SharedToolSystem.PulseQuality))
+        if (!TryComp(args.Used, out ToolComponent? tool) || !tool.Qualities.ContainsAny("Pulsing"))
             return;
 
         args.Handled = _artifactSystem.TryActivateArtifact(uid, args.User);

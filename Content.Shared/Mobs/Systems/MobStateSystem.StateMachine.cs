@@ -16,8 +16,7 @@ public partial class MobStateSystem
     /// <returns>If the entity can be set to that MobState</returns>
     public bool HasState(EntityUid entity, MobState mobState, MobStateComponent? component = null)
     {
-        return _mobStateQuery.Resolve(entity, ref component, false) &&
-               component.AllowedStates.Contains(mobState);
+        return Resolve(entity, ref component, false) && component.AllowedStates.Contains(mobState);
     }
 
     /// <summary>
@@ -28,17 +27,16 @@ public partial class MobStateSystem
     /// <param name="origin">Entity that caused the state update (if applicable)</param>
     public void UpdateMobState(EntityUid entity, MobStateComponent? component = null, EntityUid? origin = null)
     {
-        if (!_mobStateQuery.Resolve(entity, ref component))
+        if (!Resolve(entity, ref component))
             return;
 
         var ev = new UpdateMobStateEvent {Target = entity, Component = component, Origin = origin};
         RaiseLocalEvent(entity, ref ev);
-        ChangeState(entity, component, ev.State, origin: origin);
+        ChangeState(entity, component, ev.State);
     }
 
     /// <summary>
-    /// Change the MobState without triggering UpdateMobState events.
-    /// WARNING: use this sparingly when you need to override other systems (MobThresholds)
+    /// Change the MobState and trigger MobState update events
     /// </summary>
     /// <param name="entity">Target Entity we want to change the MobState of</param>
     /// <param name="mobState">The new MobState we want to set</param>
@@ -47,10 +45,12 @@ public partial class MobStateSystem
     public void ChangeMobState(EntityUid entity, MobState mobState, MobStateComponent? component = null,
         EntityUid? origin = null)
     {
-        if (!_mobStateQuery.Resolve(entity, ref component))
+        if (!Resolve(entity, ref component))
             return;
 
-        ChangeState(entity, component, mobState, origin: origin);
+        var ev = new UpdateMobStateEvent {Target = entity, Component = component, Origin = origin, State = mobState};
+        RaiseLocalEvent(entity, ref ev);
+        ChangeState(entity, component, ev.State);
     }
 
     #endregion
@@ -111,8 +111,8 @@ public partial class MobStateSystem
         OnStateChanged(target, component, oldState, newState);
         RaiseLocalEvent(target, ev, true);
         _adminLogger.Add(LogType.Damaged, oldState == MobState.Alive ? LogImpact.Low : LogImpact.Medium,
-            $"{ToPrettyString(target):user} state changed from {oldState} to {newState}");
-        Dirty(target, component);
+            $"{ToPrettyString(component.Owner):user} state changed from {oldState} to {newState}");
+        Dirty(component);
     }
 
     #endregion

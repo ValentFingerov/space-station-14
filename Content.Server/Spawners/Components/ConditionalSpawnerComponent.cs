@@ -1,32 +1,22 @@
 using Robust.Shared.Prototypes;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.List;
 
 namespace Content.Server.Spawners.Components
 {
-    [RegisterComponent, EntityCategory("Spawner")]
+    [RegisterComponent]
     [Virtual]
-    public partial class ConditionalSpawnerComponent : Component
+    public class ConditionalSpawnerComponent : Component
     {
-        /// <summary>
-        /// A list of entities, one of which can spawn in after calling Spawn()
-        /// </summary>
         [ViewVariables(VVAccess.ReadWrite)]
-        [DataField]
-        public List<EntProtoId> Prototypes { get; set; } = new();
+        [DataField("prototypes", customTypeSerializer: typeof(PrototypeIdListSerializer<EntityPrototype>))]
+        public List<string> Prototypes { get; set; } = new();
 
-        /// <summary>
-        /// A list of game rules.
-        /// If at least one of them was launched in the game,
-        /// an attempt will occur to spawn one of the objects in the Prototypes list
-        /// </summary>
         [ViewVariables(VVAccess.ReadWrite)]
-        [DataField]
-        public List<EntProtoId> GameRules = new();
+        [DataField("gameRules", customTypeSerializer: typeof(PrototypeIdListSerializer<EntityPrototype>))]
+        public readonly List<string> GameRules = new();
 
-        /// <summary>
-        /// Chance of spawning an entity
-        /// </summary>
         [ViewVariables(VVAccess.ReadWrite)]
-        [DataField]
+        [DataField("chance")]
         public float Chance { get; set; } = 1.0f;
     }
 }

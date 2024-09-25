@@ -6,7 +6,7 @@ namespace Content.Server.DeviceNetwork.Components
 {
     [RegisterComponent]
     [Access(typeof(DeviceNetworkSystem), typeof(DeviceNet))]
-    public sealed partial class DeviceNetworkComponent : Component
+    public sealed class DeviceNetworkComponent : Component
     {
         public enum DeviceNetIdDefaults
         {
@@ -101,26 +101,5 @@ namespace Content.Server.DeviceNetwork.Components
         [ViewVariables(VVAccess.ReadWrite)]
         [DataField("sendBroadcastAttemptEvent")]
         public bool SendBroadcastAttemptEvent = false;
-
-        /// <summary>
-        ///     Whether this device's address can be saved to device-lists
-        /// </summary>
-        [ViewVariables(VVAccess.ReadWrite)]
-        [DataField("savableAddress")]
-        public bool SavableAddress = true;
-
-        /// <summary>
-        ///     A list of device-lists that this device is on.
-        /// </summary>
-        [DataField]
-        [Access(typeof(DeviceListSystem))]
-        public HashSet<EntityUid> DeviceLists = new();
-
-        /// <summary>
-        ///     A list of configurators that this device is on.
-        /// </summary>
-        [DataField]
-        [Access(typeof(NetworkConfiguratorSystem))]
-        public HashSet<EntityUid> Configurators = new();
     }
 }

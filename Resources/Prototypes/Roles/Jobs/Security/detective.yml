@@ -4,11 +4,11 @@
   description: job-description-detective
   playTimeTracker: JobDetective
   requirements:
-    - !type:DepartmentTimeRequirement
-      department: Security
-      time: 72000 #20 hrs # Corvax-RoleTime
+  - !type:DepartmentTimeRequirement
+    department: Security
+    time: 72000 # Corvax-RoleTime
   startingGear: DetectiveGear
-  icon: "JobIconDetective"
+  icon: "Detective"
   supervisors: job-supervisors-hos
   canBeAntag: false
   access:
@@ -17,21 +17,21 @@
   - Maintenance
   - Service
   - Detective
-  - Cryogenics
-  - External
-  special:
-  - !type:AddImplantSpecial
-    implants: [ MindShieldImplant ]
 
 - type: startingGear
   id: DetectiveGear
   equipment:
-    eyes: ClothingEyesGlassesSecurity
+    jumpsuit: ClothingUniformJumpsuitDetective
+    back: ClothingBackpackSecurityFilled
+    shoes: ClothingShoesBootsJackSec # Corvax-Resprite
+    eyes: ClothingEyesGlassesSunglasses
+    head: ClothingHeadHatFedoraBrown
+    outerClothing: ClothingOuterVestDetective
     id: DetectivePDA
     ears: ClothingHeadsetSecurity
-    belt: ClothingBeltHolsterFilled
-  storage:
-    back:
-    - Flash
-    - ForensicPad
-    - ForensicScanner
+    pocket1: ForensicPad
+    pocket2: ForensicScanner
+    belt: ClothingBeltHolster
+  innerclothingskirt: ClothingUniformJumpskirtDetective
+  satchel: ClothingBackpackSatchelSecurityFilled
+  duffelbag: ClothingBackpackDuffelSecurityFilled

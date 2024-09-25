@@ -1,13 +1,11 @@
-using System.Collections;
 using Robust.Shared.Audio.Midi;
 using Robust.Shared.GameStates;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.Instruments;
 
-[NetworkedComponent]
-[Access(typeof(SharedInstrumentSystem))]
-public abstract partial class SharedInstrumentComponent : Component
+[NetworkedComponent, Access(typeof(SharedInstrumentSystem))]
+public abstract class SharedInstrumentComponent : Component
 {
     [ViewVariables]
     public bool Playing { get; set; }
@@ -28,30 +26,8 @@ public abstract partial class SharedInstrumentComponent : Component
     public bool RespectMidiLimits { get; set; } = true;
 
     [ViewVariables(VVAccess.ReadWrite)]
-    public EntityUid? Master { get; set; } = null;
-
-    [ViewVariables]
-    public BitArray FilteredChannels { get; set; } = new(RobustMidiEvent.MaxChannels, true);
-}
-
-[Serializable, NetSerializable]
-public sealed class InstrumentComponentState : ComponentState
-{
-    public bool Playing;
-
-    public byte InstrumentProgram;
-
-    public byte InstrumentBank;
-
-    public bool AllowPercussion;
-
-    public bool AllowProgramChange;
-
-    public bool RespectMidiLimits;
-
-    public NetEntity? Master;
-
-    public BitArray FilteredChannels = default!;
+    [Access(typeof(SharedInstrumentSystem), Other = AccessPermissions.ReadWrite)] // FIXME Friends
+    public bool DirtyRenderer { get; set; }
 }
 
 
@@ -61,45 +37,11 @@ public sealed class InstrumentComponentState : ComponentState
 [Serializable, NetSerializable]
 public sealed class InstrumentStopMidiEvent : EntityEventArgs
 {
-    public NetEntity Uid { get; }
+    public EntityUid Uid { get; }
 
-    public InstrumentStopMidiEvent(NetEntity uid)
+    public InstrumentStopMidiEvent(EntityUid uid)
     {
         Uid = uid;
-    }
-}
-
-/// <summary>
-///     Send from the client to the server to set a master instrument.
-/// </summary>
-[Serializable, NetSerializable]
-public sealed class InstrumentSetMasterEvent : EntityEventArgs
-{
-    public NetEntity Uid { get; }
-    public NetEntity? Master { get; }
-
-    public InstrumentSetMasterEvent(NetEntity uid, NetEntity? master)
-    {
-        Uid = uid;
-        Master = master;
-    }
-}
-
-/// <summary>
-///     Send from the client to the server to set a master instrument channel.
-/// </summary>
-[Serializable, NetSerializable]
-public sealed class InstrumentSetFilteredChannelEvent : EntityEventArgs
-{
-    public NetEntity Uid { get; }
-    public int Channel { get; }
-    public bool Value { get; }
-
-    public InstrumentSetFilteredChannelEvent(NetEntity uid, int channel, bool value)
-    {
-        Uid = uid;
-        Channel = channel;
-        Value = value;
     }
 }
 
@@ -109,9 +51,9 @@ public sealed class InstrumentSetFilteredChannelEvent : EntityEventArgs
 [Serializable, NetSerializable]
 public sealed class InstrumentStartMidiEvent : EntityEventArgs
 {
-    public NetEntity Uid { get; }
+    public EntityUid Uid { get; }
 
-    public InstrumentStartMidiEvent(NetEntity uid)
+    public InstrumentStartMidiEvent(EntityUid uid)
     {
         Uid = uid;
     }
@@ -123,13 +65,34 @@ public sealed class InstrumentStartMidiEvent : EntityEventArgs
 [Serializable, NetSerializable]
 public sealed class InstrumentMidiEventEvent : EntityEventArgs
 {
-    public NetEntity Uid { get; }
+    public EntityUid Uid { get; }
     public RobustMidiEvent[] MidiEvent { get; }
 
-    public InstrumentMidiEventEvent(NetEntity uid, RobustMidiEvent[] midiEvent)
+    public InstrumentMidiEventEvent(EntityUid uid, RobustMidiEvent[] midiEvent)
     {
         Uid = uid;
         MidiEvent = midiEvent;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class InstrumentState : ComponentState
+{
+    public bool Playing { get; }
+    public byte InstrumentProgram { get; }
+    public byte InstrumentBank { get; }
+    public bool AllowPercussion { get; }
+    public bool AllowProgramChange { get; }
+    public bool RespectMidiLimits { get; }
+
+    public InstrumentState(bool playing, byte instrumentProgram, byte instrumentBank, bool allowPercussion, bool allowProgramChange, bool respectMidiLimits)
+    {
+        Playing = playing;
+        InstrumentProgram = instrumentProgram;
+        InstrumentBank = instrumentBank;
+        AllowPercussion = allowPercussion;
+        AllowProgramChange = allowProgramChange;
+        RespectMidiLimits = respectMidiLimits;
     }
 }
 

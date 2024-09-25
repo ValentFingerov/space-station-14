@@ -1,10 +1,10 @@
 ﻿namespace Content.Server.Power.Components
 {
     [RegisterComponent]
-    public sealed partial class CableVisComponent : Component
+    public sealed class CableVisComponent : Component
     {
         [ViewVariables(VVAccess.ReadWrite)]
-        [DataField("node", required:true)]
-        public string Node;
+        [DataField("node")]
+        public string? Node;
     }
 }

@@ -8,7 +8,6 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Client.Utility;
-using Robust.Shared.Graphics;
 using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 using static Robust.Client.UserInterface.Controls.BaseButton;
@@ -18,16 +17,17 @@ namespace Content.Client.Crayon.UI
     [GenerateTypedNameReferences]
     public sealed partial class CrayonWindow : DefaultWindow
     {
+        public CrayonBoundUserInterface Owner { get; }
+
         private Dictionary<string, Texture>? _decals;
         private string? _selected;
         private Color _color;
 
-        public event Action<Color>? OnColorSelected;
-        public event Action<string>? OnSelected;
-
-        public CrayonWindow()
+        public CrayonWindow(CrayonBoundUserInterface owner)
         {
             RobustXamlLoader.Load(this);
+
+            Owner = owner;
 
             Search.OnTextChanged += _ => RefreshList();
             ColorSelector.OnColorChanged += SelectColor;
@@ -37,16 +37,16 @@ namespace Content.Client.Crayon.UI
         {
             _color = color;
 
-            OnColorSelected?.Invoke(color);
+            Owner.SelectColor(color);
+
             RefreshList();
         }
 
         private void RefreshList()
         {
             // Clear
-            Grid.DisposeAllChildren();
-            if (_decals == null)
-                return;
+            Grid.RemoveAllChildren();
+            if (_decals == null) return;
 
             var filter = Search.Text;
             foreach (var (decal, tex) in _decals)
@@ -88,8 +88,8 @@ namespace Content.Client.Crayon.UI
         {
             if (obj.Button.Name == null) return;
 
+            Owner.Select(obj.Button.Name);
             _selected = obj.Button.Name;
-            OnSelected?.Invoke(_selected);
             RefreshList();
         }
 

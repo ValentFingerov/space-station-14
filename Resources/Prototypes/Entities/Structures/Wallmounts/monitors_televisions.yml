@@ -5,8 +5,6 @@
   description: Finally, some decent reception around here...
   components:
   - type: Sprite
-    noRot: true
-    drawdepth: SmallObjects
     layers:
     - map: ["computerLayerBody"]
       state: television
@@ -41,6 +39,7 @@
     node: TelescreenFrame
   - type: Sprite
     drawdepth: WallMountedItems
+    netsync: false
     sprite: Structures/Machines/computers.rsi
     layers:
       - map: ["computerLayerBody"]
@@ -60,7 +59,7 @@
           - WallLayer
   - type: WallMount
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -108,11 +107,10 @@
   - type: ActivatableUI
     key: enum.SurveillanceCameraMonitorUiKey.Key
   - type: ActivatableUIRequiresPower
-  - type: ActivatableUIRequiresVision
   - type: UserInterface
     interfaces:
-        enum.SurveillanceCameraMonitorUiKey.Key:
-          type: SurveillanceCameraMonitorBoundUserInterface
+      - key: enum.SurveillanceCameraMonitorUiKey.Key
+        type: SurveillanceCameraMonitorBoundUserInterface
 
 # Wall Televisions
 
@@ -138,6 +136,7 @@
     node: TelevisionFrame
   - type: Sprite
     drawdepth: WallMountedItems
+    netsync: false
     sprite: Structures/Wallmounts/flatscreentv.rsi
     layers:
       - map: ["computerLayerBody"]
@@ -168,11 +167,10 @@
   - type: ActivatableUI
     key: enum.SurveillanceCameraMonitorUiKey.Key
   - type: ActivatableUIRequiresPower
-  - type: ActivatableUIRequiresVision
   - type: UserInterface
     interfaces:
-        enum.SurveillanceCameraMonitorUiKey.Key:
-          type: SurveillanceCameraMonitorBoundUserInterface
+      - key: enum.SurveillanceCameraMonitorUiKey.Key
+        type: SurveillanceCameraMonitorBoundUserInterface
   - type: PointLight
     radius: 1.5
     energy: 1.6

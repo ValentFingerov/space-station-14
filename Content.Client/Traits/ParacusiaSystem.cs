@@ -1,10 +1,8 @@
-using System.Numerics;
 using Content.Shared.Traits.Assorted;
+using Content.Client.Camera;
 using Robust.Shared.Random;
+using Robust.Client.GameObjects;
 using Robust.Client.Player;
-using Robust.Shared.Player;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Timing;
 
 namespace Content.Client.Traits;
@@ -15,12 +13,13 @@ public sealed class ParacusiaSystem : SharedParacusiaSystem
     [Dependency] private readonly IPlayerManager _player = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private readonly CameraRecoilSystem _camera = default!;
 
     public override void Initialize()
     {
         base.Initialize();
         SubscribeLocalEvent<ParacusiaComponent, ComponentStartup>(OnComponentStartup);
-        SubscribeLocalEvent<ParacusiaComponent, LocalPlayerDetachedEvent>(OnPlayerDetach);
+        SubscribeLocalEvent<ParacusiaComponent, PlayerDetachedEvent>(OnPlayerDetach);
     }
 
     public override void Update(float frameTime)
@@ -30,7 +29,7 @@ public sealed class ParacusiaSystem : SharedParacusiaSystem
         if (!_timing.IsFirstTimePredicted)
             return;
 
-        if (_player.LocalEntity is not EntityUid localPlayer)
+        if (_player.LocalPlayer?.ControlledEntity is not EntityUid localPlayer)
             return;
 
         PlayParacusiaSounds(localPlayer);
@@ -41,9 +40,9 @@ public sealed class ParacusiaSystem : SharedParacusiaSystem
         component.NextIncidentTime = _timing.CurTime + TimeSpan.FromSeconds(_random.NextFloat(component.MinTimeBetweenIncidents, component.MaxTimeBetweenIncidents));
     }
 
-    private void OnPlayerDetach(EntityUid uid, ParacusiaComponent component, LocalPlayerDetachedEvent args)
+    private void OnPlayerDetach(EntityUid uid, ParacusiaComponent component, PlayerDetachedEvent args)
     {
-        component.Stream = _audio.Stop(component.Stream);
+        component.Stream?.Stop();
     }
 
     private void PlayParacusiaSounds(EntityUid uid)
@@ -69,7 +68,7 @@ public sealed class ParacusiaSystem : SharedParacusiaSystem
         var newCoords = Transform(uid).Coordinates.Offset(randomOffset);
 
         // Play the sound
-        paracusia.Stream = _audio.PlayStatic(paracusia.Sounds, uid, newCoords)?.Entity;
+        paracusia.Stream = _audio.PlayStatic(paracusia.Sounds, uid, newCoords);
     }
 
 }

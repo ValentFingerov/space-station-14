@@ -2,20 +2,18 @@
   id: Bonfire
   parent: BaseStructure
   name: bonfire
-  description: What can be better than a late evening under the sky with guitar and friends?
+  description: What can be better then late evening under the sky with guitar and friends.
   components:
   - type: Sprite
-    noRot: true
+    netsync: false
     sprite: Structures/Decoration/bonfire.rsi
-    layers:
-      - state: bonfire
-      - state: burning
+    state: burning
   - type: PointLight
     radius: 5
     energy: 3
     color: "#FFC90C"
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Wood
   - type: Destructible
     thresholds:
@@ -23,14 +21,8 @@
           !type:DamageTrigger
           damage: 50
         behaviors:
-        - !type:DoActsBehavior
-          acts: [ "Destruction" ]
-  - type: AmbientSound
-    volume: -5
-    range: 5
-    sound:
-      path: /Audio/Ambience/Objects/fireplace.ogg
-  - type: AlwaysHot
+          - !type:DoActsBehavior
+        acts: [ "Destruction" ]
 
 - type: entity
   id: LegionnaireBonfire
@@ -39,7 +31,6 @@
   description: There, in the land of lava and ash, place to to cook marshmallow and potato.
   components:
   - type: Sprite
-    layers:
-      - state: legionnaire_bonfire
+    state: legionnaire_bonfire
   - type: PointLight
     color: "#FF5601"

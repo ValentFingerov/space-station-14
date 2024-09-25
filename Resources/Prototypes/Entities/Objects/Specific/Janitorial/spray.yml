@@ -5,17 +5,12 @@
   suffix: Empty
   description: A spray bottle with an unscrewable top.
   components:
-  - type: Drink
-    solution: spray
-    ignoreEmpty: true
-    useSound:
-      path: /Audio/Effects/spray3.ogg
-    transferAmount: 10
   - type: Tag
     tags:
     - Spray
     - Trash
   - type: Sprite
+    netsync: false
     sprite: Objects/Specific/Janitorial/janitorial.rsi
     state: cleaner
   - type: Item
@@ -30,17 +25,12 @@
     solution: spray
   - type: SolutionTransfer
     canChangeTransferAmount: true
-  - type: SolutionItemStatus
-    solution: spray
-  - type: UseDelay
+  - type: ItemCooldown
   - type: Spray
-    transferAmount: 10
     sprayVelocity: 2
     spraySound:
       path: /Audio/Effects/spray2.ogg
-  - type: TrashOnSolutionEmpty
-    solution: spray
-  - type: ExaminableSolution
+  - type: TrashOnEmpty
     solution: spray
 
 - type: entity
@@ -51,6 +41,7 @@
   description: A huge spray bottle, capable of unrivaled janitorial power.
   components:
   - type: Sprite
+    netsync: false
     sprite: Objects/Specific/Janitorial/janitorial.rsi
     state: cleaner_large
   - type: SolutionContainerManager
@@ -58,10 +49,8 @@
       spray:
         maxVol: 250
   - type: Spray
-    transferAmount: 15
     sprayedPrototype: BigVapor
-    sprayVelocity: 3
-    sprayDistance: 4.5
+    sprayVelocity: 5
     spraySound:
       path: /Audio/Effects/spray2.ogg
 
@@ -99,12 +88,14 @@
   - type: Tag
     tags:
       - Spray
+      - DroneUsable #They don't have any other chem stuff on their whitelist so they can't refill it
+
 # Vapor
 
 - type: entity
   id: Vapor
   name: "vapor"
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: SolutionContainerManager
     solutions:
@@ -113,8 +104,9 @@
   - type: Vapor
   - type: AnimationPlayer
   - type: Sprite
+    netsync: false
     sprite: Effects/chempuff.rsi
-    rotation: 180
+    rotation: 90
     layers:
     - state: chempuff
       map: ["enum.VaporVisualLayers.Base"]
@@ -136,11 +128,12 @@
 - type: entity
   id: BigVapor
   parent: Vapor
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Sprite
+    netsync: false
     sprite: Effects/chempuff.rsi
-    rotation: 180
+    rotation: 90
     layers:
     - state: chempuff
       scale: 2, 2

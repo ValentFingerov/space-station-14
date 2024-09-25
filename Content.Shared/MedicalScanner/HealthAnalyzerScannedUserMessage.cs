@@ -1,4 +1,4 @@
-using Robust.Shared.Serialization;
+﻿using Robust.Shared.Serialization;
 
 namespace Content.Shared.MedicalScanner;
 
@@ -8,19 +8,11 @@ namespace Content.Shared.MedicalScanner;
 [Serializable, NetSerializable]
 public sealed class HealthAnalyzerScannedUserMessage : BoundUserInterfaceMessage
 {
-    public readonly NetEntity? TargetEntity;
-    public float Temperature;
-    public float BloodLevel;
-    public bool? ScanMode;
-    public bool? Bleeding;
+    public readonly EntityUid? TargetEntity;
 
-    public HealthAnalyzerScannedUserMessage(NetEntity? targetEntity, float temperature, float bloodLevel, bool? scanMode, bool? bleeding)
+    public HealthAnalyzerScannedUserMessage(EntityUid? targetEntity)
     {
         TargetEntity = targetEntity;
-        Temperature = temperature;
-        BloodLevel = bloodLevel;
-        ScanMode = scanMode;
-        Bleeding = bleeding;
     }
 }
 

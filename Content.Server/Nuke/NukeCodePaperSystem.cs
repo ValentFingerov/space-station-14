@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Content.Server.Chat.Systems;
 using Content.Server.Fax;
-using Content.Shared.Fax.Components;
+using Content.Server.Paper;
 using Content.Server.Station.Components;
 using Content.Server.Station.Systems;
-using Content.Shared.Paper;
 using Robust.Shared.Random;
 using Robust.Shared.Utility;
 
@@ -37,8 +37,7 @@ namespace Content.Server.Nuke
 
             if (TryGetRelativeNukeCode(uid, out var paperContent, station, onlyCurrentStation: component.AllNukesAvailable))
             {
-                if (TryComp<PaperComponent>(uid, out var paperComp))
-                    _paper.SetContent((uid, paperComp), paperContent);
+                _paper.SetContent(uid, paperContent);
             }
         }
 
@@ -66,13 +65,8 @@ namespace Content.Server.Nuke
                     paperContent,
                     Loc.GetString("nuke-codes-fax-paper-name"),
                     null,
-                    null,
-                    "paper_stamp-centcom",
-                    new List<StampDisplayInfo>
-                    {
-                        new StampDisplayInfo { StampedName = Loc.GetString("stamp-component-stamped-name-centcom"), StampedColor = Color.FromHex("#BB3232") },
-                    }
-                );
+                    "paper_stamp-cent",
+                    new() { Loc.GetString("stamp-component-stamped-name-centcom") });
                 _faxSystem.Receive(faxEnt, printout, null, fax);
 
                 wasSent = true;
@@ -104,16 +98,9 @@ namespace Content.Server.Nuke
 
             var codesMessage = new FormattedMessage();
             // Find the first nuke that matches the passed location.
-            var nukes = new List<Entity<NukeComponent>>();
-            var query = EntityQueryEnumerator<NukeComponent>();
-            while (query.MoveNext(out var nukeUid, out var nuke))
-            {
-                nukes.Add((nukeUid, nuke));
-            }
-
-            _random.Shuffle(nukes);
-
-            foreach (var (nukeUid, nuke) in nukes)
+            var query = EntityQuery<NukeComponent>().ToList();
+            _random.Shuffle(query);
+            foreach (var nuke in query)
             {
                 if (!onlyCurrentStation &&
                     (owningStation == null &&
@@ -124,7 +111,7 @@ namespace Content.Server.Nuke
                 }
 
                 codesMessage.PushNewline();
-                codesMessage.AddMarkupOrThrow(Loc.GetString("nuke-codes-list", ("name", MetaData(nukeUid).EntityName), ("code", nuke.Code)));
+                codesMessage.AddMarkup(Loc.GetString("nuke-codes-list", ("name", MetaData(nuke.Owner).EntityName), ("code", nuke.Code)));
                 break;
             }
 

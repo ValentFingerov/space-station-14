@@ -1,12 +1,42 @@
 using Content.Shared.Inventory;
 using Content.Shared.Movement.Components;
+using Robust.Shared.GameStates;
+using Robust.Shared.Serialization;
 using Robust.Shared.Timing;
+using Robust.Shared.Utility;
 
 namespace Content.Shared.Movement.Systems
 {
     public sealed class MovementSpeedModifierSystem : EntitySystem
     {
         [Dependency] private readonly IGameTiming _timing = default!;
+
+        public override void Initialize()
+        {
+            base.Initialize();
+            SubscribeLocalEvent<MovementSpeedModifierComponent, ComponentGetState>(OnGetState);
+            SubscribeLocalEvent<MovementSpeedModifierComponent, ComponentHandleState>(OnHandleState);
+        }
+
+        private void OnGetState(EntityUid uid, MovementSpeedModifierComponent component, ref ComponentGetState args)
+        {
+            args.State = new MovementSpeedModifierComponentState
+            {
+                BaseWalkSpeed = component.BaseWalkSpeed,
+                BaseSprintSpeed = component.BaseSprintSpeed,
+                WalkSpeedModifier = component.WalkSpeedModifier,
+                SprintSpeedModifier = component.SprintSpeedModifier,
+            };
+        }
+
+        private void OnHandleState(EntityUid uid, MovementSpeedModifierComponent component, ref ComponentHandleState args)
+        {
+            if (args.Current is not MovementSpeedModifierComponentState state) return;
+            component.BaseWalkSpeed = state.BaseWalkSpeed;
+            component.BaseSprintSpeed = state.BaseSprintSpeed;
+            component.WalkSpeedModifier = state.WalkSpeedModifier;
+            component.SprintSpeedModifier = state.SprintSpeedModifier;
+        }
 
         public void RefreshMovementSpeedModifiers(EntityUid uid, MovementSpeedModifierComponent? move = null)
         {
@@ -25,7 +55,7 @@ namespace Content.Shared.Movement.Systems
 
             move.WalkSpeedModifier = ev.WalkSpeedModifier;
             move.SprintSpeedModifier = ev.SprintSpeedModifier;
-            Dirty(uid, move);
+            Dirty(move);
         }
 
         public void ChangeBaseSpeed(EntityUid uid, float baseWalkSpeed, float baseSprintSpeed, float acceleration, MovementSpeedModifierComponent? move = null)
@@ -36,19 +66,16 @@ namespace Content.Shared.Movement.Systems
             move.BaseWalkSpeed = baseWalkSpeed;
             move.BaseSprintSpeed = baseSprintSpeed;
             move.Acceleration = acceleration;
-            Dirty(uid, move);
+            Dirty(move);
         }
 
-        // We might want to create separate RefreshMovementFrictionModifiersEvent and RefreshMovementFrictionModifiers function that will call it
-        public void ChangeFriction(EntityUid uid, float friction, float? frictionNoInput, float acceleration, MovementSpeedModifierComponent? move = null)
+        [Serializable, NetSerializable]
+        private sealed class MovementSpeedModifierComponentState : ComponentState
         {
-            if (!Resolve(uid, ref move, false))
-                return;
-
-            move.Friction = friction;
-            move.FrictionNoInput = frictionNoInput;
-            move.Acceleration = acceleration;
-            Dirty(uid, move);
+            public float BaseWalkSpeed;
+            public float BaseSprintSpeed;
+            public float WalkSpeedModifier;
+            public float SprintSpeedModifier;
         }
     }
 
@@ -68,11 +95,6 @@ namespace Content.Shared.Movement.Systems
         {
             WalkSpeedModifier *= walk;
             SprintSpeedModifier *= sprint;
-        }
-
-        public void ModifySpeed(float mod)
-        {
-            ModifySpeed(mod, mod);
         }
     }
 }

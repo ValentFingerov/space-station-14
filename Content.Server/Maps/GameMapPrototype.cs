@@ -3,7 +3,6 @@ using JetBrains.Annotations;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 using System.Diagnostics;
-using System.Numerics;
 
 namespace Content.Server.Maps;
 
@@ -20,25 +19,19 @@ public sealed partial class GameMapPrototype : IPrototype
 {
     /// <inheritdoc/>
     [IdDataField]
-    public string ID { get; private set; } = default!;
-
-    [DataField]
-    public float MaxRandomOffset = 1000f;
-
-    [DataField]
-    public bool RandomRotation = true;
+    public string ID { get; } = default!;
 
     /// <summary>
     /// Name of the map to use in generic messages, like the map vote.
     /// </summary>
-    [DataField(required: true)]
-    public string MapName { get; private set; } = default!;
+    [DataField("mapName", required: true)]
+    public string MapName { get; } = default!;
 
     /// <summary>
     /// Relative directory path to the given map, i.e. `/Maps/saltern.yml`
     /// </summary>
-    [DataField(required: true)]
-    public ResPath MapPath { get; private set; } = default!;
+    [DataField("mapPath", required: true)]
+    public ResPath MapPath { get; } = default!;
 
     [DataField("stations", required: true)]
     private Dictionary<string, StationConfig> _stations = new();
@@ -47,18 +40,4 @@ public sealed partial class GameMapPrototype : IPrototype
     /// The stations this map contains. The names should match with the BecomesStation components.
     /// </summary>
     public IReadOnlyDictionary<string, StationConfig> Stations => _stations;
-
-    /// <summary>
-    /// Performs a shallow clone of this map prototype, replacing <c>MapPath</c> with the argument.
-    /// </summary>
-    public GameMapPrototype Persistence(ResPath mapPath)
-    {
-        return new()
-        {
-            ID = ID,
-            MapName = MapName,
-            MapPath = mapPath,
-            _stations = _stations
-        };
-    }
 }

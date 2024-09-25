@@ -1,33 +1,26 @@
-﻿using System.Linq;
-using Content.Server.Access.Systems;
+﻿using Content.Server.Access.Systems;
 using Content.Server.DetailExaminable;
+using Content.Server.Hands.Systems;
 using Content.Server.Humanoid;
 using Content.Server.IdentityManagement;
 using Content.Server.Mind.Commands;
 using Content.Server.PDA;
-using Content.Server.Shuttles.Systems;
-using Content.Server.Spawners.EntitySystems;
+using Content.Server.Roles;
 using Content.Server.Station.Components;
-using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.CCVar;
-using Content.Shared.Clothing;
+using Content.Shared.Hands.Components;
 using Content.Shared.Humanoid;
 using Content.Shared.Humanoid.Prototypes;
+using Content.Shared.Inventory;
 using Content.Shared.PDA;
 using Content.Shared.Preferences;
-using Content.Shared.Preferences.Loadouts;
-using Content.Shared.Preferences.Loadouts.Effects;
 using Content.Shared.Random;
 using Content.Shared.Random.Helpers;
 using Content.Shared.Roles;
-using Content.Shared.Roles.Jobs;
-using Content.Shared.Station;
-using Content.Shared.StatusIcon;
 using JetBrains.Annotations;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
-using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Utility;
@@ -39,26 +32,31 @@ namespace Content.Server.Station.Systems;
 /// Also provides helpers for spawning in the player's mob.
 /// </summary>
 [PublicAPI]
-public sealed class StationSpawningSystem : SharedStationSpawningSystem
+public sealed class StationSpawningSystem : EntitySystem
 {
-    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly ActorSystem _actors = default!;
+    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
+    [Dependency] private readonly HandsSystem _handsSystem = default!;
     [Dependency] private readonly HumanoidAppearanceSystem _humanoidSystem = default!;
     [Dependency] private readonly IdCardSystem _cardSystem = default!;
-    [Dependency] private readonly IdentitySystem _identity = default!;
-    [Dependency] private readonly MetaDataSystem _metaSystem = default!;
-    [Dependency] private readonly PdaSystem _pdaSystem = default!;
+    [Dependency] private readonly InventorySystem _inventorySystem = default!;
+    [Dependency] private readonly PDASystem _pdaSystem = default!;
     [Dependency] private readonly SharedAccessSystem _accessSystem = default!;
+    [Dependency] private readonly IdentitySystem _identity = default!;
 
     private bool _randomizeCharacters;
 
     /// <inheritdoc/>
     public override void Initialize()
     {
-        base.Initialize();
-        Subs.CVar(_configurationManager, CCVars.ICRandomCharacters, e => _randomizeCharacters = e, true);
+        SubscribeLocalEvent<StationInitializedEvent>(OnStationInitialized);
+        _configurationManager.OnValueChanged(CCVars.ICRandomCharacters, e => _randomizeCharacters = e, true);
+    }
+
+    private void OnStationInitialized(StationInitializedEvent ev)
+    {
+        AddComp<StationSpawningComponent>(ev.Station);
     }
 
     /// <summary>
@@ -73,15 +71,15 @@ public sealed class StationSpawningSystem : SharedStationSpawningSystem
     /// <remarks>
     /// This only spawns the character, and does none of the mind-related setup you'd need for it to be playable.
     /// </remarks>
-    public EntityUid? SpawnPlayerCharacterOnStation(EntityUid? station, JobComponent? job, HumanoidCharacterProfile? profile, StationSpawningComponent? stationSpawning = null)
+    public EntityUid? SpawnPlayerCharacterOnStation(EntityUid? station, Job? job, HumanoidCharacterProfile? profile, StationSpawningComponent? stationSpawning = null)
     {
         if (station != null && !Resolve(station.Value, ref stationSpawning))
             throw new ArgumentException("Tried to use a non-station entity as a station!", nameof(station));
 
         var ev = new PlayerSpawningEvent(job, profile, station);
-
         RaiseLocalEvent(ev);
-        DebugTools.Assert(ev.SpawnResult is { Valid: true } or null);
+
+        DebugTools.Assert(ev.SpawnResult is {Valid: true} or null);
 
         return ev.SpawnResult;
     }
@@ -97,46 +95,18 @@ public sealed class StationSpawningSystem : SharedStationSpawningSystem
     /// <param name="job">Job to assign to the character, if any.</param>
     /// <param name="profile">Appearance profile to use for the character.</param>
     /// <param name="station">The station this player is being spawned on.</param>
-    /// <param name="entity">The entity to use, if one already exists.</param>
     /// <returns>The spawned entity</returns>
     public EntityUid SpawnPlayerMob(
         EntityCoordinates coordinates,
-        JobComponent? job,
+        Job? job,
         HumanoidCharacterProfile? profile,
-        EntityUid? station,
-        EntityUid? entity = null)
+        EntityUid? station)
     {
-        _prototypeManager.TryIndex(job?.Prototype ?? string.Empty, out var prototype);
-        RoleLoadout? loadout = null;
-
-        // Need to get the loadout up-front to handle names if we use an entity spawn override.
-        var jobLoadout = LoadoutSystem.GetJobPrototype(prototype?.ID);
-
-        if (_prototypeManager.TryIndex(jobLoadout, out RoleLoadoutPrototype? roleProto))
-        {
-            profile?.Loadouts.TryGetValue(jobLoadout, out loadout);
-
-            // Set to default if not present
-            if (loadout == null)
-            {
-                loadout = new RoleLoadout(jobLoadout);
-                loadout.SetDefault(profile, _actors.GetSession(entity), _prototypeManager);
-            }
-        }
-
         // If we're not spawning a humanoid, we're gonna exit early without doing all the humanoid stuff.
-        if (prototype?.JobEntity != null)
+        if (job?.JobEntity != null)
         {
-            DebugTools.Assert(entity is null);
-            var jobEntity = EntityManager.SpawnEntity(prototype.JobEntity, coordinates);
+            var jobEntity = EntityManager.SpawnEntity(job.JobEntity, coordinates);
             MakeSentientCommand.MakeSentient(jobEntity, EntityManager);
-
-            // Make sure custom names get handled, what is gameticker control flow whoopy.
-            if (loadout != null)
-            {
-                EquipRoleName(jobEntity, loadout, roleProto!);
-            }
-
             DoJobSpecials(job, jobEntity);
             _identity.QueueIdentityUpdate(jobEntity);
             return jobEntity;
@@ -146,7 +116,7 @@ public sealed class StationSpawningSystem : SharedStationSpawningSystem
         if (_randomizeCharacters)
         {
             var weightId = _configurationManager.GetCVar(CCVars.ICRandomSpeciesWeights);
-            var weights = _prototypeManager.Index<WeightedRandomSpeciesPrototype>(weightId);
+            var weights = _prototypeManager.Index<WeightedRandomPrototype>(weightId);
             speciesId = weights.Pick(_random);
         }
         else if (profile != null)
@@ -161,80 +131,96 @@ public sealed class StationSpawningSystem : SharedStationSpawningSystem
         if (!_prototypeManager.TryIndex<SpeciesPrototype>(speciesId, out var species))
             throw new ArgumentException($"Invalid species prototype was used: {speciesId}");
 
-        entity ??= Spawn(species.Prototype, coordinates);
+        var entity = Spawn(species.Prototype, coordinates);
 
         if (_randomizeCharacters)
         {
             profile = HumanoidCharacterProfile.RandomWithSpecies(speciesId);
         }
 
-        if (loadout != null)
+        if (job?.StartingGear != null)
         {
-            EquipRoleLoadout(entity.Value, loadout, roleProto!);
+            var startingGear = _prototypeManager.Index<StartingGearPrototype>(job.StartingGear);
+            EquipStartingGear(entity, startingGear, profile);
+            if (profile != null)
+                EquipIdCard(entity, profile.Name, job.Prototype, station);
         }
-
-        if (prototype?.StartingGear != null)
-        {
-            var startingGear = _prototypeManager.Index<StartingGearPrototype>(prototype.StartingGear);
-            EquipStartingGear(entity.Value, startingGear, raiseEvent: false);
-        }
-
-        var gearEquippedEv = new StartingGearEquippedEvent(entity.Value);
-        RaiseLocalEvent(entity.Value, ref gearEquippedEv);
 
         if (profile != null)
         {
-            if (prototype != null)
-                SetPdaAndIdCardData(entity.Value, profile.Name, prototype, station);
-
-            _humanoidSystem.LoadProfile(entity.Value, profile);
-            _metaSystem.SetEntityName(entity.Value, profile.Name);
+            _humanoidSystem.LoadProfile(entity, profile);
+            MetaData(entity).EntityName = profile.Name;
             if (profile.FlavorText != "" && _configurationManager.GetCVar(CCVars.FlavorText))
             {
-                AddComp<DetailExaminableComponent>(entity.Value).Content = profile.FlavorText;
+                AddComp<DetailExaminableComponent>(entity).Content = profile.FlavorText;
             }
         }
 
-        DoJobSpecials(job, entity.Value);
-        _identity.QueueIdentityUpdate(entity.Value);
-        return entity.Value;
+        DoJobSpecials(job, entity);
+        _identity.QueueIdentityUpdate(entity);
+        return entity;
     }
 
-    private void DoJobSpecials(JobComponent? job, EntityUid entity)
+    private void DoJobSpecials(Job? job, EntityUid entity)
     {
-        if (!_prototypeManager.TryIndex(job?.Prototype ?? string.Empty, out JobPrototype? prototype))
-            return;
-
-        foreach (var jobSpecial in prototype.Special)
+        foreach (var jobSpecial in job?.Prototype.Special ?? Array.Empty<JobSpecial>())
         {
             jobSpecial.AfterEquip(entity);
         }
     }
 
     /// <summary>
-    /// Sets the ID card and PDA name, job, and access data.
+    /// Equips starting gear onto the given entity.
+    /// </summary>
+    /// <param name="entity">Entity to load out.</param>
+    /// <param name="startingGear">Starting gear to use.</param>
+    /// <param name="profile">Character profile to use, if any.</param>
+    public void EquipStartingGear(EntityUid entity, StartingGearPrototype startingGear, HumanoidCharacterProfile? profile)
+    {
+        if (_inventorySystem.TryGetSlots(entity, out var slotDefinitions))
+        {
+            foreach (var slot in slotDefinitions)
+            {
+                var equipmentStr = startingGear.GetGear(slot.Name, profile);
+                if (!string.IsNullOrEmpty(equipmentStr))
+                {
+                    var equipmentEntity = EntityManager.SpawnEntity(equipmentStr, EntityManager.GetComponent<TransformComponent>(entity).Coordinates);
+                    _inventorySystem.TryEquip(entity, equipmentEntity, slot.Name, true);
+                }
+            }
+        }
+
+        if (!TryComp(entity, out HandsComponent? handsComponent))
+            return;
+
+        var inhand = startingGear.Inhand;
+        var coords = EntityManager.GetComponent<TransformComponent>(entity).Coordinates;
+        foreach (var (hand, prototype) in inhand)
+        {
+            var inhandEntity = EntityManager.SpawnEntity(prototype, coords);
+            _handsSystem.TryPickup(entity, inhandEntity, hand, checkActionBlocker: false, handsComp: handsComponent);
+        }
+    }
+
+    /// <summary>
+    /// Equips an ID card and PDA onto the given entity.
     /// </summary>
     /// <param name="entity">Entity to load out.</param>
     /// <param name="characterName">Character name to use for the ID.</param>
     /// <param name="jobPrototype">Job prototype to use for the PDA and ID.</param>
     /// <param name="station">The station this player is being spawned on.</param>
-    public void SetPdaAndIdCardData(EntityUid entity, string characterName, JobPrototype jobPrototype, EntityUid? station)
+    public void EquipIdCard(EntityUid entity, string characterName, JobPrototype jobPrototype, EntityUid? station)
     {
-        if (!InventorySystem.TryGetSlotEntity(entity, "id", out var idUid))
+        if (!_inventorySystem.TryGetSlotEntity(entity, "id", out var idUid))
             return;
 
-        var cardId = idUid.Value;
-        if (TryComp<PdaComponent>(idUid, out var pdaComponent) && pdaComponent.ContainedId != null)
-            cardId = pdaComponent.ContainedId.Value;
-
-        if (!TryComp<IdCardComponent>(cardId, out var card))
+        if (!EntityManager.TryGetComponent(idUid, out PDAComponent? pdaComponent) || pdaComponent.ContainedID == null)
             return;
 
+        var card = pdaComponent.ContainedID;
+        var cardId = card.Owner;
         _cardSystem.TryChangeFullName(cardId, characterName, card);
         _cardSystem.TryChangeJobTitle(cardId, jobPrototype.LocalizedName, card);
-
-        if (_prototypeManager.TryIndex(jobPrototype.Icon, out var jobIcon))
-            _cardSystem.TryChangeJobIcon(cardId, jobIcon, card);
 
         var extendedAccess = false;
         if (station != null)
@@ -245,8 +231,7 @@ public sealed class StationSpawningSystem : SharedStationSpawningSystem
 
         _accessSystem.SetAccessToJob(cardId, jobPrototype, extendedAccess);
 
-        if (pdaComponent != null)
-            _pdaSystem.SetOwner(idUid.Value, pdaComponent, entity, characterName);
+        _pdaSystem.SetOwner(idUid.Value, pdaComponent, characterName);
     }
 
 
@@ -269,7 +254,7 @@ public sealed class PlayerSpawningEvent : EntityEventArgs
     /// <summary>
     /// The job to use, if any.
     /// </summary>
-    public readonly JobComponent? Job;
+    public readonly Job? Job;
     /// <summary>
     /// The profile to use, if any.
     /// </summary>
@@ -279,7 +264,7 @@ public sealed class PlayerSpawningEvent : EntityEventArgs
     /// </summary>
     public readonly EntityUid? Station;
 
-    public PlayerSpawningEvent(JobComponent? job, HumanoidCharacterProfile? humanoidCharacterProfile, EntityUid? station)
+    public PlayerSpawningEvent(Job? job, HumanoidCharacterProfile? humanoidCharacterProfile, EntityUid? station)
     {
         Job = job;
         HumanoidCharacterProfile = humanoidCharacterProfile;

@@ -1,18 +1,14 @@
-using System.Numerics;
 using Content.Shared.Salvage;
-using Content.Shared.Salvage.Expeditions;
 using Robust.Shared.Audio;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.List;
 
 namespace Content.Server.Salvage.Expeditions;
 
 /// <summary>
 /// Designates this entity as holding a salvage expedition.
 /// </summary>
-[RegisterComponent, AutoGenerateComponentPause]
-public sealed partial class SalvageExpeditionComponent : SharedSalvageExpeditionComponent
+[RegisterComponent]
+public sealed class SalvageExpeditionComponent : Component
 {
     public SalvageMissionParams MissionParams = default!;
 
@@ -26,35 +22,39 @@ public sealed partial class SalvageExpeditionComponent : SharedSalvageExpedition
     /// When the expeditions ends.
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite), DataField("endTime", customTypeSerializer: typeof(TimeOffsetSerializer))]
-    [AutoPausedField]
     public TimeSpan EndTime;
 
     /// <summary>
     /// Station whose mission this is.
     /// </summary>
-    [DataField("station")]
+    [ViewVariables, DataField("station")]
     public EntityUid Station;
 
     [ViewVariables] public bool Completed = false;
 
+    [ViewVariables(VVAccess.ReadWrite), DataField("stage")]
+    public ExpeditionStage Stage = ExpeditionStage.Added;
+
     /// <summary>
     /// Countdown audio stream.
     /// </summary>
-    [DataField, AutoNetworkedField]
-    public EntityUid? Stream = null;
+    public IPlayingAudioStream? Stream = null;
 
     /// <summary>
     /// Sound that plays when the mission end is imminent.
     /// </summary>
-    [ViewVariables(VVAccess.ReadWrite), DataField]
-    public SoundSpecifier Sound = new SoundCollectionSpecifier("ExpeditionEnd")
+    [ViewVariables(VVAccess.ReadWrite), DataField("sound")]
+    public SoundSpecifier Sound = new SoundPathSpecifier("/Audio/Misc/tension_session.ogg")
     {
-        Params = AudioParams.Default.WithVolume(-5),
+        Params = AudioParams.Default.WithVolume(-15),
     };
+}
 
-    /// <summary>
-    /// Song selected on MapInit so we can predict the audio countdown properly.
-    /// </summary>
-    [DataField]
-    public SoundPathSpecifier SelectedSong;
+public enum ExpeditionStage : byte
+{
+    Added,
+    Running,
+    Countdown,
+    MusicCountdown,
+    FinalCountdown,
 }

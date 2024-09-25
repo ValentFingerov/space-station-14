@@ -4,7 +4,7 @@ using Robust.Shared.Serialization;
 namespace Content.Shared.SubFloor;
 
 [RegisterComponent, NetworkedComponent]
-public sealed partial class TrayScannerComponent : Component
+public sealed class TrayScannerComponent : Component
 {
     /// <summary>
     ///     Whether the scanner is currently on.
@@ -22,11 +22,9 @@ public sealed partial class TrayScannerComponent : Component
 public sealed class TrayScannerState : ComponentState
 {
     public bool Enabled;
-    public float Range;
 
-    public TrayScannerState(bool enabled, float range)
+    public TrayScannerState(bool enabled)
     {
         Enabled = enabled;
-        Range = range;
     }
 }

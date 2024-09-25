@@ -4,26 +4,30 @@
   description: job-description-paramedic
   playTimeTracker: JobParamedic
   requirements:
-    - !type:RoleTimeRequirement
-      role: JobMedicalDoctor
-      time: 14400 #4 hrs
+    - !type:DepartmentTimeRequirement
+      department: Medical
+      time: 9000
     - !type:OverallPlaytimeRequirement
-      time: 54000 # 15 hrs
+      time: 54000
   startingGear: ParamedicGear
-  icon: "JobIconParamedic"
+  icon: "Paramedic"
   supervisors: job-supervisors-cmo
   access:
   - Medical
   - Maintenance
+  - External
   extendedAccess:
   - Chemistry
 
 - type: startingGear
   id: ParamedicGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitParamedic
+    back: ClothingBackpackMedicalFilled
+    shoes: ClothingShoesColorWhite
     id: ParamedicPDA
     ears: ClothingHeadsetMedical
-    belt: ClothingBeltMedicalEMTFilled
-  storage:
-    back:
-    - EmergencyRollerBedSpawnFolded
+    belt: ClothingBeltParamedicFilled
+  innerclothingskirt: ClothingUniformJumpskirtParamedic
+  satchel: ClothingBackpackSatchelMedicalFilled
+  duffelbag: ClothingBackpackDuffelMedicalFilled

@@ -1,19 +1,19 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
-using Content.Server.Construction;
-using Content.Server.Construction.Components;
+using Content.Server.Administration.Logs;
 using Content.Server.Power.Components;
+using Content.Shared.Database;
 using Content.Shared.DoAfter;
 using Content.Shared.GameTicking;
 using Content.Shared.Hands.Components;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
-using Content.Shared.Power;
+using Content.Shared.Tools;
 using Content.Shared.Tools.Components;
 using Content.Shared.Wires;
 using Robust.Server.GameObjects;
-using Robust.Shared.Player;
+using Robust.Server.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
@@ -22,16 +22,20 @@ namespace Content.Server.Wires;
 public sealed class WiresSystem : SharedWiresSystem
 {
     [Dependency] private readonly IPrototypeManager _protoMan = default!;
+    [Dependency] private readonly IAdminLogManager _adminLogger = default!;
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
+    [Dependency] private readonly SharedToolSystem _toolSystem = default!;
     [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
     [Dependency] private readonly SharedInteractionSystem _interactionSystem = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly UserInterfaceSystem _uiSystem = default!;
+    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly ConstructionSystem _construction = default!;
 
     // This is where all the wire layouts are stored.
     [ViewVariables] private readonly Dictionary<string, WireLayout> _layouts = new();
 
+    private const float ScrewTime = 1f;
     private float _toolTime = 0f;
 
     #region Initialization
@@ -42,14 +46,14 @@ public sealed class WiresSystem : SharedWiresSystem
         SubscribeLocalEvent<RoundRestartCleanupEvent>(Reset);
 
         // this is a broadcast event
-        SubscribeLocalEvent<WiresComponent, PanelChangedEvent>(OnPanelChanged);
+        SubscribeLocalEvent<WiresPanelComponent, WirePanelDoAfterEvent>(OnPanelDoAfter);
+        SubscribeLocalEvent<WiresComponent, ComponentStartup>(OnWiresStartup);
         SubscribeLocalEvent<WiresComponent, WiresActionMessage>(OnWiresActionMessage);
         SubscribeLocalEvent<WiresComponent, InteractUsingEvent>(OnInteractUsing);
         SubscribeLocalEvent<WiresComponent, MapInitEvent>(OnMapInit);
         SubscribeLocalEvent<WiresComponent, TimedWireEvent>(OnTimedWire);
         SubscribeLocalEvent<WiresComponent, PowerChangedEvent>(OnWiresPowered);
         SubscribeLocalEvent<WiresComponent, WireDoAfterEvent>(OnDoAfter);
-        SubscribeLocalEvent<WiresPanelSecurityComponent, WiresPanelSecurityEvent>(SetWiresPanelSecurity);
     }
 
     private void SetOrCreateWireLayout(EntityUid uid, WiresComponent? wires = null)
@@ -152,17 +156,19 @@ public sealed class WiresSystem : SharedWiresSystem
             for (var i = 0; i < enumeratedList.Count; i++)
             {
                 (int id, Wire d) = enumeratedList[i];
-                d.Id = i;
 
                 if (d.Action != null)
                 {
                     var actionType = d.Action.GetType();
-                    if (!types.TryAdd(actionType, 1))
+                    if (types.ContainsKey(actionType))
                         types[actionType] += 1;
+                    else
+                        types.Add(actionType, 1);
 
                     if (!d.Action.AddWire(d, types[actionType]))
                         d.Action = null;
                 }
+                d.Id = i;
 
                 data.Add(id, new WireLayout.WireData(d.Letter, d.Color, i));
                 wires.WiresList[i] = wireSet[id];
@@ -227,6 +233,14 @@ public sealed class WiresSystem : SharedWiresSystem
             letter,
             position,
             action);
+    }
+
+    private void OnWiresStartup(EntityUid uid, WiresComponent component, ComponentStartup args)
+    {
+        if (!String.IsNullOrEmpty(component.LayoutId))
+            SetOrCreateWireLayout(uid, component);
+
+        UpdateUserInterface(uid);
     }
     #endregion
 
@@ -341,7 +355,7 @@ public sealed class WiresSystem : SharedWiresSystem
         }
     }
 
-    private sealed class ActiveWireAction
+    private class ActiveWireAction
     {
         /// <summary>
         ///     The wire action's ID. This is so that once the action is finished,
@@ -387,7 +401,11 @@ public sealed class WiresSystem : SharedWiresSystem
 
     private void OnWiresActionMessage(EntityUid uid, WiresComponent component, WiresActionMessage args)
     {
-        var player = args.Actor;
+        if (args.Session.AttachedEntity == null)
+        {
+            return;
+        }
+        var player = (EntityUid) args.Session.AttachedEntity;
 
         if (!EntityManager.TryGetComponent(player, out HandsComponent? handsComponent))
         {
@@ -437,51 +455,60 @@ public sealed class WiresSystem : SharedWiresSystem
         if (args.Handled)
             return;
 
-        if (!TryComp<ToolComponent>(args.Used, out var tool))
+        if (!TryComp<ToolComponent>(args.Used, out var tool) || !TryComp<WiresPanelComponent>(uid, out var panel))
             return;
 
-        if (!IsPanelOpen(uid))
-            return;
-
-        if (Tool.HasQuality(args.Used, "Cutting", tool) ||
-            Tool.HasQuality(args.Used, "Pulsing", tool))
+        if (panel.Open &&
+            (_toolSystem.HasQuality(args.Used, "Cutting", tool) ||
+            _toolSystem.HasQuality(args.Used, "Pulsing", tool)))
         {
             if (TryComp(args.User, out ActorComponent? actor))
             {
-                _uiSystem.OpenUi(uid, WiresUiKey.Key, actor.PlayerSession);
+                _uiSystem.TryOpen(uid, WiresUiKey.Key, actor.PlayerSession);
                 args.Handled = true;
             }
         }
+        else if (_toolSystem.UseTool(args.Used, args.User, uid, ScrewTime, "Screwing", new WirePanelDoAfterEvent(), toolComponent: tool))
+        {
+            _adminLogger.Add(LogType.Action, LogImpact.Low,
+                $"{ToPrettyString(args.User):user} is screwing {ToPrettyString(uid):target}'s {(panel.Open ? "open" : "closed")} maintenance panel at {Transform(uid).Coordinates:targetlocation}");
+            args.Handled = true;
+        }
     }
 
-    private void OnPanelChanged(Entity<WiresComponent> ent, ref PanelChangedEvent args)
+    private void OnPanelDoAfter(EntityUid uid, WiresPanelComponent panel, WirePanelDoAfterEvent args)
     {
-        if (args.Open)
+        if (args.Cancelled)
             return;
 
-        _uiSystem.CloseUi(ent.Owner, WiresUiKey.Key);
+        TogglePanel(uid, panel, !panel.Open);
+        UpdateAppearance(uid, panel);
+        _adminLogger.Add(LogType.Action, LogImpact.Low, $"{ToPrettyString(args.User):user} screwed {ToPrettyString(uid):target}'s maintenance panel {(panel.Open ? "open" : "closed")}");
+
+        if (panel.Open)
+        {
+            _audio.PlayPvs(panel.ScrewdriverOpenSound, uid);
+        }
+        else
+        {
+            _audio.PlayPvs(panel.ScrewdriverCloseSound, uid);
+            _uiSystem.TryCloseAll(uid, WiresUiKey.Key);
+        }
     }
 
     private void OnMapInit(EntityUid uid, WiresComponent component, MapInitEvent args)
     {
-        if (!string.IsNullOrEmpty(component.LayoutId))
-            SetOrCreateWireLayout(uid, component);
-
+        EnsureComp<WiresPanelComponent>(uid);
         if (component.SerialNumber == null)
-            GenerateSerialNumber(uid, component);
-
-        if (component.WireSeed == 0)
-            component.WireSeed = _random.Next(1, int.MaxValue);
-
-        // Update the construction graph to make sure that it starts on the node specified by WiresPanelSecurityComponent
-        if (TryComp<WiresPanelSecurityComponent>(uid, out var wiresPanelSecurity) &&
-            !string.IsNullOrEmpty(wiresPanelSecurity.SecurityLevel) &&
-            TryComp<ConstructionComponent>(uid, out var construction))
         {
-            _construction.ChangeNode(uid, null, wiresPanelSecurity.SecurityLevel, true, construction);
+            GenerateSerialNumber(uid, component);
         }
 
-        UpdateUserInterface(uid);
+        if (component.WireSeed == 0)
+        {
+            component.WireSeed = _random.Next(1, int.MaxValue);
+            UpdateUserInterface(uid);
+        }
     }
     #endregion
 
@@ -521,7 +548,7 @@ public sealed class WiresSystem : SharedWiresSystem
         UpdateUserInterface(uid);
     }
 
-    private void UpdateUserInterface(EntityUid uid, WiresComponent? wires = null, UserInterfaceComponent? ui = null)
+    private void UpdateUserInterface(EntityUid uid, WiresComponent? wires = null, ServerUserInterfaceComponent? ui = null)
     {
         if (!Resolve(uid, ref wires, ref ui, false)) // logging this means that we get a bunch of errors
             return;
@@ -548,17 +575,18 @@ public sealed class WiresSystem : SharedWiresSystem
 
         statuses.Sort((a, b) => a.position.CompareTo(b.position));
 
-        _uiSystem.SetUiState((uid, ui), WiresUiKey.Key, new WiresBoundUserInterfaceState(
+        _uiSystem.TrySetUiState(uid, WiresUiKey.Key, new WiresBoundUserInterfaceState(
             clientList.ToArray(),
             statuses.Select(p => new StatusEntry(p.key, p.value)).ToArray(),
-            Loc.GetString(wires.BoardName),
+            wires.BoardName,
             wires.SerialNumber,
-            wires.WireSeed));
+            wires.WireSeed), ui: ui);
     }
 
-    public void OpenUserInterface(EntityUid uid, ICommonSession player)
+    public void OpenUserInterface(EntityUid uid, IPlayerSession player)
     {
-        _uiSystem.OpenUi(uid, WiresUiKey.Key, player);
+        if (_uiSystem.TryGetUi(uid, WiresUiKey.Key, out var ui))
+            _uiSystem.OpenUi(ui, player);
     }
 
     /// <summary>
@@ -593,17 +621,24 @@ public sealed class WiresSystem : SharedWiresSystem
         }
     }
 
-    public void SetWiresPanelSecurity(EntityUid uid, WiresPanelSecurityComponent component, WiresPanelSecurityEvent args)
+    public void ChangePanelVisibility(EntityUid uid, WiresPanelComponent component, bool visible)
     {
-        component.Examine = args.Examine;
-        component.WiresAccessible = args.WiresAccessible;
+        component.Visible = visible;
+        UpdateAppearance(uid, component);
+        Dirty(component);
+    }
 
-        Dirty(uid, component);
+    public void TogglePanel(EntityUid uid, WiresPanelComponent component, bool open)
+    {
+        component.Open = open;
+        UpdateAppearance(uid, component);
+        Dirty(component);
+    }
 
-        if (!args.WiresAccessible)
-        {
-            _uiSystem.CloseUi(uid, WiresUiKey.Key);
-        }
+    private void UpdateAppearance(EntityUid uid, WiresPanelComponent panel)
+    {
+        if (TryComp<AppearanceComponent>(uid, out var appearance))
+            _appearance.SetData(uid, WiresVisuals.MaintenancePanelState, panel.Open && panel.Visible, appearance);
     }
 
     private void TryDoWireAction(EntityUid target, EntityUid user, EntityUid toolEntity, int id, WiresAction action, WiresComponent? wires = null, ToolComponent? tool = null)
@@ -623,7 +658,7 @@ public sealed class WiresSystem : SharedWiresSystem
         switch (action)
         {
             case WiresAction.Cut:
-                if (!Tool.HasQuality(toolEntity, "Cutting", tool))
+                if (!_toolSystem.HasQuality(toolEntity, "Cutting", tool))
                 {
                     _popupSystem.PopupCursor(Loc.GetString("wires-component-ui-on-receive-message-need-wirecutters"), user);
                     return;
@@ -637,7 +672,7 @@ public sealed class WiresSystem : SharedWiresSystem
 
                 break;
             case WiresAction.Mend:
-                if (!Tool.HasQuality(toolEntity, "Cutting", tool))
+                if (!_toolSystem.HasQuality(toolEntity, "Cutting", tool))
                 {
                     _popupSystem.PopupCursor(Loc.GetString("wires-component-ui-on-receive-message-need-wirecutters"), user);
                     return;
@@ -651,7 +686,7 @@ public sealed class WiresSystem : SharedWiresSystem
 
                 break;
             case WiresAction.Pulse:
-                if (!Tool.HasQuality(toolEntity, "Pulsing", tool))
+                if (!_toolSystem.HasQuality(toolEntity, "Pulsing", tool))
                 {
                     _popupSystem.PopupCursor(Loc.GetString("wires-component-ui-on-receive-message-need-multitool"), user);
                     return;
@@ -670,11 +705,11 @@ public sealed class WiresSystem : SharedWiresSystem
 
         if (_toolTime > 0f)
         {
-            var args = new DoAfterArgs(EntityManager, user, _toolTime, new WireDoAfterEvent(action, id), target, target: target, used: toolEntity)
+            var args = new DoAfterArgs(user, _toolTime, new WireDoAfterEvent(action, id), target, target: target, used: toolEntity)
             {
                 NeedHand = true,
                 BreakOnDamage = true,
-                BreakOnMove = true
+                BreakOnUserMove = true
             };
 
             _doAfter.TryStartDoAfter(args);
@@ -710,7 +745,7 @@ public sealed class WiresSystem : SharedWiresSystem
         switch (action)
         {
             case WiresAction.Cut:
-                if (!Tool.HasQuality(toolEntity, "Cutting", tool))
+                if (!_toolSystem.HasQuality(toolEntity, "Cutting", tool))
                 {
                     _popupSystem.PopupCursor(Loc.GetString("wires-component-ui-on-receive-message-need-wirecutters"), user);
                     break;
@@ -722,7 +757,7 @@ public sealed class WiresSystem : SharedWiresSystem
                     break;
                 }
 
-                Tool.PlayToolSound(toolEntity, tool, null);
+                _toolSystem.PlayToolSound(toolEntity, tool, user);
                 if (wire.Action == null || wire.Action.Cut(user, wire))
                 {
                     wire.IsCut = true;
@@ -731,7 +766,7 @@ public sealed class WiresSystem : SharedWiresSystem
                 UpdateUserInterface(used);
                 break;
             case WiresAction.Mend:
-                if (!Tool.HasQuality(toolEntity, "Cutting", tool))
+                if (!_toolSystem.HasQuality(toolEntity, "Cutting", tool))
                 {
                     _popupSystem.PopupCursor(Loc.GetString("wires-component-ui-on-receive-message-need-wirecutters"), user);
                     break;
@@ -743,7 +778,7 @@ public sealed class WiresSystem : SharedWiresSystem
                     break;
                 }
 
-                Tool.PlayToolSound(toolEntity, tool, null);
+                _toolSystem.PlayToolSound(toolEntity, tool, user);
                 if (wire.Action == null || wire.Action.Mend(user, wire))
                 {
                     wire.IsCut = false;
@@ -752,7 +787,7 @@ public sealed class WiresSystem : SharedWiresSystem
                 UpdateUserInterface(used);
                 break;
             case WiresAction.Pulse:
-                if (!Tool.HasQuality(toolEntity, "Pulsing", tool))
+                if (!_toolSystem.HasQuality(toolEntity, "Pulsing", tool))
                 {
                     _popupSystem.PopupCursor(Loc.GetString("wires-component-ui-on-receive-message-need-multitool"), user);
                     break;
@@ -767,7 +802,7 @@ public sealed class WiresSystem : SharedWiresSystem
                 wire.Action?.Pulse(user, wire);
 
                 UpdateUserInterface(used);
-                Audio.PlayPvs(wires.PulseSound, used);
+                _audio.PlayPvs(wires.PulseSound, used);
                 break;
         }
 

@@ -8,7 +8,7 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototy
 namespace Content.Shared.Singularity.Components;
 
 [RegisterComponent, NetworkedComponent]
-public sealed partial class ContainmentFieldGeneratorComponent : Component
+public sealed class ContainmentFieldGeneratorComponent : Component
 {
         private int _powerBuffer;
 
@@ -53,7 +53,7 @@ public sealed partial class ContainmentFieldGeneratorComponent : Component
     /// How many seconds should the generators wait before losing power?
     /// </summary>
     [DataField("threshold")]
-    public float Threshold = 20f;
+    public float Threshold = 10f;
 
     /// <summary>
     /// How many tiles should this field check before giving up?
@@ -70,16 +70,9 @@ public sealed partial class ContainmentFieldGeneratorComponent : Component
     public string IDTag = "EmitterBolt";
 
     /// <summary>
-    /// Which fixture ID should test collision with from the entity that powers the generator?
-    /// Prevents the generator from being powered by fly-by fixtures.
-    /// </summary>
-    [DataField]
-    public string SourceFixtureId = "projectile";
-
-    /// <summary>
     /// Is the generator toggled on?
     /// </summary>
-    [DataField]
+    [ViewVariables]
     public bool Enabled;
 
     /// <summary>
@@ -99,7 +92,7 @@ public sealed partial class ContainmentFieldGeneratorComponent : Component
     /// Stores a list of fields connected between generators in this direction.
     /// </summary>
     [ViewVariables]
-    public Dictionary<Direction, (Entity<ContainmentFieldGeneratorComponent>, List<EntityUid>)> Connections = new();
+    public Dictionary<Direction, (ContainmentFieldGeneratorComponent, List<EntityUid>)> Connections = new();
 
     /// <summary>
     /// What fields should this spawn?

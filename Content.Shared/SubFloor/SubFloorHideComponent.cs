@@ -13,7 +13,7 @@ namespace Content.Shared.SubFloor
     [NetworkedComponent]
     [RegisterComponent]
     [Access(typeof(SharedSubFloorHideSystem))]
-    public sealed partial class SubFloorHideComponent : Component
+    public sealed class SubFloorHideComponent : Component
     {
         /// <summary>
         ///     Whether the entity's current position has a "Floor-type" tile above its current position.
@@ -45,12 +45,5 @@ namespace Content.Shared.SubFloor
         /// </summary>
         [DataField("visibleLayers")]
         public HashSet<Enum> VisibleLayers = new() { SubfloorLayers.FirstLayer };
-
-        /// <summary>
-        /// This is used for storing the original draw depth of a t-ray revealed entity.
-        /// e.g. when a t-ray revealed cable is drawn above a carpet.
-        /// </summary>
-        [DataField]
-        public int? OriginalDrawDepth;
     }
 }

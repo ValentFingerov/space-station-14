@@ -1,3 +1,4 @@
+using Content.Shared.Actions.ActionTypes;
 using Robust.Shared.GameStates;
 using Robust.Shared.Serialization;
 
@@ -6,21 +7,22 @@ namespace Content.Shared.Actions;
 [NetworkedComponent]
 [RegisterComponent]
 [Access(typeof(SharedActionsSystem))]
-public sealed partial class ActionsComponent : Component
+public sealed class ActionsComponent : Component
 {
-    /// <summary>
-    /// List of actions currently granted to this entity.
-    /// On the client, this may contain a mixture of client-side and networked entities.
-    /// </summary>
-    [DataField] public HashSet<EntityUid> Actions = new();
+    [ViewVariables]
+    [Access(typeof(SharedActionsSystem), Other = AccessPermissions.ReadExecute)]
+    // FIXME Friends
+    public SortedSet<ActionType> Actions = new();
+
+    public override bool SendOnlyToOwner => true;
 }
 
 [Serializable, NetSerializable]
 public sealed class ActionsComponentState : ComponentState
 {
-    public readonly HashSet<NetEntity> Actions;
+    public readonly List<ActionType> Actions;
 
-    public ActionsComponentState(HashSet<NetEntity> actions)
+    public ActionsComponentState(List<ActionType> actions)
     {
         Actions = actions;
     }

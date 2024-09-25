@@ -5,46 +5,43 @@
   parent: BaseStructure
   components:
   - type: Transform
-    anchored: false
     noRot: true
   - type: Sprite
     sprite: Objects/Specific/Security/barrier.rsi
+    netsync: false
     layers:
-    - state: idle
-    - state: locked
-      map: ["enum.LockVisualLayers.Lock"]
+    - state: "idle"
+      map: ["deployableBarrierBase"]
   - type: Appearance
-  - type: LockVisuals
+  - type: GenericVisualizer
+    visuals:
+      enum.DeployableBarrierVisuals.State:
+        deployableBarrierBase:
+          enum.DeployableBarrierState.Idle: {state: "idle"}
+          enum.DeployableBarrierState.Deployed: {state: "deployed"}
   - type: InteractionOutline
   - type: Physics
     bodyType: Dynamic
     canCollide: false
   - type: Fixtures
     fixtures:
-      base:
+      fix1:
         shape:
           !type:PhysShapeCircle
           radius: 0.45
         density: 75
         mask:
         - MachineMask
-      barrier:
-        shape:
-          !type:PhysShapeCircle
-          radius: 0.45
         layer:
         - WallLayer
-  - type: DeployableBarrier
-    fixture: barrier
   - type: AccessReader
     access: [["Security"]]
   - type: Lock
     locked: false
     lockOnClick: true # toggle lock just by clicking on barrier
-    lockTime: 5
-    unlockTime: 5
+  - type: DeployableBarrier
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -65,7 +62,7 @@
             max: 5
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:DoActsBehavior
         acts: [ "Destruction" ]
   - type: PointLight

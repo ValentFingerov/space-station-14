@@ -1,5 +1,5 @@
-using System.Linq;
-using Content.Shared.Light.Components;
+﻿using System.Linq;
+using Content.Shared.Light.Component;
 using JetBrains.Annotations;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
@@ -16,7 +16,7 @@ namespace Content.Client.Light.Components
     /// </summary>
     [Serializable]
     [ImplicitDataDefinitionForInheritors]
-    public abstract partial class LightBehaviourAnimationTrack : AnimationTrackProperty
+    public abstract class LightBehaviourAnimationTrack : AnimationTrackProperty
     {
         protected IEntityManager _entMan = default!;
         protected IRobustRandom _random = default!;
@@ -24,7 +24,7 @@ namespace Content.Client.Light.Components
         [DataField("id")] public string ID { get; set; } = string.Empty;
 
         [DataField("property")]
-        public virtual string Property { get; protected set; } = nameof(PointLightComponent.AnimatedRadius);
+        public virtual string Property { get; protected set; } = "Radius";
 
         [DataField("isLooped")] public bool IsLooped { get; set; }
 
@@ -53,7 +53,7 @@ namespace Content.Client.Light.Components
 
             if (Enabled && _entMan.TryGetComponent(_parent, out PointLightComponent? light))
             {
-                _entMan.System<PointLightSystem>().SetEnabled(_parent, true, light);
+                light.Enabled = true;
             }
 
             OnInitialize();
@@ -63,12 +63,12 @@ namespace Content.Client.Light.Components
         {
             if (_entMan.TryGetComponent(_parent, out PointLightComponent? light))
             {
-                _entMan.System<PointLightSystem>().SetEnabled(_parent, true, light);
+                light.Enabled = true;
             }
 
             if (MinDuration > 0)
             {
-                MaxTime = (float)_random.NextDouble() * (MaxDuration - MinDuration) + MinDuration;
+                MaxTime = (float) _random.NextDouble() * (MaxDuration - MinDuration) + MinDuration;
             }
             else
             {
@@ -111,7 +111,7 @@ namespace Content.Client.Light.Components
     /// A light behaviour that alternates between StartValue and EndValue
     /// </summary>
     [UsedImplicitly]
-    public sealed partial class PulseBehaviour : LightBehaviourAnimationTrack
+    public sealed class PulseBehaviour : LightBehaviourAnimationTrack
     {
         public override (int KeyFrameIndex, float FramePlayingTime) AdvancePlayback(
             object context, int prevKeyFrameIndex, float prevPlayingTime, float frameTime)
@@ -119,7 +119,7 @@ namespace Content.Client.Light.Components
             var playingTime = prevPlayingTime + frameTime;
             var interpolateValue = playingTime / MaxTime;
 
-            if (Property == nameof(PointLightComponent.AnimatedEnable)) // special case for boolean
+            if (Property == "Enabled") // special case for boolean
             {
                 ApplyProperty(interpolateValue < 0.5f);
                 return (-1, playingTime);
@@ -166,7 +166,7 @@ namespace Content.Client.Light.Components
     /// A light behaviour that interpolates from StartValue to EndValue
     /// </summary>
     [UsedImplicitly]
-    public sealed partial class FadeBehaviour : LightBehaviourAnimationTrack
+    public sealed class FadeBehaviour : LightBehaviourAnimationTrack
     {
         /// <summary>
         /// Automatically reverse the animation when EndValue is reached. In this particular case, MaxTime specifies the
@@ -181,7 +181,7 @@ namespace Content.Client.Light.Components
             var playingTime = prevPlayingTime + frameTime;
             var interpolateValue = playingTime / MaxTime;
 
-            if (Property == nameof(PointLightComponent.AnimatedEnable)) // special case for boolean
+            if (Property == "Enabled") // special case for boolean
             {
                 ApplyProperty(interpolateValue < EndValue);
                 return (-1, playingTime);
@@ -192,11 +192,11 @@ namespace Content.Client.Light.Components
             {
                 if (interpolateValue < 0.5f)
                 {
-                    ApplyInterpolation(StartValue, EndValue, interpolateValue * 2);
+                    ApplyInterpolation(StartValue, EndValue, interpolateValue*2);
                 }
                 else
                 {
-                    ApplyInterpolation(EndValue, StartValue, (interpolateValue - 0.5f) * 2);
+                    ApplyInterpolation(EndValue, StartValue, (interpolateValue-0.5f)*2);
                 }
             }
             else
@@ -229,7 +229,7 @@ namespace Content.Client.Light.Components
     /// A light behaviour that interpolates using random values chosen between StartValue and EndValue.
     /// </summary>
     [UsedImplicitly]
-    public sealed partial class RandomizeBehaviour : LightBehaviourAnimationTrack
+    public sealed class RandomizeBehaviour : LightBehaviourAnimationTrack
     {
         private float _randomValue1;
         private float _randomValue2;
@@ -238,14 +238,14 @@ namespace Content.Client.Light.Components
 
         public override void OnInitialize()
         {
-            _randomValue1 = (float)InterpolateLinear(StartValue, EndValue, (float)_random.NextDouble());
-            _randomValue2 = (float)InterpolateLinear(StartValue, EndValue, (float)_random.NextDouble());
-            _randomValue3 = (float)InterpolateLinear(StartValue, EndValue, (float)_random.NextDouble());
+            _randomValue1 = (float) InterpolateLinear(StartValue, EndValue, (float) _random.NextDouble());
+            _randomValue2 = (float) InterpolateLinear(StartValue, EndValue, (float) _random.NextDouble());
+            _randomValue3 = (float) InterpolateLinear(StartValue, EndValue, (float) _random.NextDouble());
         }
 
         public override void OnStart()
         {
-            if (Property == nameof(PointLightComponent.AnimatedEnable)) // special case for boolean, we randomize it
+            if (Property == "Enabled") // special case for boolean, we randomize it
             {
                 ApplyProperty(_random.NextDouble() < 0.5);
                 return;
@@ -258,7 +258,7 @@ namespace Content.Client.Light.Components
             }
 
             _randomValue3 = _randomValue4;
-            _randomValue4 = (float)InterpolateLinear(StartValue, EndValue, (float) _random.NextDouble());
+            _randomValue4 = (float) InterpolateLinear(StartValue, EndValue, (float) _random.NextDouble());
         }
 
         public override (int KeyFrameIndex, float FramePlayingTime) AdvancePlayback(
@@ -267,7 +267,7 @@ namespace Content.Client.Light.Components
             var playingTime = prevPlayingTime + frameTime;
             var interpolateValue = playingTime / MaxTime;
 
-            if (Property == nameof(PointLightComponent.AnimatedEnable))
+            if (Property == "Enabled")
             {
                 return (-1, playingTime);
             }
@@ -295,10 +295,10 @@ namespace Content.Client.Light.Components
     /// </summary>
     [UsedImplicitly]
     [DataDefinition]
-    public sealed partial class ColorCycleBehaviour : LightBehaviourAnimationTrack, ISerializationHooks
+    public sealed class ColorCycleBehaviour : LightBehaviourAnimationTrack, ISerializationHooks
     {
         [DataField("property")]
-        public override string Property { get; protected set; } = nameof(PointLightComponent.Color);
+        public override string Property { get; protected set; } = "Color";
 
         [DataField("colors")] public List<Color> ColorsToCycle { get; set; } = new();
 
@@ -357,9 +357,12 @@ namespace Content.Client.Light.Components
     /// A component which applies a specific behaviour to a PointLightComponent on its owner.
     /// </summary>
     [RegisterComponent]
-    public sealed partial class LightBehaviourComponent : SharedLightBehaviourComponent, ISerializationHooks
+    public sealed class LightBehaviourComponent : SharedLightBehaviourComponent, ISerializationHooks
     {
-        public const string KeyPrefix = nameof(LightBehaviourComponent);
+        [Dependency] private readonly IEntityManager _entMan = default!;
+        [Dependency] private readonly IRobustRandom _random = default!;
+
+        private const string KeyPrefix = nameof(LightBehaviourComponent);
 
         public sealed class AnimationContainer
         {
@@ -378,13 +381,13 @@ namespace Content.Client.Light.Components
 
         [ViewVariables(VVAccess.ReadOnly)]
         [DataField("behaviours")]
-        public List<LightBehaviourAnimationTrack> Behaviours = new();
+        public readonly List<LightBehaviourAnimationTrack> Behaviours = new();
 
         [ViewVariables(VVAccess.ReadOnly)]
-        public readonly List<AnimationContainer> Animations = new();
+        private readonly List<AnimationContainer> _animations = new();
 
         [ViewVariables(VVAccess.ReadOnly)]
-        public Dictionary<string, object> OriginalPropertyValues = new();
+        private Dictionary<string, object> _originalPropertyValues = new();
 
         void ISerializationHooks.AfterDeserialization()
         {
@@ -394,11 +397,196 @@ namespace Content.Client.Light.Components
             {
                 var animation = new Animation()
                 {
-                    AnimationTracks = { behaviour }
+                    AnimationTracks = {behaviour}
                 };
 
-                Animations.Add(new AnimationContainer(key, animation, behaviour));
+                _animations.Add(new AnimationContainer(key, animation, behaviour));
                 key++;
+            }
+        }
+
+        protected override void Startup()
+        {
+            base.Startup();
+
+            // TODO: Do NOT ensure component here. And use eventbus events instead...
+            Owner.EnsureComponent<AnimationPlayerComponent>();
+
+            if (_entMan.TryGetComponent(Owner, out AnimationPlayerComponent? animation))
+            {
+#pragma warning disable 618
+                animation.AnimationCompleted += OnAnimationCompleted;
+#pragma warning restore 618
+            }
+
+            foreach (var container in _animations)
+            {
+                container.LightBehaviour.Initialize(Owner, _random, _entMan);
+            }
+
+            // we need to initialize all behaviours before starting any
+            foreach (var container in _animations)
+            {
+                if (container.LightBehaviour.Enabled)
+                {
+                    StartLightBehaviour(container.LightBehaviour.ID);
+                }
+            }
+        }
+
+        private void OnAnimationCompleted(string key)
+        {
+            var container = _animations.FirstOrDefault(x => x.FullKey == key);
+
+            if (container == null)
+            {
+                return;
+            }
+
+            if (container.LightBehaviour.IsLooped)
+            {
+                container.LightBehaviour.UpdatePlaybackValues(container.Animation);
+
+                if (_entMan.TryGetComponent(Owner, out AnimationPlayerComponent? animation))
+                {
+                    animation.Play(container.Animation, container.FullKey);
+                }
+            }
+        }
+
+        /// <summary>
+        /// If we disable all the light behaviours we want to be able to revert the light to its original state.
+        /// </summary>
+        private void CopyLightSettings(string property)
+        {
+            if (_entMan.TryGetComponent(Owner, out PointLightComponent? light))
+            {
+                var propertyValue = AnimationHelper.GetAnimatableProperty(light, property);
+                if (propertyValue != null)
+                {
+                    _originalPropertyValues.Add(property, propertyValue);
+                }
+            }
+            else
+            {
+                Logger.Warning($"{_entMan.GetComponent<MetaDataComponent>(Owner).EntityName} has a {nameof(LightBehaviourComponent)} but it has no {nameof(PointLightComponent)}! Check the prototype!");
+            }
+        }
+
+        /// <summary>
+        /// Start animating a light behaviour with the specified ID. If the specified ID is empty, it will start animating all light behaviour entries.
+        /// If specified light behaviours are already animating, calling this does nothing.
+        /// Multiple light behaviours can have the same ID.
+        /// </summary>
+        public void StartLightBehaviour(string id = "")
+        {
+            if (!_entMan.TryGetComponent(Owner, out AnimationPlayerComponent? animation))
+            {
+                return;
+            }
+
+            foreach (var container in _animations)
+            {
+                if (container.LightBehaviour.ID == id || id == string.Empty)
+                {
+                    if (!animation.HasRunningAnimation(KeyPrefix + container.Key))
+                    {
+                        CopyLightSettings(container.LightBehaviour.Property);
+                        container.LightBehaviour.UpdatePlaybackValues(container.Animation);
+                        animation.Play(container.Animation, KeyPrefix + container.Key);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// If any light behaviour with the specified ID is animating, then stop it.
+        /// If no ID is specified then all light behaviours will be stopped.
+        /// Multiple light behaviours can have the same ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="removeBehaviour">Should the behaviour(s) also be removed permanently?</param>
+        /// <param name="resetToOriginalSettings">Should the light have its original settings applied?</param>
+        public void StopLightBehaviour(string id = "", bool removeBehaviour = false, bool resetToOriginalSettings = false)
+        {
+            if (!_entMan.TryGetComponent(Owner, out AnimationPlayerComponent? animation))
+            {
+                return;
+            }
+
+            var toRemove = new List<AnimationContainer>();
+
+            foreach (var container in _animations)
+            {
+                if (container.LightBehaviour.ID == id || id == string.Empty)
+                {
+                    if (animation.HasRunningAnimation(KeyPrefix + container.Key))
+                    {
+                        animation.Stop(KeyPrefix + container.Key);
+                    }
+
+                    if (removeBehaviour)
+                    {
+                        toRemove.Add(container);
+                    }
+                }
+            }
+
+            foreach (var container in toRemove)
+            {
+                _animations.Remove(container);
+            }
+
+            if (resetToOriginalSettings && _entMan.TryGetComponent(Owner, out PointLightComponent? light))
+            {
+                foreach (var (property, value) in _originalPropertyValues)
+                {
+                    AnimationHelper.SetAnimatableProperty(light, property, value);
+                }
+            }
+
+            _originalPropertyValues.Clear();
+        }
+
+        /// <summary>
+        /// Checks if at least one behaviour is running.
+        /// </summary>
+        /// <returns>Whether at least one behaviour is running, false if none is.</returns>
+        public bool HasRunningBehaviours()
+        {
+            if (!_entMan.TryGetComponent(Owner, out AnimationPlayerComponent? animation))
+            {
+                return false;
+            }
+
+            return _animations.Any(container => animation.HasRunningAnimation(KeyPrefix + container.Key));
+        }
+
+        /// <summary>
+        /// Add a new light behaviour to the component and start it immediately unless otherwise specified.
+        /// </summary>
+        public void AddNewLightBehaviour(LightBehaviourAnimationTrack behaviour, bool playImmediately = true)
+        {
+            var key = 0;
+
+            while (_animations.Any(x => x.Key == key))
+            {
+                key++;
+            }
+
+            var animation = new Animation()
+            {
+                AnimationTracks = {behaviour}
+            };
+
+            behaviour.Initialize(Owner, _random, _entMan);
+
+            var container = new AnimationContainer(key, animation, behaviour);
+            _animations.Add(container);
+
+            if (playImmediately)
+            {
+                StartLightBehaviour(behaviour.ID);
             }
         }
     }

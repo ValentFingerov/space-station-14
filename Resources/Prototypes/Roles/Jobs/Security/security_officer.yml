@@ -6,9 +6,9 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Security
-      time: 36000 #10 hrs # Corvax-RoleTime
+      time: 36000 # Corvax-RoleTime
   startingGear: SecurityOfficerGear
-  icon: "JobIconSecurityOfficer"
+  icon: "SecurityOfficer"
   supervisors: job-supervisors-hos
   canBeAntag: false
   access:
@@ -17,18 +17,19 @@
   - Maintenance
   - Service
   - External
-  - Cryogenics
-  special:
-  - !type:AddImplantSpecial
-    implants: [ MindShieldImplant ]
 
 - type: startingGear
   id: SecurityOfficerGear
   equipment:
+    jumpsuit: ClothingUniformJumpsuitSec
+    back: ClothingBackpackSecurityFilled
+    shoes: ClothingShoesBootsJackSec # Corvax-Resprite
     eyes: ClothingEyesGlassesSecurity
+    head: ClothingHeadHelmetHelmet # Corvax-Resprite
+    outerClothing: ClothingOuterVestArmorSec # Corvax-Resprite
+    id: SecurityPDA
     ears: ClothingHeadsetSecurity
-    pocket1: WeaponPistolMk58
-  storage:
-    back:
-    - Flash
-    - MagazinePistol
+    belt: ClothingBeltSecurityFilled
+  innerclothingskirt: ClothingUniformJumpskirtSec
+  satchel: ClothingBackpackSatchelSecurityFilled
+  duffelbag: ClothingBackpackDuffelSecurityFilled

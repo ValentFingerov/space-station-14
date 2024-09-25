@@ -1,8 +1,11 @@
 ﻿using System.Linq;
+using Content.Server.Chemistry.Components;
+using Content.Server.Chemistry.ReactionEffects;
 using Content.Server.Fluids.EntitySystems;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Effects.Components;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Events;
 using Content.Shared.Chemistry.Components;
+using Robust.Server.GameObjects;
 using Robust.Shared.Random;
 
 namespace Content.Server.Xenoarchaeology.XenoArtifacts.Effects.Systems;
@@ -10,7 +13,6 @@ namespace Content.Server.Xenoarchaeology.XenoArtifacts.Effects.Systems;
 public sealed class FoamArtifactSystem : EntitySystem
 {
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly SmokeSystem _smoke = default!;
 
     /// <inheritdoc/>
     public override void Initialize()
@@ -34,10 +36,12 @@ public sealed class FoamArtifactSystem : EntitySystem
 
         var sol = new Solution();
         var xform = Transform(uid);
-        var range = (int) MathF.Round(MathHelper.Lerp(component.MinFoamAmount, component.MaxFoamAmount, _random.NextFloat(0, 1f)));
-        sol.AddReagent(component.SelectedReagent, component.ReagentAmount);
+        sol.AddReagent(component.SelectedReagent, component.ReagentAmount *
+                                                  (component.MinFoamAmount +
+                                                   (component.MaxFoamAmount - component.MinFoamAmount) * _random.NextFloat()));
+
         var foamEnt = Spawn("Foam", xform.Coordinates);
-        var spreadAmount = range * 4;
-        _smoke.StartSmoke(foamEnt, sol, component.Duration, spreadAmount);
+        var smoke = EnsureComp<SmokeComponent>(foamEnt);
+        EntityManager.System<SmokeSystem>().Start(foamEnt, smoke, sol, 20f);
     }
 }

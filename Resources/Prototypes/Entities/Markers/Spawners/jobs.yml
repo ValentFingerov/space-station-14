@@ -73,12 +73,12 @@
   - type: Sprite
     layers:
       - state: green
-      - state: salvagespecialist
+      - state: miner
 
 # Civilian
 
 - type: entity
-  id: SpawnPointPassenger
+  id: SpawnPointAssistant # TODO rename, but requires map changes.
   parent: SpawnPointJobBase
   name: passenger
   components:
@@ -91,31 +91,23 @@
 
 - type: entity
   id: SpawnPointTechnicalAssistant
-  parent: SpawnPointJobBase
+  parent: SpawnPointAssistant
   name: technical assistant
   components:
   - type: SpawnPoint
     job_id: TechnicalAssistant
-  - type: Sprite
-    layers:
-      - state: green
-      - state: technicalassistant
 
 - type: entity
   id: SpawnPointMedicalIntern
-  parent: SpawnPointJobBase
+  parent: SpawnPointAssistant
   name: medical intern
   components:
   - type: SpawnPoint
     job_id: MedicalIntern
-  - type: Sprite
-    layers:
-      - state: green
-      - state: medicalintern
 
 - type: entity
   id: SpawnPointSecurityCadet
-  parent: SpawnPointJobBase
+  parent: SpawnPointAssistant
   name: security cadet
   components:
   - type: SpawnPoint
@@ -127,27 +119,19 @@
 
 - type: entity
   id: SpawnPointResearchAssistant
-  parent: SpawnPointJobBase
+  parent: SpawnPointAssistant
   name: research assistant
   components:
   - type: SpawnPoint
     job_id: ResearchAssistant
-  - type: Sprite
-    layers:
-      - state: green
-      - state: researchassistant
 
 - type: entity
   id: SpawnPointServiceWorker
-  parent: SpawnPointJobBase
+  parent: SpawnPointAssistant
   name: service worker
   components:
   - type: SpawnPoint
     job_id: ServiceWorker
-  - type: Sprite
-    layers:
-      - state: green
-      - state: serviceworker
 
 - type: entity
   id: SpawnPointBartender
@@ -262,39 +246,24 @@
   parent: SpawnPointJobBase
   name: musician
   components:
-  - type: SpawnPoint
-    job_id: Musician
-  - type: Sprite
-    layers:
-      - state: green
-      - state: musician
+    - type: SpawnPoint
+      job_id: Musician
+    - type: Sprite
+      layers:
+        - state: green
+        - state: musician
 
 - type: entity
   id: SpawnPointBoxer
   parent: SpawnPointJobBase
   name: boxer
   components:
-  - type: SpawnPoint
-    job_id: Boxer
-  - type: Sprite
-    layers:
-      - state: green
-      - state: boxer
-
-- type: entity
-  id: SpawnPointBorg
-  parent: SpawnPointJobBase
-  name: cyborg
-  components:
-  - type: SpawnPoint
-    job_id: Borg
-  - type: Sprite
-    layers:
-    - state: green
-    - sprite: Mobs/Silicon/chassis.rsi
-      state: robot
-    - sprite: Mobs/Silicon/chassis.rsi
-      state: robot_e
+    - type: SpawnPoint
+      job_id: Boxer
+    - type: Sprite
+      layers:
+        - state: green
+        - state: boxer
 
 # Command
 
@@ -353,12 +322,12 @@
   parent: SpawnPointJobBase
   name: atmospherics
   components:
-  - type: SpawnPoint
-    job_id: AtmosphericTechnician
-  - type: Sprite
-    layers:
-      - state: green
-      - state: atmospherics
+    - type: SpawnPoint
+      job_id: AtmosphericTechnician
+    - type: Sprite
+      layers:
+        - state: green
+        - state: atmospherics
 
 # Medical
 
@@ -385,7 +354,7 @@
     layers:
       - state: green
       - state: doctor
-
+      
 - type: entity
   id: SpawnPointParamedic
   parent: SpawnPointJobBase
@@ -509,18 +478,6 @@
     layers:
       - state: green
       - state: ertleader
-
-- type: entity
-  id: SpawnPointERTChaplain
-  parent: SpawnPointJobBase
-  name: ERTchaplain
-  components:
-  - type: SpawnPoint
-    job_id: ERTChaplain
-  - type: Sprite
-    layers:
-      - state: green
-      - state: chaplain
 
 - type: entity
   id: SpawnPointERTEngineer

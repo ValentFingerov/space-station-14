@@ -8,9 +8,6 @@
   "copyright": "Taken from https://github.com/tgstation/tgstation/blob/e9d1248bc9548ab18f3fcf967e0d9dfb303fe4ad/icons/mob/simple/animal.dmi",
   "states": [
     {
-      "name": "critical"
-    },
-    {
       "name": "dead"
     },
 	{
@@ -19,10 +16,6 @@
     {
       "name": "regalrat",
       "directions": 4
-    },
-    {
-       "name": "eyes",
-       "directions": 4
     }
   ]
 }

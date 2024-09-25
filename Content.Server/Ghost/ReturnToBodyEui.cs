@@ -1,20 +1,17 @@
 using Content.Server.EUI;
+using Content.Server.Players;
 using Content.Shared.Eui;
 using Content.Shared.Ghost;
-using Content.Shared.Mind;
 
 namespace Content.Server.Ghost;
 
 public sealed class ReturnToBodyEui : BaseEui
 {
-    private readonly SharedMindSystem _mindSystem;
+    private readonly Mind.Mind _mind;
 
-    private readonly MindComponent _mind;
-
-    public ReturnToBodyEui(MindComponent mind, SharedMindSystem mindSystem)
+    public ReturnToBodyEui(Mind.Mind mind)
     {
         _mind = mind;
-        _mindSystem = mindSystem;
     }
 
     public override void HandleMessage(EuiMessageBase msg)
@@ -28,8 +25,8 @@ public sealed class ReturnToBodyEui : BaseEui
             return;
         }
 
-        _mindSystem.UnVisit(_mind.Session);
-
+        if (_mind.TryGetSession(out var session))
+            session.ContentData()!.Mind?.UnVisit();
         Close();
     }
 }

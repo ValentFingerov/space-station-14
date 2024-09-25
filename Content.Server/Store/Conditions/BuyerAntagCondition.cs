@@ -1,16 +1,16 @@
-using Content.Shared.Mind;
+using Content.Server.Mind.Components;
+using Content.Server.Traitor;
 using Content.Shared.Roles;
-using Content.Shared.Store;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.Set;
 
-namespace Content.Server.Store.Conditions;
+namespace Content.Shared.Store.Conditions;
 
 /// <summary>
 /// Allows a store entry to be filtered out based on the user's antag role.
 /// Supports both blacklists and whitelists. This is copypaste because roles
 /// are absolute shitcode. Refactor this later. -emo
 /// </summary>
-public sealed partial class BuyerAntagCondition : ListingCondition
+public sealed class BuyerAntagCondition : ListingCondition
 {
     /// <summary>
     /// A whitelist of antag roles that can purchase this listing. Only one needs to be found.
@@ -27,22 +27,18 @@ public sealed partial class BuyerAntagCondition : ListingCondition
     public override bool Condition(ListingConditionArgs args)
     {
         var ent = args.EntityManager;
-        var minds = ent.System<SharedMindSystem>();
 
-        if (!minds.TryGetMind(args.Buyer, out var mindId, out var mind))
+        if (!ent.TryGetComponent<MindComponent>(args.Buyer, out var mind) || mind.Mind == null)
             return true;
-
-        var roleSystem = ent.System<SharedRoleSystem>();
-        var roles = roleSystem.MindGetAllRoles(mindId);
 
         if (Blacklist != null)
         {
-            foreach (var role in roles)
+            foreach (var role in mind.Mind.AllRoles)
             {
-                if (role.Component is not AntagonistRoleComponent blacklistantag)
+                if (role is not TraitorRole blacklistantag)
                     continue;
 
-                if (blacklistantag.PrototypeId != null && Blacklist.Contains(blacklistantag.PrototypeId))
+                if (Blacklist.Contains(blacklistantag.Prototype.ID))
                     return false;
             }
         }
@@ -50,12 +46,12 @@ public sealed partial class BuyerAntagCondition : ListingCondition
         if (Whitelist != null)
         {
             var found = false;
-            foreach (var role in roles)
+            foreach (var role in mind.Mind.AllRoles)
             {
-                if (role.Component is not AntagonistRoleComponent antag)
+                if (role is not TraitorRole antag)
                     continue;
 
-                if (antag.PrototypeId != null && Whitelist.Contains(antag.PrototypeId))
+                if (Whitelist.Contains(antag.Prototype.ID))
                     found = true;
             }
             if (!found)

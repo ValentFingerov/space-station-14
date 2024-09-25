@@ -4,19 +4,23 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototy
 namespace Content.Shared.Salvage.Expeditions.Modifiers;
 
 [Prototype("salvageLightMod")]
-public sealed partial class SalvageLightMod : IPrototype, IBiomeSpecificMod
+public sealed class SalvageLightMod : IPrototype, ISalvageMod
 {
     [IdDataField] public string ID { get; } = default!;
 
-    [DataField("desc")] public LocId Description { get; private set; } = string.Empty;
+    [DataField("desc")] public string Description { get; } = string.Empty;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Cost for difficulty modifiers.
+    /// </summary>
     [DataField("cost")]
-    public float Cost { get; private set; } = 0f;
-
-    /// <inheritdoc/>
-    [DataField("biomes", customTypeSerializer: typeof(PrototypeIdListSerializer<SalvageBiomeModPrototype>))]
-    public List<string>? Biomes { get; private set; } = null;
+    public float Cost { get; } = 0f;
 
     [DataField("color", required: true)] public Color? Color;
+
+    /// <summary>
+    /// Biomes that this color applies to.
+    /// </summary>
+    [DataField("biomes", customTypeSerializer: typeof(PrototypeIdListSerializer<SalvageBiomeMod>))]
+    public List<string>? Biomes;
 }

@@ -1,4 +1,4 @@
-using Content.Shared.DeviceLinking;
+using Content.Shared.MachineLinking;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 
 namespace Content.Server.DeviceLinking.Components
@@ -7,12 +7,12 @@ namespace Content.Server.DeviceLinking.Components
     /// Sends out a signal to machine linked objects.
     /// </summary>
     [RegisterComponent]
-    public sealed partial class SignallerComponent : Component
+    public sealed class SignallerComponent : Component
     {
         /// <summary>
         ///     The port that gets signaled when the switch turns on.
         /// </summary>
-        [DataField("port", customTypeSerializer: typeof(PrototypeIdSerializer<SourcePortPrototype>))]
+        [DataField("port", customTypeSerializer: typeof(PrototypeIdSerializer<TransmitterPortPrototype>))]
         public string Port = "Pressed";
     }
 }

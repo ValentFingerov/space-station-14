@@ -1,16 +1,10 @@
-using Content.Shared.Shuttles.Components;
-using Content.Shared.Procedural;
-using Content.Shared.Salvage.Expeditions;
-using Content.Shared.Dataset;
-using Robust.Shared.Prototypes;
+using Content.Shared.Salvage;
+using Robust.Server.GameObjects;
 
 namespace Content.Server.Salvage;
 
 public sealed partial class SalvageSystem
 {
-    [ValidatePrototypeId<EntityPrototype>]
-    public const string CoordinatesDisk = "CoordinatesDisk";
-
     private void OnSalvageClaimMessage(EntityUid uid, SalvageExpeditionConsoleComponent component, ClaimSalvageMessage args)
     {
         var station = _station.GetOwningStation(uid);
@@ -21,48 +15,42 @@ public sealed partial class SalvageSystem
         if (!data.Missions.TryGetValue(args.Index, out var missionparams))
             return;
 
-        var cdUid = Spawn(CoordinatesDisk, Transform(uid).Coordinates);
-        SpawnMission(missionparams, station.Value, cdUid);
+        SpawnMission(missionparams, station.Value);
 
         data.ActiveMission = args.Index;
-        var mission = GetMission(_prototypeManager.Index<SalvageDifficultyPrototype>(missionparams.Difficulty), missionparams.Seed);
+        var mission = GetMission(missionparams.MissionType, missionparams.Difficulty, missionparams.Seed);
         data.NextOffer = _timing.CurTime + mission.Duration + TimeSpan.FromSeconds(1);
-
-        _labelSystem.Label(cdUid, GetFTLName(_prototypeManager.Index<DatasetPrototype>("names_borer"), missionparams.Seed));
-        _audio.PlayPvs(component.PrintSound, uid);
-
-        UpdateConsoles((station.Value, data));
+        UpdateConsoles(data);
     }
 
-    private void OnSalvageConsoleInit(Entity<SalvageExpeditionConsoleComponent> console, ref ComponentInit args)
+    private void OnSalvageConsoleInit(EntityUid uid, SalvageExpeditionConsoleComponent component, ComponentInit args)
     {
-        UpdateConsole(console);
+        UpdateConsole(component);
     }
 
-    private void OnSalvageConsoleParent(Entity<SalvageExpeditionConsoleComponent> console, ref EntParentChangedMessage args)
+    private void OnSalvageConsoleParent(EntityUid uid, SalvageExpeditionConsoleComponent component, ref EntParentChangedMessage args)
     {
-        UpdateConsole(console);
+        UpdateConsole(component);
     }
 
-    private void UpdateConsoles(Entity<SalvageExpeditionDataComponent> component)
+    private void UpdateConsoles(SalvageExpeditionDataComponent component)
     {
         var state = GetState(component);
 
-        var query = AllEntityQuery<SalvageExpeditionConsoleComponent, UserInterfaceComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out _, out var uiComp, out var xform))
+        foreach (var (console, xform, uiComp) in EntityQuery<SalvageExpeditionConsoleComponent, TransformComponent, ServerUserInterfaceComponent>(true))
         {
-            var station = _station.GetOwningStation(uid, xform);
+            var station = _station.GetOwningStation(console.Owner, xform);
 
             if (station != component.Owner)
                 continue;
 
-            _ui.SetUiState((uid, uiComp), SalvageConsoleUiKey.Expedition, state);
+            _ui.TrySetUiState(console.Owner, SalvageConsoleUiKey.Expedition, state, ui: uiComp);
         }
     }
 
-    private void UpdateConsole(Entity<SalvageExpeditionConsoleComponent> component)
+    private void UpdateConsole(SalvageExpeditionConsoleComponent component)
     {
-        var station = _station.GetOwningStation(component);
+        var station = _station.GetOwningStation(component.Owner);
         SalvageExpeditionConsoleState state;
 
         if (TryComp<SalvageExpeditionDataComponent>(station, out var dataComponent))
@@ -74,6 +62,6 @@ public sealed partial class SalvageSystem
             state = new SalvageExpeditionConsoleState(TimeSpan.Zero, false, true, 0, new List<SalvageMissionParams>());
         }
 
-        _ui.SetUiState(component.Owner, SalvageConsoleUiKey.Expedition, state);
+        _ui.TrySetUiState(component.Owner, SalvageConsoleUiKey.Expedition, state);
     }
 }

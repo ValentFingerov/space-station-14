@@ -6,8 +6,7 @@ using Content.Shared.Radiation.Events;
 using Content.Shared.Radiation.Systems;
 using Robust.Shared.Console;
 using Robust.Shared.Enums;
-using Robust.Shared.Map.Components;
-using Robust.Shared.Player;
+using Robust.Shared.Players;
 
 namespace Content.Server.Radiation.Systems;
 
@@ -34,7 +33,7 @@ public partial class RadiationSystem
         }
 
         var ev = new OnRadiationOverlayToggledEvent(isEnabled);
-        RaiseNetworkEvent(ev, session.Channel);
+        RaiseNetworkEvent(ev, session.ConnectedClient);
     }
 
     /// <summary>
@@ -47,7 +46,7 @@ public partial class RadiationSystem
         {
             if (session.Status != SessionStatus.InGame)
                 _debugSessions.Remove(session);
-            RaiseNetworkEvent(ev, session.Channel);
+            RaiseNetworkEvent(ev, session.ConnectedClient);
         }
     }
 
@@ -56,14 +55,17 @@ public partial class RadiationSystem
         if (_debugSessions.Count == 0)
             return;
 
-        var dict = new Dictionary<NetEntity, Dictionary<Vector2i, float>>();
+        var query = GetEntityQuery<RadiationGridResistanceComponent>();
+        var dict = new Dictionary<EntityUid, Dictionary<Vector2i, float>>();
 
-        var gridQuery = AllEntityQuery<MapGridComponent, RadiationGridResistanceComponent>();
-
-        while (gridQuery.MoveNext(out var gridUid, out _, out var resistance))
+        foreach (var grid in _mapManager.GetAllGrids())
         {
+            var gridUid = grid.Owner;
+            if (!query.TryGetComponent(gridUid, out var resistance))
+                continue;
+
             var resMap = resistance.ResistancePerTile;
-            dict.Add(GetNetEntity(gridUid), resMap);
+            dict.Add(gridUid, resMap);
         }
 
         var ev = new OnRadiationOverlayResistanceUpdateEvent(dict);

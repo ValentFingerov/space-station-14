@@ -158,16 +158,16 @@
        - id: ClothingUniformJumpsuitSec
        - id: ClothingBackpackSecurity
        - id: ClothingShoesBootsJack
-       - id: ClothingEyesGlassesSunglasses
-       - id: ClothingHeadHelmetBasic
-       - id: ClothingOuterArmorBasic
+       - id: ClothingEyesGlassesSecurity
+       - id: ClothingHeadHelmetHelmet  # Corvax-Resprite
+       - id: ClothingOuterVestKevlar
        - id: ClothingUniformJumpskirtSec
 
  - type: entity
    id: WardrobeCargoFilled
    suffix: Filled
    parent: WardrobeCargo
-   description: "This locker? Maybe 500 spesos. Brotherhood? Priceless."
+   description: "This locker? Maybe 500 spacebucks. Brotherhood? Priceless."
    components:
    - type: StorageFill
      contents:

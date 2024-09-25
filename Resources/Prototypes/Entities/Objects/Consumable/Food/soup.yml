@@ -1,15 +1,10 @@
-# When adding new food also add to random spawner located in Resources\Prototypes\Entities\Markers\Spawners\Random\Food_Drinks\food_meal.yml
-
 - type: entity
   parent: FoodBase
   id: FoodBowlBase
   abstract: true
   components:
-  - type: Item
-    storedRotation: -90
   - type: Food
-    trash: 
-    - FoodBowlBig
+    trash: FoodBowlBig
     utensil: Spoon
   - type: SolutionContainerManager
     solutions:
@@ -20,6 +15,7 @@
           Quantity: 20
   - type: Sprite
     sprite: Objects/Consumable/Food/bowl.rsi
+    netsync: false
   - type: DamageOnLand
     damage:
       types:
@@ -39,9 +35,6 @@
         Blunt: 0
   - type: Damageable
     damageContainer: Inorganic
-  - type: Tag
-    tags:
-    - Soup
   - type: Destructible
     thresholds:
     - trigger:
@@ -51,8 +44,6 @@
       - !type:PlaySoundBehavior
         sound:
           collection: GlassBreak
-          params:
-            volume: -8
       - !type:SpillBehavior { }
       - !type:SpawnEntitiesBehavior
         spawn:
@@ -83,10 +74,10 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
-          Quantity: 10
+          Quantity: 8
         - ReagentId: Vitamin
           Quantity: 5
 
@@ -108,7 +99,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
@@ -116,10 +107,6 @@
           Quantity: 6
         - ReagentId: Omnizine
           Quantity: 8
-  - type: Tag
-    tags:
-    - Soup
-    - Fruit # I don't know what this is but its' a salad so sure
 
 - type: entity
   name: herb salad
@@ -138,16 +125,12 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
         - ReagentId: Vitamin
           Quantity: 2
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 
 - type: entity
   name: valid salad
@@ -168,7 +151,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
@@ -176,11 +159,6 @@
           Quantity: 2
         - ReagentId: DoctorsDelight
           Quantity: 5
-  - type: Tag
-    tags:
-    - Meat
-    - Fruit
-    - Soup
 
 - type: entity
   name: coleslaw
@@ -200,7 +178,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
@@ -228,7 +206,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
@@ -253,7 +231,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
@@ -278,16 +256,12 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 10
+        maxvol: 10
         reagents:
         - ReagentId: Nutriment
           Quantity: 2
         - ReagentId: Vitamin
           Quantity: 4
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 
 - type: entity
   name: jungle salad
@@ -306,16 +280,12 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 15
+        maxvol: 15
         reagents:
         - ReagentId: Nutriment
           Quantity: 7
         - ReagentId: Vitamin
           Quantity: 4
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 
 - type: entity
   name: citrus salad
@@ -334,16 +304,12 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 38
+        maxvol: 38
         reagents:
         - ReagentId: Nutriment
           Quantity: 18
         - ReagentId: Vitamin
           Quantity: 15
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 
 - type: entity
   name: salad of eden
@@ -362,7 +328,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 25
+        maxvol: 25
         reagents:
         - ReagentId: Nutriment
           Quantity: 8
@@ -404,16 +370,12 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 4
         - ReagentId: Vitamin
           Quantity: 4
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 - type: entity
   name: rice and pork
@@ -432,7 +394,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 40
+        maxvol: 40
         reagents:
         - ReagentId: Nutriment
           Quantity: 18
@@ -442,10 +404,6 @@
           Quantity: 6.5
         - ReagentId: Epinephrine
           Quantity: 2
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 - type: entity
   name: rice pudding
@@ -464,7 +422,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 25
+        maxvol: 25
         reagents:
         - ReagentId: Nutriment
           Quantity: 9
@@ -494,7 +452,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 5
@@ -502,10 +460,6 @@
           Quantity: 3
         - ReagentId: CapsaicinOil
           Quantity: 2
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 # Misc
 
@@ -526,7 +480,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 20
+        maxvol: 20
         reagents:
         - ReagentId: Nutriment
           Quantity: 7
@@ -566,7 +520,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 6
@@ -591,7 +545,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 7
@@ -599,10 +553,6 @@
           Quantity: 8
         - ReagentId: Water
           Quantity: 10
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 - type: entity
   name: slime soup
@@ -620,7 +570,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 1
@@ -646,7 +596,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 3
@@ -654,10 +604,6 @@
           Quantity: 10
         - ReagentId: Blood
           Quantity: 5
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 
 - type: entity
   name: wing fang chu
@@ -676,7 +622,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 30
+        maxvol: 30
         reagents:
         - ReagentId: Protein
           Quantity: 9
@@ -701,7 +647,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 2
@@ -727,7 +673,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 5
@@ -754,7 +700,7 @@
   - type: SolutionContainerManager
     solutions:
       food:
-        maxVol: 12
+        maxvol: 12
         reagents:
         - ReagentId: Nutriment
           Quantity: 5
@@ -807,10 +753,6 @@
             Quantity: 4
           - ReagentId: Allicin
             Quantity: 3
-  - type: Tag
-    tags:
-    - ChiliBowl
-
 
 - type: entity
   name: cold chili
@@ -835,9 +777,6 @@
             Quantity: 8
           - ReagentId: Vitamin
             Quantity: 4
-  - type: Tag
-    tags:
-    - ChiliBowl
 
 - type: entity
   name: chili con carnival
@@ -868,9 +807,6 @@
             Quantity: 4
           - ReagentId: Allicin
             Quantity: 3
-  - type: Tag
-    tags:
-    - ChiliBowl
 
 - type: entity
   name: monkey's delight
@@ -899,10 +835,6 @@
             Quantity: 1
           - ReagentId: Blackpepper
             Quantity: 1
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 - type: entity
   name: tomato soup
@@ -928,10 +860,6 @@
             Quantity: 5
           - ReagentId: Water
             Quantity: 10
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 
 - type: entity
   name: eyeball soup
@@ -956,10 +884,6 @@
             Quantity: 5
           - ReagentId: Vitamin
             Quantity: 3
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 - type: entity
   name: miso soup
@@ -971,8 +895,7 @@
     flavors:
       - miso
   - type: Food
-    trash: 
-    - FoodBowlFancy
+    trash: FoodBowlFancy
   - type: Sprite
     layers:
     - state: bowl2
@@ -989,10 +912,6 @@
             Quantity: 3
           - ReagentId: Water
             Quantity: 10
-  - type: Tag
-    tags:
-    - Meat
-    - Soup
 
 - type: entity
   name: mushroom soup
@@ -1091,11 +1010,6 @@
             Quantity: 5
           - ReagentId: Vitamin
             Quantity: 2
-  - type: Tag
-    tags:
-    - Meat
-    - Fruit
-    - Soup
 
 - type: entity
   name: sweet potato soup
@@ -1222,38 +1136,4 @@
             Quantity: 5
           - ReagentId: CapsaicinOil
             Quantity: 5
-  - type: Tag
-    tags:
-    - Fruit
-    - Soup
 # Tastes like bungo, hot curry.
-
-- type: entity
-  name: escargot
-  parent: FoodBowlBase
-  id: FoodSoupEscargot
-  description: A creamy and rich bowl of snails, bon appetit!
-  components:
-  - type: FlavorProfile
-    flavors:
-      - creamy
-      - slimy
-  - type: Sprite
-    layers:
-    - state: bowl
-    - state: escargot
-  - type: SolutionContainerManager
-    solutions:
-      food:
-        maxVol: 20
-        reagents:
-          - ReagentId: Nutriment
-            Quantity: 6
-          - ReagentId: Vitamin
-            Quantity: 6
-          - ReagentId: Allicin
-            Quantity: 3
-  - type: Tag
-    tags:
-    - Meat
-    - Soup

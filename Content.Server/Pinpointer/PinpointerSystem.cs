@@ -1,10 +1,8 @@
 using Content.Shared.Interaction;
 using Content.Shared.Pinpointer;
 using System.Linq;
-using System.Numerics;
 using Robust.Shared.Utility;
 using Content.Server.Shuttles.Events;
-using Content.Shared.IdentityManagement;
 
 namespace Content.Server.Pinpointer;
 
@@ -13,18 +11,20 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
     [Dependency] private readonly SharedTransformSystem _transform = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
 
-    private EntityQuery<TransformComponent> _xformQuery;
-
     public override void Initialize()
     {
         base.Initialize();
-        _xformQuery = GetEntityQuery<TransformComponent>();
-
         SubscribeLocalEvent<PinpointerComponent, ActivateInWorldEvent>(OnActivate);
         SubscribeLocalEvent<FTLCompletedEvent>(OnLocateTarget);
     }
 
-    public override bool TogglePinpointer(EntityUid uid, PinpointerComponent? pinpointer = null)
+    private void OnActivate(EntityUid uid, PinpointerComponent component, ActivateInWorldEvent args)
+    {
+        TogglePinpointer(uid, component);
+        LocateTarget(uid, component);
+    }
+
+    public bool TogglePinpointer(EntityUid uid, PinpointerComponent? pinpointer = null)
     {
         if (!Resolve(uid, ref pinpointer))
             return false;
@@ -43,19 +43,6 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
         _appearance.SetData(uid, PinpointerVisuals.TargetDistance, pinpointer.DistanceToTarget, appearance);
     }
 
-    private void OnActivate(EntityUid uid, PinpointerComponent component, ActivateInWorldEvent args)
-    {
-        if (args.Handled || !args.Complex)
-            return;
-
-        TogglePinpointer(uid, component);
-
-        if (!component.CanRetarget)
-            LocateTarget(uid, component);
-
-        args.Handled = true;
-    }
-
     private void OnLocateTarget(ref FTLCompletedEvent ev)
     {
         // This feels kind of expensive, but it only happens once per hyperspace jump
@@ -63,12 +50,8 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
         // todo: ideally, you would need to raise this event only on jumped entities
         // this code update ALL pinpointers in game
         var query = EntityQueryEnumerator<PinpointerComponent>();
-
         while (query.MoveNext(out var uid, out var pinpointer))
         {
-            if (pinpointer.CanRetarget)
-                continue;
-
             LocateTarget(uid, pinpointer);
         }
     }
@@ -80,7 +63,7 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
         {
             if (!EntityManager.ComponentFactory.TryGetRegistration(component.Component, out var reg))
             {
-                Log.Error($"Unable to find component registration for {component.Component} for pinpointer!");
+                Logger.Error($"Unable to find component registration for {component.Component} for pinpointer!");
                 DebugTools.Assert(false);
                 return;
             }
@@ -109,7 +92,10 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
     /// </summary>
     private EntityUid? FindTargetFromComponent(EntityUid uid, Type whitelist, TransformComponent? transform = null)
     {
-        _xformQuery.Resolve(uid, ref transform, false);
+        var xformQuery = GetEntityQuery<TransformComponent>();
+
+        if (transform == null)
+            xformQuery.TryGetComponent(uid, out transform);
 
         if (transform == null)
             return null;
@@ -117,15 +103,15 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
         // sort all entities in distance increasing order
         var mapId = transform.MapID;
         var l = new SortedList<float, EntityUid>();
-        var worldPos = _transform.GetWorldPosition(transform);
+        var worldPos = _transform.GetWorldPosition(transform, xformQuery);
 
-        foreach (var (otherUid, _) in EntityManager.GetAllComponents(whitelist))
+        foreach (var comp in EntityManager.GetAllComponents(whitelist))
         {
-            if (!_xformQuery.TryGetComponent(otherUid, out var compXform) || compXform.MapID != mapId)
+            if (!xformQuery.TryGetComponent(comp.Owner, out var compXform) || compXform.MapID != mapId)
                 continue;
 
-            var dist = (_transform.GetWorldPosition(compXform) - worldPos).LengthSquared();
-            l.TryAdd(dist, otherUid);
+            var dist = (_transform.GetWorldPosition(compXform, xformQuery) - worldPos).LengthSquared;
+            l.TryAdd(dist, comp.Owner);
         }
 
         // return uid with a smallest distance
@@ -133,13 +119,26 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
     }
 
     /// <summary>
-    ///     Update direction from pinpointer to selected target (if it was set)
+    ///     Set pinpointers target to track
     /// </summary>
-    protected override void UpdateDirectionToTarget(EntityUid uid, PinpointerComponent? pinpointer = null)
+    public void SetTarget(EntityUid uid, EntityUid? target, PinpointerComponent? pinpointer = null)
     {
         if (!Resolve(uid, ref pinpointer))
             return;
 
+        if (pinpointer.Target == target)
+            return;
+
+        pinpointer.Target = target;
+        if (pinpointer.IsActive)
+            UpdateDirectionToTarget(uid, pinpointer);
+    }
+
+    /// <summary>
+    ///     Update direction from pinpointer to selected target (if it was set)
+    /// </summary>
+    private void UpdateDirectionToTarget(EntityUid uid, PinpointerComponent pinpointer)
+    {
         if (!pinpointer.IsActive)
             return;
 
@@ -190,9 +189,9 @@ public sealed class PinpointerSystem : SharedPinpointerSystem
         return dir;
     }
 
-    private Distance CalculateDistance(Vector2 vec, PinpointerComponent pinpointer)
+    private static Distance CalculateDistance(Vector2 vec, PinpointerComponent pinpointer)
     {
-        var dist = vec.Length();
+        var dist = vec.Length;
         if (dist <= pinpointer.ReachedDistance)
             return Distance.Reached;
         else if (dist <= pinpointer.CloseDistance)

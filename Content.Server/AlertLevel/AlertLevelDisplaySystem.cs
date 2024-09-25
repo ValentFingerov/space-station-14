@@ -1,7 +1,7 @@
 using Content.Server.Power.Components;
 using Content.Server.Station.Systems;
 using Content.Shared.AlertLevel;
-using Content.Shared.Power;
+using Robust.Server.GameObjects;
 
 namespace Content.Server.AlertLevel;
 
@@ -19,10 +19,9 @@ public sealed class AlertLevelDisplaySystem : EntitySystem
 
     private void OnAlertChanged(AlertLevelChangedEvent args)
     {
-        var query = EntityQueryEnumerator<AlertLevelDisplayComponent, AppearanceComponent>();
-        while (query.MoveNext(out var uid, out _, out var appearance))
+        foreach (var (_, appearance) in EntityManager.EntityQuery<AlertLevelDisplayComponent, AppearanceComponent>())
         {
-            _appearance.SetData(uid, AlertLevelDisplay.CurrentLevel, args.AlertLevel, appearance);
+            _appearance.SetData(appearance.Owner, AlertLevelDisplay.CurrentLevel, args.AlertLevel, appearance);
         }
     }
 

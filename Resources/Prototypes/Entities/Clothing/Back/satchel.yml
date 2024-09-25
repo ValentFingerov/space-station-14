@@ -1,16 +1,31 @@
 - type: entity
-  parent: ClothingBackpack
+  parent: Clothing
   id: ClothingBackpackSatchel
   name: satchel
   description: A trendy looking satchel.
   components:
   - type: Sprite
     sprite: Clothing/Back/Satchels/satchel.rsi
+    state: icon
+  - type: Item
+    size: 9999
+  - type: Clothing
+    quickEquip: false
+    slots:
+    - back
   - type: Storage
-    grid:
-    - 0,0,1,3
-    - 3,0,6,3
-    - 8,0,9,3
+    capacity: 100
+  - type: ContainerContainer
+    containers:
+      storagebase: !type:Container
+        ents: []
+  - type: UserInterface
+    interfaces:
+    - key: enum.StorageUiKey.Key
+      type: StorageBoundUserInterface
+  # to prevent bag open/honk spam
+  - type: UseDelay
+    delay: 0.5
 
 - type: entity
   parent: ClothingBackpackSatchel
@@ -32,15 +47,6 @@
 
 - type: entity
   parent: ClothingBackpackSatchel
-  id: ClothingBackpackSatchelAtmospherics
-  name: atmospherics satchel
-  description: A tough satchel made of fire resistant fibers. Smells like plasma.
-  components:
-  - type: Sprite
-    sprite: Clothing/Back/Satchels/atmospherics.rsi
-
-- type: entity
-  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelClown
   name: clown satchel
   description: For fast running from security.
@@ -50,15 +56,6 @@
   - type: Storage
     storageOpenSound:
       collection: BikeHorn
-
-- type: entity
-  parent: ClothingBackpackSatchel
-  id: ClothingBackpackSatchelMime
-  name: mime satchel
-  description: A satchel designed for the silent and expressive art of miming.
-  components:
-  - type: Sprite
-    sprite: Clothing/Back/Satchels/mime.rsi
 
 - type: entity
   parent: ClothingBackpackSatchel
@@ -106,7 +103,7 @@
     sprite: Clothing/Back/Satchels/science.rsi
 
 - type: entity
-  parent: [ClothingBackpackSatchel, BaseRestrictedContraband]
+  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelSecurity
   name: security satchel
   description: A robust satchel for security related needs.
@@ -115,7 +112,7 @@
     sprite: Clothing/Back/Satchels/security.rsi
 
 - type: entity
-  parent: [ClothingBackpackSatchel, BaseRestrictedContraband]
+  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelBrigmedic
   name: brigmedic satchel
   description: A sterile satchel for medical related needs.
@@ -124,7 +121,7 @@
     sprite: Clothing/Back/Satchels/brigmedic.rsi
 
 - type: entity
-  parent: [ClothingBackpackSatchel, BaseCommandContraband]
+  parent: ClothingBackpackSatchel
   id: ClothingBackpackSatchelCaptain
   name: captain's satchel
   description: An exclusive satchel for Nanotrasen officers.
@@ -140,15 +137,6 @@
   components:
   - type: Sprite
     sprite: Clothing/Back/Satchels/hydroponics.rsi
-
-- type: entity
-  parent: ClothingBackpackSatchel
-  id: ClothingBackpackSatchelCargo
-  name: cargo satchel
-  description: A robust satchel for stealing cargo's loot.
-  components:
-    - type: Sprite
-      sprite: Clothing/Back/Satchels/cargo.rsi
 
 - type: entity
   parent: ClothingBackpackSatchel
@@ -172,9 +160,6 @@
     - state: icon
     - state: icon-unlit
       shader: unshaded
-  - type: Item
-    size: Ginormous
   - type: Storage
-    maxItemSize: Huge
-    grid:
-    - 0,0,19,9
+    capacity: 9999
+

@@ -17,14 +17,16 @@
       shader: unshaded
     - state: full
       shader: unshaded
+  - type: UpgradeBattery
+    maxChargeMultiplier: 2
+    baseMaxCharge: 2500000
   - type: Battery
-    maxCharge: 2500000
     startingCharge: 0
   - type: ExaminableBattery
   - type: PointLight
     radius: 1.5
-    energy: 1
-    color: "#34e06d" # Corvax-Resprite
+    energy: 1.6
+    color: "#3db83b"
     castShadows: false
   - type: NodeContainer
     examinable: true
@@ -35,13 +37,6 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: MVPower
-  - type: PowerMonitoringDevice
-    group: Substation
-    sourceNode: input
-    loadNode: output
-    collectionName: substation
-    sprite: Structures/Power/substation.rsi
-    state: substation_static
   - type: BatteryCharger
     voltage: High
   - type: BatteryDischarger
@@ -52,9 +47,8 @@
     supplyRampTolerance: 5000
     supplyRampRate: 1000
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
-  - type: PacifismDangerousAttack
+    damageContainer: Inorganic
+    damageModifierSet: StrongMetallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -71,27 +65,21 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:ExplodeBehavior
-      - !type:SpawnEntitiesBehavior
+      - !type:SpawnEntitiesBehavior # in future should also emit a cloud of hot gas
         spawn:
           MachineFrameDestroyed:
             min: 1
             max: 1
-      - !type:SpawnGasBehavior
-        gasMixture:
-          volume: 1000
-          moles:
-            - 0 # oxygen
-            - 0 # nitrogen
-            - 340.5701689 # carbon dioxide
-          temperature: 373.15
   - type: Explosive
     explosionType: Default
     maxIntensity: 100
     intensitySlope: 2
     totalIntensity: 200
-  - type: WiresPanel
+  - type: Wires
+    BoardName: "Substation"
+    LayoutId: Substation
   - type: Machine
     board: SubstationMachineCircuitboard
   - type: StationInfiniteBatteryTarget
@@ -101,18 +89,11 @@
     range: 3
     sound:
       path: /Audio/Ambience/Objects/buzzing.ogg
-  - type: Electrified
-    onHandInteract: false
-    onInteractUsing: false
-    onBump: false
-    requirePower: true
-    highVoltageNode: input
-    mediumVoltageNode: output
 
 # Compact Wall Substation Base
 - type: entity
   id: BaseSubstationWall
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: wallmount substation
   description: A substation designed for compact shuttles and spaces.
   placement:
@@ -125,21 +106,14 @@
     sound:
       path: /Audio/Ambience/Objects/buzzing.ogg
   - type: PointLight
-    radius: 1.5
-    energy: 1
-    color: "#34e06d" # Corvax-Resprite
     netsync: false
+    radius: 1.5
+    energy: 1.6
+    color: "#3db83b"
     castShadows: false
-    offset: 0, -0.2
   - type: Clickable
   - type: AccessReader
     access: [["Engineering"]]
-  - type: ContainerFill
-    containers:
-      board: [ WallmountSubstationElectronics ]
-  - type: ContainerContainer
-    containers:
-      board: !type:Container
   - type: InteractionOutline
   - type: Physics
     bodyType: Static
@@ -149,10 +123,11 @@
     anchored: true
   - type: Sprite # TODO: add sprite for maintenance panel open
     drawdepth: WallMountedItems
+    netsync: false
     sprite: Structures/Power/substation.rsi
     layers:
     - state: substation_wall
-    - state: screen_wall
+    - state: screen
       shader: unshaded
   - type: Battery
     maxCharge: 2000000
@@ -167,12 +142,6 @@
       output:
         !type:CableDeviceNode
         nodeGroupID: MVPower
-  - type: PowerMonitoringDevice
-    group: Substation
-    sourceNode: input
-    loadNode: output
-    sprite: Structures/Power/substation.rsi
-    state: substation_wall_static
   - type: BatteryCharger
     voltage: High
   - type: BatteryDischarger
@@ -183,9 +152,8 @@
     supplyRampTolerance: 5000
     supplyRampRate: 1000
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallicStrong
-  - type: PacifismDangerousAttack
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -203,7 +171,7 @@
       - !type:ExplodeBehavior
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
   - type: Construction
     graph: WallmountSubstation
     node: substation
@@ -242,23 +210,13 @@
   - type: Battery
     maxCharge: 2000000
     startingCharge: 2000000
-  - type: ContainerFill
-    containers:
-      board: [ WallmountSubstationElectronics ]
-      capacitor: [ CapacitorStockPart ]
-      powercell: [ PowerCellSmall ]
-  - type: ContainerContainer
-    containers:
-      board: !type:Container
-      capacitor: !type:Container
-      powercell: !type:Container
 
 # Construction Frame
 - type: entity
   id: BaseSubstationWallFrame
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: wallmount substation frame
-  description: A substation frame for construction.
+  description: A substation frame for construction
   placement:
     mode: SnapgridCenter
   components:
@@ -272,6 +230,7 @@
     anchored: true
   - type: Sprite
     drawdepth: WallMountedItems
+    netsync: false
     sprite: Structures/Power/substation.rsi
     layers:
     - state: substation_wall

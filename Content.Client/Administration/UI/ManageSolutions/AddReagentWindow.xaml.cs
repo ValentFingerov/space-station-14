@@ -4,6 +4,9 @@ using Robust.Client.Console;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
 using Robust.Client.UserInterface.XAML;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using Robust.Shared.Localization;
 using Robust.Shared.Prototypes;
 
 namespace Content.Client.Administration.UI.ManageSolutions
@@ -18,14 +21,14 @@ namespace Content.Client.Administration.UI.ManageSolutions
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IClientConsoleHost _consoleHost = default!;
 
-        private readonly NetEntity _targetEntity;
+        private readonly EntityUid _targetEntity;
         private string _targetSolution;
         private ReagentPrototype? _selectedReagent;
 
         // FloatSpinBox does not (yet?) play nice with xaml
         private FloatSpinBox _quantitySpin = new(1, 2) { Value = 10, HorizontalExpand = true};
 
-        public AddReagentWindow(NetEntity targetEntity, string targetSolution)
+        public AddReagentWindow(EntityUid targetEntity, string targetSolution)
         {
             IoCManager.InjectDependencies(this);
             RobustXamlLoader.Load(this);

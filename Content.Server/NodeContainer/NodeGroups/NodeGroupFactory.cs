@@ -1,5 +1,4 @@
 using System.Reflection;
-using Content.Server.Power.Generation.Teg;
 using Robust.Shared.Reflection;
 
 namespace Content.Server.NodeContainer.NodeGroups
@@ -61,12 +60,6 @@ namespace Content.Server.NodeContainer.NodeGroups
         AMEngine,
         Pipe,
         WireNet,
-
-        /// <summary>
-        /// Group used by the TEG.
-        /// </summary>
-        /// <seealso cref="TegSystem"/>
-        /// <seealso cref="TegNodeGroup"/>
-        Teg,
+        Spreader,
     }
 }

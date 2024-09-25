@@ -1,9 +1,10 @@
 using Content.Client.Guidebook;
 using Content.Client.Guidebook.Richtext;
+using NUnit.Framework;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Prototypes;
 using System.Linq;
-using Content.Shared.Guidebook;
+using System.Threading.Tasks;
 
 namespace Content.IntegrationTests.Tests.Guidebook;
 
@@ -16,27 +17,26 @@ public sealed class GuideEntryPrototypeTests
     [Test]
     public async Task ValidatePrototypeContents()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings { Connected = true });
-        var client = pair.Client;
+        await using var pairTracker = await PoolManager.GetServerClient();
+        var client = pairTracker.Pair.Client;
         await client.WaitIdleAsync();
         var protoMan = client.ResolveDependency<IPrototypeManager>();
         var resMan = client.ResolveDependency<IResourceManager>();
         var parser = client.ResolveDependency<DocumentParsingManager>();
         var prototypes = protoMan.EnumeratePrototypes<GuideEntryPrototype>().ToList();
 
-        foreach (var proto in prototypes)
+        await client.WaitAssertion(() =>
         {
-            await client.WaitAssertion(() =>
+            Assert.Multiple(() =>
             {
-                using var reader = resMan.ContentFileReadText(proto.Text);
-                var text = reader.ReadToEnd();
-                Assert.That(parser.TryAddMarkup(new Document(), text), $"Failed to parse guidebook: {proto.Id}");
+                foreach (var proto in prototypes)
+                {
+                    var text = resMan.ContentFileReadText(proto.Text).ReadToEnd();
+                    Assert.That(parser.TryAddMarkup(new Document(), text), $"Failed to parse guidebook: {proto.Id}");
+                }
             });
+        });
 
-            // Avoid styleguide update limit
-            await client.WaitRunTicks(1);
-        }
-
-        await pair.CleanReturnAsync();
+        await pairTracker.CleanReturnAsync();
     }
 }

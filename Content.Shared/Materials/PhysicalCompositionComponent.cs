@@ -14,7 +14,7 @@ namespace Content.Shared.Materials;
 /// combination of the two systems.
 /// </remarks>
 [RegisterComponent]
-public sealed partial class PhysicalCompositionComponent : Component
+public sealed class PhysicalCompositionComponent : Component
 {
     /// <summary>
     /// The materials that "make up" this entity
@@ -27,5 +27,4 @@ public sealed partial class PhysicalCompositionComponent : Component
     /// </summary>
     [DataField("chemicalComposition", customTypeSerializer: typeof(PrototypeIdDictionarySerializer<FixedPoint2, ReagentPrototype>))]
     public Dictionary<string, FixedPoint2> ChemicalComposition = new();
-    // TODO use ReagentQuantity[]
 }

@@ -1,5 +1,4 @@
-using Robust.Shared.Containers;
-using Robust.Shared.GameStates;
+﻿using Robust.Shared.Containers;
 
 namespace Content.Shared.Implants.Components;
 
@@ -7,8 +6,8 @@ namespace Content.Shared.Implants.Components;
 /// Added to an entity via the <see cref="SharedImplanterSystem"/> on implant
 /// Used in instances where mob info needs to be passed to the implant such as MobState triggers
 /// </summary>
-[RegisterComponent, NetworkedComponent]
-public sealed partial class ImplantedComponent : Component
+[RegisterComponent]
+public sealed class ImplantedComponent : Component
 {
     public Container ImplantContainer = default!;
 }

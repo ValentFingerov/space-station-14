@@ -1,58 +1,14 @@
 {
   "version": 1,
   "license": "CC-BY-SA-3.0",
-  "copyright": "Made by 20kdc (github) for ss14, Resprite by github: Mureixlol",
+  "copyright": "Made by Julian Giebel <juliangiebel@live.de> for ss14, modified by deltanedas (github)",
   "size": {
     "x": 32,
     "y": 32
   },
   "states": [
     {
-      "name": "icon",
-      "delays": [
-        [
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1,
-          0.1
-        ]
-      ]
+      "name": "icon"
     },
     {
       "name": "mode-list"

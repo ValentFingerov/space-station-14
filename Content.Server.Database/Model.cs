@@ -7,7 +7,6 @@ using System.Net;
 using System.Text.Json;
 using Content.Shared.Database;
 using Microsoft.EntityFrameworkCore;
-using NpgsqlTypes;
 
 namespace Content.Server.Database
 {
@@ -28,7 +27,6 @@ namespace Content.Server.Database
         public DbSet<AdminLog> AdminLog { get; set; } = null!;
         public DbSet<AdminLogPlayer> AdminLogPlayer { get; set; } = null!;
         public DbSet<Whitelist> Whitelist { get; set; } = null!;
-        public DbSet<Blacklist> Blacklist { get; set; } = null!;
         public DbSet<ServerBan> Ban { get; set; } = default!;
         public DbSet<ServerUnban> Unban { get; set; } = default!;
         public DbSet<ServerBanExemption> BanExemption { get; set; } = default!;
@@ -39,10 +37,6 @@ namespace Content.Server.Database
         public DbSet<PlayTime> PlayTime { get; set; } = default!;
         public DbSet<UploadedResourceLog> UploadedResourceLog { get; set; } = default!;
         public DbSet<AdminNote> AdminNotes { get; set; } = null!;
-        public DbSet<AdminWatchlist> AdminWatchlists { get; set; } = null!;
-        public DbSet<AdminMessage> AdminMessages { get; set; } = null!;
-        public DbSet<RoleWhitelist> RoleWhitelists { get; set; } = null!;
-        public DbSet<BanTemplate> BanTemplate { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -59,26 +53,8 @@ namespace Content.Server.Database
                 .IsUnique();
 
             modelBuilder.Entity<Trait>()
-                .HasIndex(p => new {HumanoidProfileId = p.ProfileId, p.TraitName})
-                .IsUnique();
-
-            modelBuilder.Entity<ProfileRoleLoadout>()
-                .HasOne(e => e.Profile)
-                .WithMany(e => e.Loadouts)
-                .HasForeignKey(e => e.ProfileId)
-                .IsRequired();
-
-            modelBuilder.Entity<ProfileLoadoutGroup>()
-                .HasOne(e => e.ProfileRoleLoadout)
-                .WithMany(e => e.Groups)
-                .HasForeignKey(e => e.ProfileRoleLoadoutId)
-                .IsRequired();
-
-            modelBuilder.Entity<ProfileLoadout>()
-                .HasOne(e => e.ProfileLoadoutGroup)
-                .WithMany(e => e.Loadouts)
-                .HasForeignKey(e => e.ProfileLoadoutGroupId)
-                .IsRequired();
+                        .HasIndex(p => new {HumanoidProfileId = p.ProfileId, p.TraitName})
+                        .IsUnique();
 
             modelBuilder.Entity<Job>()
                 .HasIndex(j => j.ProfileId);
@@ -115,10 +91,11 @@ namespace Content.Server.Database
                 .IsUnique();
 
             modelBuilder.Entity<AdminLog>()
-                .HasKey(log => new {log.RoundId, log.Id});
+                .HasKey(log => new {log.Id, log.RoundId});
 
             modelBuilder.Entity<AdminLog>()
-                .Property(log => log.Id);
+                .Property(log => log.Id)
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<AdminLog>()
                 .HasIndex(log => log.Date);
@@ -134,29 +111,23 @@ namespace Content.Server.Database
                 .HasPrincipalKey(player => player.UserId);
 
             modelBuilder.Entity<AdminLogPlayer>()
-                .HasIndex(p => p.PlayerUserId);
-
-            modelBuilder.Entity<Round>()
-                .HasIndex(round => round.StartDate);
-
-            modelBuilder.Entity<AdminLogPlayer>()
-                .HasKey(logPlayer => new {logPlayer.RoundId, logPlayer.LogId, logPlayer.PlayerUserId});
+                .HasKey(logPlayer => new {logPlayer.PlayerUserId, logPlayer.LogId, logPlayer.RoundId});
 
             modelBuilder.Entity<ServerBan>()
-                .HasIndex(p => p.PlayerUserId);
+                .HasIndex(p => p.UserId);
 
             modelBuilder.Entity<ServerBan>()
                 .HasIndex(p => p.Address);
 
             modelBuilder.Entity<ServerBan>()
-                .HasIndex(p => p.PlayerUserId);
+                .HasIndex(p => p.UserId);
 
             modelBuilder.Entity<ServerUnban>()
                 .HasIndex(p => p.BanId)
                 .IsUnique();
 
             modelBuilder.Entity<ServerBan>().ToTable(t =>
-                t.HasCheckConstraint("HaveEitherAddressOrUserIdOrHWId", "address IS NOT NULL OR player_user_id IS NOT NULL OR hwid IS NOT NULL"));
+                t.HasCheckConstraint("HaveEitherAddressOrUserIdOrHWId", "address IS NOT NULL OR user_id IS NOT NULL OR hwid IS NOT NULL"));
 
             // Ban exemption can't have flags 0 since that wouldn't exempt anything.
             // The row should be removed if setting to 0.
@@ -164,20 +135,20 @@ namespace Content.Server.Database
                 t.HasCheckConstraint("FlagsNotZero", "flags != 0"));
 
             modelBuilder.Entity<ServerRoleBan>()
-                .HasIndex(p => p.PlayerUserId);
+                .HasIndex(p => p.UserId);
 
             modelBuilder.Entity<ServerRoleBan>()
                 .HasIndex(p => p.Address);
 
             modelBuilder.Entity<ServerRoleBan>()
-                .HasIndex(p => p.PlayerUserId);
+                .HasIndex(p => p.UserId);
 
             modelBuilder.Entity<ServerRoleUnban>()
                 .HasIndex(p => p.BanId)
                 .IsUnique();
 
             modelBuilder.Entity<ServerRoleBan>().ToTable(t =>
-                t.HasCheckConstraint("HaveEitherAddressOrUserIdOrHWId", "address IS NOT NULL OR player_user_id IS NOT NULL OR hwid IS NOT NULL"));
+                t.HasCheckConstraint("HaveEitherAddressOrUserIdOrHWId", "address IS NOT NULL OR user_id IS NOT NULL OR hwid IS NOT NULL"));
 
             modelBuilder.Entity<Player>()
                 .HasIndex(p => p.UserId)
@@ -189,144 +160,29 @@ namespace Content.Server.Database
             modelBuilder.Entity<ConnectionLog>()
                 .HasIndex(p => p.UserId);
 
-            modelBuilder.Entity<ConnectionLog>()
-                .HasIndex(p => p.Time);
-
-            modelBuilder.Entity<ConnectionLog>()
-                .Property(p => p.ServerId)
-                .HasDefaultValue(0);
-
-            modelBuilder.Entity<ConnectionLog>()
-                .HasOne(p => p.Server)
-                .WithMany(p => p.ConnectionLogs)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // SetNull is necessary for created by/edited by-s here,
-            // so you can safely delete admins (GDPR right to erasure) while keeping the notes intact
-
             modelBuilder.Entity<AdminNote>()
                 .HasOne(note => note.Player)
                 .WithMany(player => player.AdminNotesReceived)
                 .HasForeignKey(note => note.PlayerUserId)
-                .HasPrincipalKey(player => player.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasPrincipalKey(player => player.UserId);
 
             modelBuilder.Entity<AdminNote>()
                 .HasOne(version => version.CreatedBy)
                 .WithMany(author => author.AdminNotesCreated)
                 .HasForeignKey(note => note.CreatedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasPrincipalKey(author => author.UserId);
 
             modelBuilder.Entity<AdminNote>()
                 .HasOne(version => version.LastEditedBy)
                 .WithMany(author => author.AdminNotesLastEdited)
                 .HasForeignKey(note => note.LastEditedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasPrincipalKey(author => author.UserId);
 
             modelBuilder.Entity<AdminNote>()
                 .HasOne(version => version.DeletedBy)
                 .WithMany(author => author.AdminNotesDeleted)
                 .HasForeignKey(note => note.DeletedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminWatchlist>()
-                .HasOne(note => note.Player)
-                .WithMany(player => player.AdminWatchlistsReceived)
-                .HasForeignKey(note => note.PlayerUserId)
-                .HasPrincipalKey(player => player.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<AdminWatchlist>()
-                .HasOne(version => version.CreatedBy)
-                .WithMany(author => author.AdminWatchlistsCreated)
-                .HasForeignKey(note => note.CreatedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminWatchlist>()
-                .HasOne(version => version.LastEditedBy)
-                .WithMany(author => author.AdminWatchlistsLastEdited)
-                .HasForeignKey(note => note.LastEditedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminWatchlist>()
-                .HasOne(version => version.DeletedBy)
-                .WithMany(author => author.AdminWatchlistsDeleted)
-                .HasForeignKey(note => note.DeletedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminMessage>()
-                .HasOne(note => note.Player)
-                .WithMany(player => player.AdminMessagesReceived)
-                .HasForeignKey(note => note.PlayerUserId)
-                .HasPrincipalKey(player => player.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<AdminMessage>()
-                .HasOne(version => version.CreatedBy)
-                .WithMany(author => author.AdminMessagesCreated)
-                .HasForeignKey(note => note.CreatedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminMessage>()
-                .HasOne(version => version.LastEditedBy)
-                .WithMany(author => author.AdminMessagesLastEdited)
-                .HasForeignKey(note => note.LastEditedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<AdminMessage>()
-                .HasOne(version => version.DeletedBy)
-                .WithMany(author => author.AdminMessagesDeleted)
-                .HasForeignKey(note => note.DeletedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // A message cannot be "dismissed" without also being "seen".
-            modelBuilder.Entity<AdminMessage>().ToTable(t =>
-                t.HasCheckConstraint("NotDismissedAndSeen",
-                    "NOT dismissed OR seen"));
-
-            modelBuilder.Entity<ServerBan>()
-                .HasOne(ban => ban.CreatedBy)
-                .WithMany(author => author.AdminServerBansCreated)
-                .HasForeignKey(ban => ban.BanningAdmin)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<ServerBan>()
-                .HasOne(ban => ban.LastEditedBy)
-                .WithMany(author => author.AdminServerBansLastEdited)
-                .HasForeignKey(ban => ban.LastEditedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<ServerRoleBan>()
-                .HasOne(ban => ban.CreatedBy)
-                .WithMany(author => author.AdminServerRoleBansCreated)
-                .HasForeignKey(ban => ban.BanningAdmin)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<ServerRoleBan>()
-                .HasOne(ban => ban.LastEditedBy)
-                .WithMany(author => author.AdminServerRoleBansLastEdited)
-                .HasForeignKey(ban => ban.LastEditedById)
-                .HasPrincipalKey(author => author.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<RoleWhitelist>()
-                .HasOne(w => w.Player)
-                .WithMany(p => p.JobWhitelists)
-                .HasForeignKey(w => w.PlayerUserId)
-                .HasPrincipalKey(p => p.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasPrincipalKey(author => author.UserId);
         }
 
         public virtual IQueryable<AdminLog> SearchLogs(IQueryable<AdminLog> query, string searchText)
@@ -369,12 +225,11 @@ namespace Content.Server.Database
         public string FacialHairColor { get; set; } = null!;
         public string EyeColor { get; set; } = null!;
         public string SkinColor { get; set; } = null!;
-        public int SpawnPriority { get; set; } = 0;
+        public string Clothing { get; set; } = null!;
+        public string Backpack { get; set; } = null!;
         public List<Job> Jobs { get; } = new();
         public List<Antag> Antags { get; } = new();
         public List<Trait> Traits { get; } = new();
-
-        public List<ProfileRoleLoadout> Loadouts { get; } = new();
 
         [Column("pref_unavailable")] public DbPreferenceUnavailableMode PreferenceUnavailable { get; set; }
 
@@ -419,79 +274,6 @@ namespace Content.Server.Database
         public string TraitName { get; set; } = null!;
     }
 
-    #region Loadouts
-
-    /// <summary>
-    /// Corresponds to a single role's loadout inside the DB.
-    /// </summary>
-    public class ProfileRoleLoadout
-    {
-        public int Id { get; set; }
-
-        public int ProfileId { get; set; }
-
-        public Profile Profile { get; set; } = null!;
-
-        /// <summary>
-        /// The corresponding role prototype on the profile.
-        /// </summary>
-        public string RoleName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Store the saved loadout groups. These may get validated and removed when loaded at runtime.
-        /// </summary>
-        public List<ProfileLoadoutGroup> Groups { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Corresponds to a loadout group prototype with the specified loadouts attached.
-    /// </summary>
-    public class ProfileLoadoutGroup
-    {
-        public int Id { get; set; }
-
-        public int ProfileRoleLoadoutId { get; set; }
-
-        /// <summary>
-        /// The corresponding RoleLoadout that owns this.
-        /// </summary>
-        public ProfileRoleLoadout ProfileRoleLoadout { get; set; } = null!;
-
-        /// <summary>
-        /// The corresponding group prototype.
-        /// </summary>
-        public string GroupName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Selected loadout prototype. Null if none is set.
-        /// May get validated at runtime and updated to to the default.
-        /// </summary>
-        public List<ProfileLoadout> Loadouts { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Corresponds to a selected loadout.
-    /// </summary>
-    public class ProfileLoadout
-    {
-        public int Id { get; set; }
-
-        public int ProfileLoadoutGroupId { get; set; }
-
-        public ProfileLoadoutGroup ProfileLoadoutGroup { get; set; } = null!;
-
-        /// <summary>
-        /// Corresponding loadout prototype.
-        /// </summary>
-        public string LoadoutName { get; set; } = string.Empty;
-
-        /*
-         * Insert extra data here like custom descriptions or colors or whatever.
-         */
-    }
-
-    #endregion
-
     public enum DbPreferenceUnavailableMode
     {
         // These enum values HAVE to match the ones in PreferenceUnavailableMode in Shared.
@@ -532,32 +314,10 @@ namespace Content.Server.Database
         public List<AdminNote> AdminNotesCreated { get; set; } = null!;
         public List<AdminNote> AdminNotesLastEdited { get; set; } = null!;
         public List<AdminNote> AdminNotesDeleted { get; set; } = null!;
-        public List<AdminWatchlist> AdminWatchlistsReceived { get; set; } = null!;
-        public List<AdminWatchlist> AdminWatchlistsCreated { get; set; } = null!;
-        public List<AdminWatchlist> AdminWatchlistsLastEdited { get; set; } = null!;
-        public List<AdminWatchlist> AdminWatchlistsDeleted { get; set; } = null!;
-        public List<AdminMessage> AdminMessagesReceived { get; set; } = null!;
-        public List<AdminMessage> AdminMessagesCreated { get; set; } = null!;
-        public List<AdminMessage> AdminMessagesLastEdited { get; set; } = null!;
-        public List<AdminMessage> AdminMessagesDeleted { get; set; } = null!;
-        public List<ServerBan> AdminServerBansCreated { get; set; } = null!;
-        public List<ServerBan> AdminServerBansLastEdited { get; set; } = null!;
-        public List<ServerRoleBan> AdminServerRoleBansCreated { get; set; } = null!;
-        public List<ServerRoleBan> AdminServerRoleBansLastEdited { get; set; } = null!;
-        public List<RoleWhitelist> JobWhitelists { get; set; } = null!;
     }
 
     [Table("whitelist")]
     public class Whitelist
-    {
-        [Required, Key] public Guid UserId { get; set; }
-    }
-
-    /// <summary>
-    /// List of users who are on the "blacklist". This is a list that may be used by Whitelist implementations to deny access to certain users.
-    /// </summary>
-    [Table("blacklist")]
-    public class Blacklist
     {
         [Required, Key] public Guid UserId { get; set; }
     }
@@ -605,8 +365,6 @@ namespace Content.Server.Database
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        public DateTime? StartDate { get; set; }
-
         public List<Player> Players { get; set; } = default!;
 
         public List<AdminLog> AdminLogs { get; set; } = default!;
@@ -624,19 +382,15 @@ namespace Content.Server.Database
 
         [InverseProperty(nameof(Round.Server))]
         public List<Round> Rounds { get; set; } = default!;
-
-        [InverseProperty(nameof(ConnectionLog.Server))]
-        public List<ConnectionLog> ConnectionLogs { get; set; } = default!;
     }
 
     [Index(nameof(Type))]
     public class AdminLog
     {
-        [Key, ForeignKey("Round")] public int RoundId { get; set; }
-
-        [Key]
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
+        [Key, ForeignKey("Round")] public int RoundId { get; set; }
         public Round Round { get; set; } = default!;
 
         [Required] public LogType Type { get; set; }
@@ -650,30 +404,36 @@ namespace Content.Server.Database
         [Required, Column(TypeName = "jsonb")] public JsonDocument Json { get; set; } = default!;
 
         public List<AdminLogPlayer> Players { get; set; } = default!;
+
+        public List<AdminLogEntity> Entities { get; set; } = default!;
     }
 
     public class AdminLogPlayer
     {
-        [Required, Key] public int RoundId { get; set; }
-        [Required, Key] public int LogId { get; set; }
-
         [Required, Key, ForeignKey("Player")] public Guid PlayerUserId { get; set; }
         public Player Player { get; set; } = default!;
 
-        [ForeignKey("RoundId,LogId")] public AdminLog Log { get; set; } = default!;
+        [Required, Key] public int LogId { get; set; }
+        [Required, Key] public int RoundId { get; set; }
+        [ForeignKey("LogId,RoundId")] public AdminLog Log { get; set; } = default!;
+    }
+
+    public class AdminLogEntity
+    {
+        [Required, Key] public int Uid { get; set; }
+        public string? Name { get; set; } = default!;
     }
 
     // Used by SS14.Admin
     public interface IBanCommon<TUnban> where TUnban : IUnbanCommon
     {
         int Id { get; set; }
-        Guid? PlayerUserId { get; set; }
-        NpgsqlInet? Address { get; set; }
+        Guid? UserId { get; set; }
+        (IPAddress, int)? Address { get; set; }
         byte[]? HWId { get; set; }
         DateTime BanTime { get; set; }
         DateTime? ExpirationTime { get; set; }
         string Reason { get; set; }
-        NoteSeverity Severity { get; set; }
         Guid? BanningAdmin { get; set; }
         TUnban? Unban { get; set; }
     }
@@ -708,19 +468,6 @@ namespace Content.Server.Database
         /// Intended use is for users with shared connections. This should not be used as an alternative to <see cref="Datacenter"/>.
         /// </remarks>
         IP = 1 << 1,
-
-        /// <summary>
-        /// Ban is an IP range that is only applied for first time joins.
-        /// </summary>
-        /// <remarks>
-        /// Intended for use with residential IP ranges that are often used maliciously.
-        /// </remarks>
-        BlacklistedRange = 1 << 2,
-
-        /// <summary>
-        /// Represents having all possible exemption flags.
-        /// </summary>
-        All = int.MaxValue,
         // @formatter:on
     }
 
@@ -731,25 +478,20 @@ namespace Content.Server.Database
     /// <remarks>
     /// At least one of UserID, IP, or HWID must be given (otherwise the ban would match nothing).
     /// </remarks>
-    [Table("server_ban"), Index(nameof(PlayerUserId))]
+    [Table("server_ban")]
     public class ServerBan : IBanCommon<ServerUnban>
     {
         public int Id { get; set; }
 
-        [ForeignKey("Round")]
-        public int? RoundId { get; set; }
-        public Round? Round { get; set; }
-
         /// <summary>
         /// The user ID of the banned player.
         /// </summary>
-        public Guid? PlayerUserId { get; set; }
-        [Required] public TimeSpan PlaytimeAtNote { get; set; }
+        public Guid? UserId { get; set; }
 
         /// <summary>
         /// CIDR IP address range of the ban. The whole range can match the ban.
         /// </summary>
-        public NpgsqlInet? Address { get; set; }
+        [Column(TypeName = "inet")] public (IPAddress, int)? Address { get; set; }
 
         /// <summary>
         /// Hardware ID of the banned player.
@@ -772,30 +514,9 @@ namespace Content.Server.Database
         public string Reason { get; set; } = null!;
 
         /// <summary>
-        /// The severity of the incident
-        /// </summary>
-        public NoteSeverity Severity { get; set; }
-
-        /// <summary>
         /// User ID of the admin that applied the ban.
         /// </summary>
-        [ForeignKey("CreatedBy")]
         public Guid? BanningAdmin { get; set; }
-
-        public Player? CreatedBy { get; set; }
-
-        /// <summary>
-        /// User ID of the admin that last edited the note
-        /// </summary>
-        [ForeignKey("LastEditedBy")]
-        public Guid? LastEditedById { get; set; }
-
-        public Player? LastEditedBy { get; set; }
-
-        /// <summary>
-        /// When the ban was last edited
-        /// </summary>
-        public DateTime? LastEditedAt { get; set; }
 
         /// <summary>
         /// Optional flags that allow adding exemptions to the ban via <see cref="ServerBanExemption"/>.
@@ -817,11 +538,6 @@ namespace Content.Server.Database
         /// psql -d ss14 -c "DELETE FROM server_ban WHERE auto_delete AND expiration_time &lt; NOW()"
         /// </remarks>
         public bool AutoDelete { get; set; }
-
-        /// <summary>
-        /// Whether to display this ban in the admin remarks (notes) panel
-        /// </summary>
-        public bool Hidden { get; set; }
 
         public List<ServerBanHit> BanHits { get; set; } = null!;
     }
@@ -896,19 +612,7 @@ namespace Content.Server.Database
 
         public ConnectionDenyReason? Denied { get; set; }
 
-        /// <summary>
-        /// ID of the <see cref="Server"/> that the connection was attempted to.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// The default value of this column is set to <c>0</c>, which is the ID of the "<c>unknown</c>" server.
-        /// This is intended for old entries (that didn't track this) and if the server name isn't configured.
-        /// </para>
-        /// </remarks>
-        public int ServerId { get; set; }
-
         public List<ServerBanHit> BanHits { get; set; } = null!;
-        public Server Server { get; set; } = null!;
     }
 
     public enum ConnectionDenyReason : byte
@@ -917,13 +621,6 @@ namespace Content.Server.Database
         Whitelist = 1,
         Full = 2,
         Panic = 3,
-        /*
-         * TODO: Remove baby jail code once a more mature gateway process is established. This code is only being issued as a stopgap to help with potential tiding in the immediate future.
-         *
-         * If baby jail is removed, please reserve this value for as long as can reasonably be done to prevent causing ambiguity in connection denial reasons.
-         * Reservation by commenting out the value is likely sufficient for this purpose, but may impact projects which depend on SS14 like SS14.Admin.
-         */
-        BabyJail = 4,
     }
 
     public class ServerBanHit
@@ -937,15 +634,12 @@ namespace Content.Server.Database
         public ConnectionLog Connection { get; set; } = null!;
     }
 
-    [Table("server_role_ban"), Index(nameof(PlayerUserId))]
+    [Table("server_role_ban")]
     public sealed class ServerRoleBan : IBanCommon<ServerRoleUnban>
     {
         public int Id { get; set; }
-        public int? RoundId { get; set; }
-        public Round? Round { get; set; }
-        public Guid? PlayerUserId { get; set; }
-        [Required] public TimeSpan PlaytimeAtNote { get; set; }
-        public NpgsqlInet? Address { get; set; }
+        public Guid? UserId { get; set; }
+        [Column(TypeName = "inet")] public (IPAddress, int)? Address { get; set; }
         public byte[]? HWId { get; set; }
 
         public DateTime BanTime { get; set; }
@@ -953,17 +647,9 @@ namespace Content.Server.Database
         public DateTime? ExpirationTime { get; set; }
 
         public string Reason { get; set; } = null!;
-
-        public NoteSeverity Severity { get; set; }
-        [ForeignKey("CreatedBy")] public Guid? BanningAdmin { get; set; }
-        public Player? CreatedBy { get; set; }
-
-        [ForeignKey("LastEditedBy")] public Guid? LastEditedById { get; set; }
-        public Player? LastEditedBy { get; set; }
-        public DateTime? LastEditedAt { get; set; }
+        public Guid? BanningAdmin { get; set; }
 
         public ServerRoleUnban? Unban { get; set; }
-        public bool Hidden { get; set; }
 
         public string RoleId { get; set; } = null!;
     }
@@ -1010,201 +696,34 @@ namespace Content.Server.Database
         public byte[] Data { get; set; } = default!;
     }
 
-    // Note: this interface isn't used by the game, but it *is* used by SS14.Admin.
-    // Don't remove! Or face the consequences!
-    public interface IAdminRemarksCommon
-    {
-        public int Id { get; }
-
-        public int? RoundId { get; }
-        public Round? Round { get; }
-
-        public Guid? PlayerUserId { get; }
-        public Player? Player { get; }
-        public TimeSpan PlaytimeAtNote { get; }
-
-        public string Message { get; }
-
-        public Player? CreatedBy { get; }
-
-        public DateTime CreatedAt { get; }
-
-        public Player? LastEditedBy { get; }
-
-        public DateTime? LastEditedAt { get; }
-        public DateTime? ExpirationTime { get; }
-
-        public bool Deleted { get; }
-    }
-
     [Index(nameof(PlayerUserId))]
-    public class AdminNote : IAdminRemarksCommon
+    public class AdminNote
     {
         [Required, Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)] public int Id { get; set; }
 
         [ForeignKey("Round")] public int? RoundId { get; set; }
         public Round? Round { get; set; }
 
-        [ForeignKey("Player")] public Guid? PlayerUserId { get; set; }
-        public Player? Player { get; set; }
-        [Required] public TimeSpan PlaytimeAtNote { get; set; }
-
-        [Required, MaxLength(4096)] public string Message { get; set; } = string.Empty;
-        [Required] public NoteSeverity Severity { get; set; }
-
-        [ForeignKey("CreatedBy")] public Guid? CreatedById { get; set; }
-        public Player? CreatedBy { get; set; }
-
-        [Required] public DateTime CreatedAt { get; set; }
-
-        [ForeignKey("LastEditedBy")] public Guid? LastEditedById { get; set; }
-        public Player? LastEditedBy { get; set; }
-
-        [Required] public DateTime? LastEditedAt { get; set; }
-        public DateTime? ExpirationTime { get; set; }
-
-        public bool Deleted { get; set; }
-        [ForeignKey("DeletedBy")] public Guid? DeletedById { get; set; }
-        public Player? DeletedBy { get; set; }
-        public DateTime? DeletedAt { get; set; }
-
-        public bool Secret { get; set; }
-    }
-
-    [Index(nameof(PlayerUserId))]
-    public class AdminWatchlist : IAdminRemarksCommon
-    {
-        [Required, Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)] public int Id { get; set; }
-
-        [ForeignKey("Round")] public int? RoundId { get; set; }
-        public Round? Round { get; set; }
-
-        [ForeignKey("Player")] public Guid? PlayerUserId { get; set; }
-        public Player? Player { get; set; }
-        [Required] public TimeSpan PlaytimeAtNote { get; set; }
-
-        [Required, MaxLength(4096)] public string Message { get; set; } = string.Empty;
-
-        [ForeignKey("CreatedBy")] public Guid? CreatedById { get; set; }
-        public Player? CreatedBy { get; set; }
-
-        [Required] public DateTime CreatedAt { get; set; }
-
-        [ForeignKey("LastEditedBy")] public Guid? LastEditedById { get; set; }
-        public Player? LastEditedBy { get; set; }
-
-        [Required] public DateTime? LastEditedAt { get; set; }
-        public DateTime? ExpirationTime { get; set; }
-
-        public bool Deleted { get; set; }
-        [ForeignKey("DeletedBy")] public Guid? DeletedById { get; set; }
-        public Player? DeletedBy { get; set; }
-        public DateTime? DeletedAt { get; set; }
-    }
-
-    [Index(nameof(PlayerUserId))]
-    public class AdminMessage : IAdminRemarksCommon
-    {
-        [Required, Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)] public int Id { get; set; }
-
-        [ForeignKey("Round")] public int? RoundId { get; set; }
-        public Round? Round { get; set; }
-
-        [ForeignKey("Player")]
-        public Guid? PlayerUserId { get; set; }
-        public Player? Player { get; set; }
-        [Required] public TimeSpan PlaytimeAtNote { get; set; }
-
-        [Required, MaxLength(4096)] public string Message { get; set; } = string.Empty;
-
-        [ForeignKey("CreatedBy")] public Guid? CreatedById { get; set; }
-        public Player? CreatedBy { get; set; }
-
-        [Required] public DateTime CreatedAt { get; set; }
-
-        [ForeignKey("LastEditedBy")] public Guid? LastEditedById { get; set; }
-        public Player? LastEditedBy { get; set; }
-
-        public DateTime? LastEditedAt { get; set; }
-        public DateTime? ExpirationTime { get; set; }
-
-        public bool Deleted { get; set; }
-        [ForeignKey("DeletedBy")] public Guid? DeletedById { get; set; }
-        public Player? DeletedBy { get; set; }
-        public DateTime? DeletedAt { get; set; }
-
-        /// <summary>
-        /// Whether the message has been seen at least once by the player.
-        /// </summary>
-        public bool Seen { get; set; }
-
-        /// <summary>
-        /// Whether the message has been dismissed permanently by the player.
-        /// </summary>
-        public bool Dismissed { get; set; }
-    }
-
-    [PrimaryKey(nameof(PlayerUserId), nameof(RoleId))]
-    public class RoleWhitelist
-    {
-        [Required, ForeignKey("Player")]
-        public Guid PlayerUserId { get; set; }
+        [Required, ForeignKey("Player")] public Guid PlayerUserId { get; set; }
         public Player Player { get; set; } = default!;
 
-        [Required]
-        public string RoleId { get; set; } = default!;
-    }
+        [Required, MaxLength(4096)] public string Message { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Defines a template that admins can use to quickly fill out ban information.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This information is not currently used by the game itself, but it is used by SS14.Admin.
-    /// </para>
-    /// </remarks>
-    public sealed class BanTemplate
-    {
-        public int Id { get; set; }
+        [Required, ForeignKey("CreatedBy")] public Guid CreatedById { get; set; }
+        [Required] public Player CreatedBy { get; set; } = default!;
 
-        /// <summary>
-        /// Title of the ban template. This is purely for reference by admins and not copied into the ban.
-        /// </summary>
-        public required string Title { get; set; }
+        [Required] public DateTime CreatedAt { get; set; }
 
-        /// <summary>
-        /// How long the ban should last. 0 for permanent.
-        /// </summary>
-        public TimeSpan Length { get; set; }
+        [Required, ForeignKey("LastEditedBy")] public Guid LastEditedById { get; set; }
+        [Required] public Player LastEditedBy { get; set; } = default!;
 
-        /// <summary>
-        /// The reason for the ban.
-        /// </summary>
-        /// <seealso cref="ServerBan.Reason"/>
-        public string Reason { get; set; } = "";
+        [Required] public DateTime LastEditedAt { get; set; }
 
-        /// <summary>
-        /// Exemptions granted to the ban.
-        /// </summary>
-        /// <seealso cref="ServerBan.ExemptFlags"/>
-        public ServerBanExemptFlags ExemptFlags { get; set; }
+        public bool Deleted { get; set; }
+        [ForeignKey("DeletedBy")] public Guid? DeletedById { get; set; }
+        public Player? DeletedBy { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
-        /// <summary>
-        /// Severity of the ban
-        /// </summary>
-        /// <seealso cref="ServerBan.Severity"/>
-        public NoteSeverity Severity { get; set; }
-
-        /// <summary>
-        /// Ban will be automatically deleted once expired.
-        /// </summary>
-        /// <seealso cref="ServerBan.AutoDelete"/>
-        public bool AutoDelete { get; set; }
-
-        /// <summary>
-        /// Ban is not visible to players in the remarks menu.
-        /// </summary>
-        /// <seealso cref="ServerBan.Hidden"/>
-        public bool Hidden { get; set; }
+        public bool ShownToPlayer { get; set; }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Content.Client.Gravity;
+﻿using Content.Client.Gravity;
 using Content.Shared.Anomaly;
 using Content.Shared.Anomaly.Components;
 using Robust.Client.GameObjects;
@@ -20,9 +19,8 @@ public sealed class AnomalySystem : SharedAnomalySystem
         SubscribeLocalEvent<AnomalyComponent, AppearanceChangeEvent>(OnAppearanceChanged);
         SubscribeLocalEvent<AnomalyComponent, ComponentStartup>(OnStartup);
         SubscribeLocalEvent<AnomalyComponent, AnimationCompletedEvent>(OnAnimationComplete);
-
-        SubscribeLocalEvent<AnomalySupercriticalComponent, ComponentShutdown>(OnShutdown);
     }
+
     private void OnStartup(EntityUid uid, AnomalyComponent component, ComponentStartup args)
     {
         _floating.FloatAnimation(uid, component.FloatingOffset, component.AnimationKey, component.AnimationTime);
@@ -61,9 +59,7 @@ public sealed class AnomalySystem : SharedAnomalySystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<AnomalySupercriticalComponent, SpriteComponent>();
-
-        while (query.MoveNext(out var super, out var sprite))
+        foreach (var (super, sprite) in EntityQuery<AnomalySupercriticalComponent, SpriteComponent>())
         {
             var completion = 1f - (float) ((super.EndTime - _timing.CurTime) / super.SupercriticalDuration);
             var scale = completion * (super.MaxScaleAmount - 1f) + 1f;
@@ -75,14 +71,5 @@ public sealed class AnomalySystem : SharedAnomalySystem
                 sprite.Color = sprite.Color.WithAlpha(transparency);
             }
         }
-    }
-
-    private void OnShutdown(Entity<AnomalySupercriticalComponent> ent, ref ComponentShutdown args)
-    {
-        if (!TryComp<SpriteComponent>(ent, out var sprite))
-            return;
-
-        sprite.Scale = Vector2.One;
-        sprite.Color = sprite.Color.WithAlpha(1f);
     }
 }

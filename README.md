@@ -14,8 +14,7 @@ Space Station 14 это ремейк SS13, который работает на 
 
 ## Контрибьют
 
-Мы рады принять вклад от любого человека. Заходите в Discord, если хотите помочь. У нас есть [список проблем](https://github.com/space-syndicate/space-station-14-content/issues), которые нужно решить, и любой может за них взяться. Не бойтесь просить о помощи!
-Только убедитесь, что ваши изменения и PRы соответствуют [руководству по контрибьюту](https://docs.spacestation14.com/en/general-development/codebase-info/pull-request-guidelines.html).
+В случае если вы хотите добавить новый контент будет лучше, если сначала вы предложите его в [основной репозиторий](https://github.com/space-wizards/space-station-14) или обсудите его необходимость на нашем сервере [Discord](https://discord.station14.ru).
 
 ## Сборка
 
@@ -23,12 +22,12 @@ Space Station 14 это ремейк SS13, который работает на 
 2. Запустите `RUN_THIS.py` для инициализации подмодулей и скачивания движка.
 3. Скомпилируйте проект.
 
-[Более подробная инструкция по запуску проекта.](https://docs.spacestation14.com/en/general-development/setup.html)
+[Более подробная инструкция по запуску проекта.](https://docs.spacestation14.io/getting-started/dev-setup)
 
 ## Лицензия
 
 Весь код репозитория лицензирован под [MIT](https://github.com/space-syndicate/space-station-14/blob/master/LICENSE.TXT).
 
-Большинство ассетов лицензированы под [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), если не указано иное. Ассеты имеют свою лицензию и авторские права в файле метаданных. [Пример](https://github.com/space-syndicate/space-station-14/blob/master/Resources/Textures/Objects/Tools/crowbar.rsi/meta.json).
+Большинство ассетов лицензированы под [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), если не указано иное. Ассеты имеют свою лицензию и авторские права в файле метаданных. [Пример](https://github.com/space-syndicate/space-station-14/blob/master/Resources/Textures/Objects/Tools/crowbar.rsi/meta.json). 
 
 Обратите внимание, что некоторые ассеты лицензированы на некоммерческой основе [CC-BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) или аналогичной некоммерческой лицензией, и их необходимо удалить, если вы хотите использовать этот проект в коммерческих целях.

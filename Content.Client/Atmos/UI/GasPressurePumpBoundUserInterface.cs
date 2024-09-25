@@ -1,9 +1,11 @@
-﻿using Content.Shared.Atmos;
+﻿using System;
+using Content.Client.Atmos.EntitySystems;
+using Content.Shared.Atmos;
 using Content.Shared.Atmos.Piping.Binary.Components;
-using Content.Shared.Localizations;
+using Content.Shared.Atmos.Piping.Trinary.Components;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
+using Robust.Shared.GameObjects;
 
 namespace Content.Client.Atmos.UI
 {
@@ -13,13 +15,11 @@ namespace Content.Client.Atmos.UI
     [UsedImplicitly]
     public sealed class GasPressurePumpBoundUserInterface : BoundUserInterface
     {
-        [ViewVariables]
+
+        private GasPressurePumpWindow? _window;
         private const float MaxPressure = Atmospherics.MaxOutputPressure;
 
-        [ViewVariables]
-        private GasPressurePumpWindow? _window;
-
-        public GasPressurePumpBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+        public GasPressurePumpBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
         {
         }
 
@@ -27,7 +27,14 @@ namespace Content.Client.Atmos.UI
         {
             base.Open();
 
-            _window = this.CreateWindow<GasPressurePumpWindow>();
+            _window = new GasPressurePumpWindow();
+
+            if(State != null)
+                UpdateState(State);
+
+            _window.OpenCentered();
+
+            _window.OnClose += Close;
 
             _window.ToggleStatusButtonPressed += OnToggleStatusButtonPressed;
             _window.PumpOutputPressureChanged += OnPumpOutputPressurePressed;
@@ -41,7 +48,7 @@ namespace Content.Client.Atmos.UI
 
         private void OnPumpOutputPressurePressed(string value)
         {
-            var pressure = UserInputParser.TryFloat(value, out var parsed) ? parsed : 0f;
+            float pressure = float.TryParse(value, out var parsed) ? parsed : 0f;
             if (pressure > MaxPressure) pressure = MaxPressure;
 
             SendMessage(new GasPressurePumpChangeOutputPressureMessage(pressure));
@@ -60,6 +67,13 @@ namespace Content.Client.Atmos.UI
             _window.Title = (cast.PumpLabel);
             _window.SetPumpStatus(cast.Enabled);
             _window.SetOutputPressure(cast.OutputPressure);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (!disposing) return;
+            _window?.Dispose();
         }
     }
 }

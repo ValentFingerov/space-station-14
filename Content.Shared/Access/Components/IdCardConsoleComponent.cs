@@ -1,14 +1,14 @@
 using Content.Shared.Access.Systems;
 using Content.Shared.Containers.ItemSlots;
 using Robust.Shared.GameStates;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
+using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.List;
 
 namespace Content.Shared.Access.Components;
 
-[RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
+[RegisterComponent, NetworkedComponent]
 [Access(typeof(SharedIdCardConsoleSystem))]
-public sealed partial class IdCardConsoleComponent : Component
+public sealed class IdCardConsoleComponent : Component
 {
     public const int MaxFullNameLength = 30;
     public const int MaxJobTitleLength = 30;
@@ -16,10 +16,10 @@ public sealed partial class IdCardConsoleComponent : Component
     public static string PrivilegedIdCardSlotId = "IdCardConsole-privilegedId";
     public static string TargetIdCardSlotId = "IdCardConsole-targetId";
 
-    [DataField]
+    [DataField("privilegedIdSlot")]
     public ItemSlot PrivilegedIdSlot = new();
 
-    [DataField]
+    [DataField("targetIdSlot")]
     public ItemSlot TargetIdSlot = new();
 
     [Serializable, NetSerializable]
@@ -27,10 +27,10 @@ public sealed partial class IdCardConsoleComponent : Component
     {
         public readonly string FullName;
         public readonly string JobTitle;
-        public readonly List<ProtoId<AccessLevelPrototype>> AccessList;
-        public readonly ProtoId<AccessLevelPrototype> JobPrototype;
+        public readonly List<string> AccessList;
+        public readonly string JobPrototype;
 
-        public WriteToTargetIdMessage(string fullName, string jobTitle, List<ProtoId<AccessLevelPrototype>> accessList, ProtoId<AccessLevelPrototype> jobPrototype)
+        public WriteToTargetIdMessage(string fullName, string jobTitle, List<string> accessList, string jobPrototype)
         {
             FullName = fullName;
             JobTitle = jobTitle;
@@ -41,8 +41,8 @@ public sealed partial class IdCardConsoleComponent : Component
 
     // Put this on shared so we just send the state once in PVS range rather than every time the UI updates.
 
-    [DataField, AutoNetworkedField]
-    public List<ProtoId<AccessLevelPrototype>> AccessLevels = new()
+    [DataField("accessLevels", customTypeSerializer: typeof(PrototypeIdListSerializer<AccessLevelPrototype>))]
+    public List<string> AccessLevels = new()
     {
         "Armory",
         "Atmospherics",
@@ -56,7 +56,6 @@ public sealed partial class IdCardConsoleComponent : Component
         "ChiefEngineer",
         "ChiefMedicalOfficer",
         "Command",
-        "Cryogenics",
         "Engineering",
         "External",
         "HeadOfPersonnel",
@@ -64,7 +63,6 @@ public sealed partial class IdCardConsoleComponent : Component
         "Hydroponics",
         "Janitor",
         "Kitchen",
-        "Lawyer",
         "Maintenance",
         "Medical",
         "Quartermaster",
@@ -86,18 +84,18 @@ public sealed partial class IdCardConsoleComponent : Component
         public readonly string TargetIdName;
         public readonly string? TargetIdFullName;
         public readonly string? TargetIdJobTitle;
-        public readonly List<ProtoId<AccessLevelPrototype>>? TargetIdAccessList;
-        public readonly List<ProtoId<AccessLevelPrototype>>? AllowedModifyAccessList;
-        public readonly ProtoId<AccessLevelPrototype> TargetIdJobPrototype;
+        public readonly string[]? TargetIdAccessList;
+        public readonly string[]? AllowedModifyAccessList;
+        public readonly string TargetIdJobPrototype;
 
         public IdCardConsoleBoundUserInterfaceState(bool isPrivilegedIdPresent,
             bool isPrivilegedIdAuthorized,
             bool isTargetIdPresent,
             string? targetIdFullName,
             string? targetIdJobTitle,
-            List<ProtoId<AccessLevelPrototype>>? targetIdAccessList,
-            List<ProtoId<AccessLevelPrototype>>? allowedModifyAccessList,
-            ProtoId<AccessLevelPrototype> targetIdJobPrototype,
+            string[]? targetIdAccessList,
+            string[]? allowedModifyAccessList,
+            string targetIdJobPrototype,
             string privilegedIdName,
             string targetIdName)
         {

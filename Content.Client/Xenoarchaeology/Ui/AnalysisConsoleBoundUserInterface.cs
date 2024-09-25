@@ -1,25 +1,27 @@
 using Content.Shared.Xenoarchaeology.Equipment;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 
 namespace Content.Client.Xenoarchaeology.Ui;
 
 [UsedImplicitly]
 public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
 {
-    [ViewVariables]
     private AnalysisConsoleMenu? _consoleMenu;
 
-    public AnalysisConsoleBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    public AnalysisConsoleBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
     {
+
     }
 
     protected override void Open()
     {
         base.Open();
 
-        _consoleMenu = this.CreateWindow<AnalysisConsoleMenu>();
+        _consoleMenu = new AnalysisConsoleMenu();
+
+        _consoleMenu.OnClose += Close;
+        _consoleMenu.OpenCentered();
 
         _consoleMenu.OnServerSelectionButtonPressed += () =>
         {
@@ -33,17 +35,9 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
         {
             SendMessage(new AnalysisConsolePrintButtonPressedMessage());
         };
-        _consoleMenu.OnExtractButtonPressed += () =>
+        _consoleMenu.OnDestroyButtonPressed += () =>
         {
-            SendMessage(new AnalysisConsoleExtractButtonPressedMessage());
-        };
-        _consoleMenu.OnUpBiasButtonPressed += () =>
-        {
-            SendMessage(new AnalysisConsoleBiasButtonPressedMessage(false));
-        };
-        _consoleMenu.OnDownBiasButtonPressed += () =>
-        {
-            SendMessage(new AnalysisConsoleBiasButtonPressedMessage(true));
+            SendMessage(new AnalysisConsoleDestroyButtonPressedMessage());
         };
     }
 
@@ -53,7 +47,7 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
 
         switch (state)
         {
-            case AnalysisConsoleUpdateState msg:
+            case AnalysisConsoleScanUpdateState msg:
                 _consoleMenu?.SetButtonsDisabled(msg);
                 _consoleMenu?.UpdateInformationDisplay(msg);
                 _consoleMenu?.UpdateProgressBar(msg);
@@ -67,7 +61,6 @@ public sealed class AnalysisConsoleBoundUserInterface : BoundUserInterface
 
         if (!disposing)
             return;
-
         _consoleMenu?.Dispose();
     }
 }

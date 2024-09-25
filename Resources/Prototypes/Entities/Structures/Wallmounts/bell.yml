@@ -16,7 +16,7 @@
     - state: bell
   - type: InteractionPopup
     successChance: 1
-    interactSuccessSound:
+    interactSuccessSound:   
       path: /Audio/Weapons/boxingbell.ogg
   - type: Clickable
   - type: MeleeSound
@@ -44,4 +44,4 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalBreak
+          path: /Audio/Effects/metalbreak.ogg

@@ -1,16 +1,15 @@
 ﻿using System.Threading;
-using Content.Shared.DeviceLinking;
+using Content.Shared.Construction.Prototypes;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.List;
-using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.Dictionary;
 
 namespace Content.Shared.Singularity.Components;
 
 [RegisterComponent, NetworkedComponent]
-public sealed partial class EmitterComponent : Component
+public sealed class EmitterComponent : Component
 {
     public CancellationTokenSource? TimerCancel;
 
@@ -53,6 +52,12 @@ public sealed partial class EmitterComponent : Component
     public TimeSpan FireInterval = TimeSpan.FromSeconds(2);
 
     /// <summary>
+    /// The base amount of time between each shot during a burst.
+    /// </summary>
+    [DataField("baseFireInterval"), ViewVariables(VVAccess.ReadWrite)]
+    public TimeSpan BaseFireInterval = TimeSpan.FromSeconds(2);
+
+    /// <summary>
     /// The current minimum delay between bursts.
     /// </summary>
     [DataField("fireBurstDelayMin")]
@@ -65,6 +70,33 @@ public sealed partial class EmitterComponent : Component
     public TimeSpan FireBurstDelayMax = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// The base minimum delay between shot bursts.
+    /// Used for machine part rating calculations.
+    /// </summary>
+    [DataField("baseFireBurstDelayMin")]
+    public TimeSpan BaseFireBurstDelayMin = TimeSpan.FromSeconds(4);
+
+    /// <summary>
+    /// The base maximum delay between shot bursts.
+    /// Used for machine part rating calculations.
+    /// </summary>
+    [DataField("baseFireBurstDelayMax")]
+    public TimeSpan BaseFireBurstDelayMax = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// The multiplier for the base delay between shot bursts as well as
+    /// the fire interval
+    /// </summary>
+    [DataField("fireRateMultiplier"), ViewVariables(VVAccess.ReadWrite)]
+    public float FireRateMultiplier = 0.8f;
+
+    /// <summary>
+    /// The machine part that affects burst delay.
+    /// </summary>
+    [DataField("machinePartFireRate", customTypeSerializer: typeof(PrototypeIdSerializer<MachinePartPrototype>))]
+    public string MachinePartFireRate = "Capacitor";
+
+    /// <summary>
     /// The visual state that is set when the emitter is turned on
     /// </summary>
     [DataField("onState")]
@@ -75,30 +107,6 @@ public sealed partial class EmitterComponent : Component
     /// </summary>
     [DataField("underpoweredState")]
     public string? UnderpoweredState = "underpowered";
-
-    /// <summary>
-    /// Signal port that turns on the emitter.
-    /// </summary>
-    [DataField("onPort", customTypeSerializer: typeof(PrototypeIdSerializer<SinkPortPrototype>))]
-    public string OnPort = "On";
-
-    /// <summary>
-    /// Signal port that turns off the emitter.
-    /// </summary>
-    [DataField("offPort", customTypeSerializer: typeof(PrototypeIdSerializer<SinkPortPrototype>))]
-    public string OffPort = "Off";
-
-    /// <summary>
-    /// Signal port that toggles the emitter on or off.
-    /// </summary>
-    [DataField("togglePort", customTypeSerializer: typeof(PrototypeIdSerializer<SinkPortPrototype>))]
-    public string TogglePort = "Toggle";
-
-    /// <summary>
-    /// Map of signal ports to entity prototype IDs of the entity that will be fired.
-    /// </summary>
-    [DataField("setTypePorts", customTypeSerializer: typeof(PrototypeIdDictionarySerializer<string, SinkPortPrototype>))]
-    public Dictionary<string, string> SetTypePorts = new();
 }
 
 [NetSerializable, Serializable]

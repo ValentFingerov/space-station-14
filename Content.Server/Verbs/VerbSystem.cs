@@ -5,8 +5,8 @@ using Content.Shared.Administration;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Database;
 using Content.Shared.Hands.Components;
-using Content.Shared.Inventory.VirtualItem;
 using Content.Shared.Verbs;
+using Robust.Server.Player;
 
 namespace Content.Server.Verbs
 {
@@ -25,17 +25,17 @@ namespace Content.Server.Verbs
 
         private void HandleVerbRequest(RequestServerVerbsEvent args, EntitySessionEventArgs eventArgs)
         {
-            var player = eventArgs.SenderSession;
+            var player = (IPlayerSession) eventArgs.SenderSession;
 
-            if (!EntityManager.EntityExists(GetEntity(args.EntityUid)))
+            if (!EntityManager.EntityExists(args.EntityUid))
             {
-                Log.Warning($"{nameof(HandleVerbRequest)} called on a non-existent entity with id {args.EntityUid} by player {player}.");
+                Logger.Warning($"{nameof(HandleVerbRequest)} called on a non-existent entity with id {args.EntityUid} by player {player}.");
                 return;
             }
 
             if (player.AttachedEntity is not {} attached)
             {
-                Log.Warning($"{nameof(HandleVerbRequest)} called by player {player} with no attached entity.");
+                Logger.Warning($"{nameof(HandleVerbRequest)} called by player {player} with no attached entity.");
                 return;
             }
 
@@ -43,7 +43,7 @@ namespace Content.Server.Verbs
             // this, and some verbs (e.g. view variables) won't even care about whether an entity is accessible through
             // the entity menu or not.
 
-            var force = args.AdminRequest && eventArgs.SenderSession is { } playerSession &&
+            var force = args.AdminRequest && eventArgs.SenderSession is IPlayerSession playerSession &&
                         _adminMgr.HasAdminFlag(playerSession, AdminFlags.Admin);
 
             List<Type> verbTypes = new();
@@ -54,12 +54,12 @@ namespace Content.Server.Verbs
                 if (type != null)
                     verbTypes.Add(type);
                 else
-                    Log.Error($"Unknown verb type received: {key}");
+                    Logger.Error($"Unknown verb type received: {key}");
             }
 
             var response =
-                new VerbsResponseEvent(args.EntityUid, GetLocalVerbs(GetEntity(args.EntityUid), attached, verbTypes, force));
-            RaiseNetworkEvent(response, player.Channel);
+                new VerbsResponseEvent(args.EntityUid, GetLocalVerbs(args.EntityUid, attached, verbTypes, force));
+            RaiseNetworkEvent(response, player.ConnectedClient);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace Content.Server.Verbs
             }
 
             // if this is a virtual pull, get the held entity
-            if (holding != null && TryComp(holding, out VirtualItemComponent? pull))
+            if (holding != null && TryComp(holding, out HandVirtualItemComponent? pull))
                 holding = pull.BlockingEntity;
 
             var verbText = $"{verb.Category?.Text} {verb.Text}".Trim();

@@ -1,7 +1,12 @@
 ﻿#nullable enable
+using System.Threading.Tasks;
 using Content.Shared.Physics;
 using Content.Shared.Spawning;
+using NUnit.Framework;
 using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using Robust.Shared.Map;
+using Robust.Shared.Physics;
 using Robust.Shared.Physics.Systems;
 
 namespace Content.IntegrationTests.Tests.Utility
@@ -12,8 +17,7 @@ namespace Content.IntegrationTests.Tests.Utility
     {
         private const string BlockerDummyId = "BlockerDummy";
 
-        [TestPrototypes]
-        private const string Prototypes = $@"
+        private static readonly string Prototypes = $@"
 - type: entity
   id: {BlockerDummyId}
   name: {BlockerDummyId}
@@ -32,10 +36,10 @@ namespace Content.IntegrationTests.Tests.Utility
         [Test]
         public async Task Test()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{NoClient = true, ExtraPrototypes = Prototypes});
+            var server = pairTracker.Pair.Server;
 
-            var testMap = await pair.CreateTestMap();
+            var testMap = await PoolManager.CreateTestMap(pairTracker);
             var mapCoordinates = testMap.MapCoords;
             var entityCoordinates = testMap.GridCoords;
 
@@ -46,56 +50,38 @@ namespace Content.IntegrationTests.Tests.Utility
             {
 
                 // Nothing blocking it, only entity is the grid
-                Assert.Multiple(() =>
-                {
-                    Assert.That(sEntityManager.SpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable), Is.Not.Null);
-                    Assert.That(sEntityManager.TrySpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable, out var entity));
-                    Assert.That(entity, Is.Not.Null);
-                });
+                Assert.NotNull(sEntityManager.SpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable));
+                Assert.True(sEntityManager.TrySpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable, out var entity));
+                Assert.NotNull(entity);
 
                 // Nothing blocking it, only entity is the grid
-                Assert.Multiple(() =>
-                {
-                    Assert.That(sEntityManager.SpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable), Is.Not.Null);
-                    Assert.That(sEntityManager.TrySpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable, out var entity));
-                    Assert.That(entity, Is.Not.Null);
-                });
+                Assert.NotNull(sEntityManager.SpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable));
+                Assert.True(sEntityManager.TrySpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable, out entity));
+                Assert.NotNull(entity);
 
                 // Spawn a blocker with an Impassable mask
                 sEntityManager.SpawnEntity(BlockerDummyId, entityCoordinates);
                 broady.Update(0.016f);
 
                 // Cannot spawn something with an Impassable layer
-                Assert.Multiple(() =>
-                {
-                    Assert.That(sEntityManager.SpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable), Is.Null);
-                    Assert.That(sEntityManager.TrySpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable, out var entity), Is.False);
-                    Assert.That(entity, Is.Null);
-                });
+                Assert.Null(sEntityManager.SpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable));
+                Assert.False(sEntityManager.TrySpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.Impassable, out entity));
+                Assert.Null(entity);
 
-                Assert.Multiple(() =>
-                {
-                    Assert.That(sEntityManager.SpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable), Is.Null);
-                    Assert.That(sEntityManager.TrySpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable, out var entity), Is.False);
-                    Assert.That(entity, Is.Null);
-                });
+                Assert.Null(sEntityManager.SpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable));
+                Assert.False(sEntityManager.TrySpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.Impassable, out entity));
+                Assert.Null(entity);
 
                 // Other layers are fine
-                Assert.Multiple(() =>
-                {
-                    Assert.That(sEntityManager.SpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.MidImpassable), Is.Not.Null);
-                    Assert.That(sEntityManager.TrySpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.MidImpassable, out var entity));
-                    Assert.That(entity, Is.Not.Null);
-                });
+                Assert.NotNull(sEntityManager.SpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.MidImpassable));
+                Assert.True(sEntityManager.TrySpawnIfUnobstructed(null, entityCoordinates, CollisionGroup.MidImpassable, out entity));
+                Assert.NotNull(entity);
 
-                Assert.Multiple(() =>
-                {
-                    Assert.That(sEntityManager.SpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.MidImpassable), Is.Not.Null);
-                    Assert.That(sEntityManager.TrySpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.MidImpassable, out var entity));
-                    Assert.That(entity, Is.Not.Null);
-                });
+                Assert.NotNull(sEntityManager.SpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.MidImpassable));
+                Assert.True(sEntityManager.TrySpawnIfUnobstructed(null, mapCoordinates, CollisionGroup.MidImpassable, out entity));
+                Assert.NotNull(entity);
             });
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

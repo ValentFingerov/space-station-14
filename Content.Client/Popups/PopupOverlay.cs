@@ -1,7 +1,11 @@
-using System.Numerics;
+using Content.Client.Examine;
+using Content.Shared.CCVar;
 using Content.Shared.Examine;
+using Content.Shared.Interaction;
+using Content.Shared.Popups;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
+using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Shared;
 using Robust.Shared.Configuration;
@@ -21,10 +25,11 @@ public sealed class PopupOverlay : Overlay
     private readonly IPlayerManager _playerMgr;
     private readonly IUserInterfaceManager _uiManager;
     private readonly PopupSystem _popup;
-    private readonly PopupUIController _controller;
-    private readonly ExamineSystemShared _examine;
-    private readonly SharedTransformSystem _transform;
+
     private readonly ShaderInstance _shader;
+    private readonly Font _smallFont;
+    private readonly Font _mediumFont;
+    private readonly Font _largeFont;
 
     public override OverlaySpace Space => OverlaySpace.ScreenSpace;
 
@@ -33,22 +38,20 @@ public sealed class PopupOverlay : Overlay
         IEntityManager entManager,
         IPlayerManager playerMgr,
         IPrototypeManager protoManager,
+        IResourceCache cache,
         IUserInterfaceManager uiManager,
-        PopupUIController controller,
-        ExamineSystemShared examine,
-        SharedTransformSystem transform,
         PopupSystem popup)
     {
         _configManager = configManager;
         _entManager = entManager;
         _playerMgr = playerMgr;
         _uiManager = uiManager;
-        _examine = examine;
-        _transform = transform;
         _popup = popup;
-        _controller = controller;
 
         _shader = protoManager.Index<ShaderPrototype>("unshaded").Instance();
+        _smallFont = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Italic.ttf"), 10);
+        _mediumFont = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-Italic.ttf"), 12);
+        _largeFont = new VectorFont(cache.GetResource<FontResource>("/Fonts/NotoSans/NotoSans-BoldItalic.ttf"), 14);
     }
 
     protected override void Draw(in OverlayDrawArgs args)
@@ -56,7 +59,7 @@ public sealed class PopupOverlay : Overlay
         if (args.ViewportControl == null)
             return;
 
-        args.DrawingHandle.SetTransform(Matrix3x2.Identity);
+        args.DrawingHandle.SetTransform(Matrix3.Identity);
         args.DrawingHandle.UseShader(_shader);
         var scale = _configManager.GetCVar(CVars.DisplayUIScale);
 
@@ -64,41 +67,84 @@ public sealed class PopupOverlay : Overlay
             scale = _uiManager.DefaultUIScale;
 
         DrawWorld(args.ScreenHandle, args, scale);
+        DrawScreen(args.ScreenHandle, args, scale);
 
         args.DrawingHandle.UseShader(null);
     }
 
     private void DrawWorld(DrawingHandleScreen worldHandle, OverlayDrawArgs args, float scale)
     {
-        if (_popup.WorldLabels.Count == 0 || args.ViewportControl == null)
+        if (_popup.WorldLabels.Count == 0)
             return;
 
-        var matrix = args.ViewportControl.GetWorldToScreenMatrix();
-        var ourEntity = _playerMgr.LocalEntity;
+        var matrix = args.ViewportControl!.GetWorldToScreenMatrix();
         var viewPos = new MapCoordinates(args.WorldAABB.Center, args.MapId);
-        var ourPos = args.WorldBounds.Center;
-        if (ourEntity != null)
-        {
-            viewPos = _transform.GetMapCoordinates(ourEntity.Value);
-            ourPos = viewPos.Position;
-        }
+        var ourEntity = _playerMgr.LocalPlayer?.ControlledEntity;
 
         foreach (var popup in _popup.WorldLabels)
         {
-            var mapPos = popup.InitialPos.ToMap(_entManager, _transform);
+            var mapPos = popup.InitialPos.ToMap(_entManager);
 
             if (mapPos.MapId != args.MapId)
                 continue;
 
-            var distance = (mapPos.Position - ourPos).Length();
+            var distance = (mapPos.Position - args.WorldBounds.Center).Length;
 
             // Should handle fade here too wyci.
-            if (!args.WorldBounds.Contains(mapPos.Position) || !_examine.InRangeUnOccluded(viewPos, mapPos, distance,
+            if (!args.WorldAABB.Contains(mapPos.Position) || !ExamineSystemShared.InRangeUnOccluded(viewPos, mapPos, distance,
                     e => e == popup.InitialPos.EntityId || e == ourEntity, entMan: _entManager))
                 continue;
 
-            var pos = Vector2.Transform(mapPos.Position, matrix);
-            _controller.DrawPopup(popup, worldHandle, pos, scale);
+            var pos = matrix.Transform(mapPos.Position);
+            DrawPopup(popup, worldHandle, pos, scale);
         }
+    }
+
+    private void DrawScreen(DrawingHandleScreen screenHandle, OverlayDrawArgs args, float scale)
+    {
+        foreach (var popup in _popup.CursorLabels)
+        {
+            // Different window
+            if (popup.InitialPos.Window != args.ViewportControl?.Window?.Id)
+                continue;
+
+            DrawPopup(popup, screenHandle, popup.InitialPos.Position, scale);
+        }
+    }
+
+    private void DrawPopup(PopupSystem.PopupLabel popup, DrawingHandleScreen handle, Vector2 position, float scale)
+    {
+        const float alphaMinimum = 0.5f;
+
+        var alpha = MathF.Min(1f, 1f - (popup.TotalTime - alphaMinimum) / (PopupSystem.PopupLifetime - alphaMinimum));
+        var updatedPosition = position - new Vector2(0f, 20f * (popup.TotalTime * popup.TotalTime + popup.TotalTime));
+        var font = _smallFont;
+        var color = Color.White.WithAlpha(alpha);
+
+        switch (popup.Type)
+        {
+            case PopupType.SmallCaution:
+                color = Color.Red;
+                break;
+            case PopupType.Medium:
+                font = _mediumFont;
+                color = Color.LightGray;
+                break;
+            case PopupType.MediumCaution:
+                font = _mediumFont;
+                color = Color.Red;
+                break;
+            case PopupType.Large:
+                font = _largeFont;
+                color = Color.LightGray;
+                break;
+            case PopupType.LargeCaution:
+                font = _largeFont;
+                color = Color.Red;
+                break;
+        }
+
+        var dimensions = handle.GetDimensions(font, popup.Text, scale);
+        handle.DrawString(font, updatedPosition - dimensions / 2f, popup.Text, scale, color.WithAlpha(alpha));
     }
 }

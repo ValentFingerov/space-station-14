@@ -1,10 +1,9 @@
+using Content.Server.Morgue.Components;
 using Content.Server.Storage.Components;
 using Content.Shared.Body.Components;
 using Content.Shared.Examine;
 using Content.Shared.Morgue;
-using Content.Shared.Morgue.Components;
-using Robust.Shared.Audio.Systems;
-using Robust.Shared.Player;
+using Robust.Server.GameObjects;
 
 namespace Content.Server.Morgue;
 
@@ -23,12 +22,12 @@ public sealed class MorgueSystem : EntitySystem
     /// <summary>
     ///     Handles the examination text for looking at a morgue.
     /// </summary>
-    private void OnExamine(Entity<MorgueComponent> ent, ref ExaminedEvent args)
+    private void OnExamine(EntityUid uid, MorgueComponent component, ExaminedEvent args)
     {
         if (!args.IsInDetailsRange)
             return;
 
-        _appearance.TryGetData<MorgueContents>(ent.Owner, MorgueVisuals.Contents, out var contents);
+        _appearance.TryGetData<MorgueContents>(uid, MorgueVisuals.Contents, out var contents);
 
         var text = contents switch
         {
@@ -62,7 +61,7 @@ public sealed class MorgueSystem : EntitySystem
             if (!hasMob && HasComp<BodyComponent>(ent))
                 hasMob = true;
 
-            if (HasComp<ActorComponent>(ent))
+            if (HasComp<ActorComponent?>(ent))
             {
                 _appearance.SetData(uid, MorgueVisuals.Contents, MorgueContents.HasSoul, app);
                 return;
@@ -79,21 +78,20 @@ public sealed class MorgueSystem : EntitySystem
     {
         base.Update(frameTime);
 
-        var query = EntityQueryEnumerator<MorgueComponent, EntityStorageComponent, AppearanceComponent>();
-        while (query.MoveNext(out var uid, out var comp, out var storage, out var appearance))
+        foreach (var (comp, storage, appearance) in EntityQuery<MorgueComponent, EntityStorageComponent, AppearanceComponent>())
         {
             comp.AccumulatedFrameTime += frameTime;
 
-            CheckContents(uid, comp, storage);
+            CheckContents(comp.Owner, comp, storage);
 
             if (comp.AccumulatedFrameTime < comp.BeepTime)
                 continue;
 
             comp.AccumulatedFrameTime -= comp.BeepTime;
 
-            if (comp.DoSoulBeep && _appearance.TryGetData<MorgueContents>(uid, MorgueVisuals.Contents, out var contents, appearance) && contents == MorgueContents.HasSoul)
+            if (comp.DoSoulBeep && _appearance.TryGetData<MorgueContents>(appearance.Owner, MorgueVisuals.Contents, out var contents, appearance) && contents == MorgueContents.HasSoul)
             {
-                _audio.PlayPvs(comp.OccupantHasSoulAlarmSound, uid);
+                _audio.PlayPvs(comp.OccupantHasSoulAlarmSound, comp.Owner);
             }
         }
     }

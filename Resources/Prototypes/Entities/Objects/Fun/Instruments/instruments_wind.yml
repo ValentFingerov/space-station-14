@@ -16,7 +16,7 @@
     sprite: Objects/Fun/Instruments/saxophone.rsi
     state: icon
   - type: Item
-    size: Normal
+    size: 24
     sprite: Objects/Fun/Instruments/saxophone.rsi
   - type: Tag
     tags:
@@ -45,14 +45,14 @@
     sprite: Objects/Fun/Instruments/accordion.rsi
     state: icon
   - type: Item
-    size: Normal
+    size: 24
     sprite: Objects/Fun/Instruments/accordion.rsi
   - type: Tag
     tags:
     - KeyedInstrument
 
 - type: entity
-  parent: [BaseHandheldInstrument, Clothing]
+  parent: BaseHandheldInstrument
   id: HarmonicaInstrument
   name: harmonica
   components:
@@ -62,15 +62,8 @@
     sprite: Objects/Fun/Instruments/harmonica.rsi
     state: icon
   - type: Item
-    size: Small
+    size: 10
     sprite: Objects/Fun/Instruments/harmonica.rsi
-    storedRotation: -90
-  - type: Clothing
-    quickEquip: false
-    slots:
-    - neck
-  - type: ActivatableUI
-    inHandsOnly: false  
   - type: Tag
     tags:
     - WoodwindInstrument
@@ -87,7 +80,7 @@
     sprite: Objects/Fun/Instruments/clarinet.rsi
     state: icon
   - type: Item
-    size: Normal
+    size: 20
     sprite: Objects/Fun/Instruments/clarinet.rsi
   - type: Tag
     tags:
@@ -105,7 +98,7 @@
     sprite: Objects/Fun/Instruments/flute.rsi
     state: icon
   - type: Item
-    size: Normal
+    size: 20
     sprite: Objects/Fun/Instruments/flute.rsi
   - type: Tag
     tags:
@@ -123,7 +116,7 @@
     sprite: Objects/Fun/Instruments/recorder.rsi
     state: icon
   - type: Item
-    size: Normal
+    size: 24
     sprite: Objects/Fun/Instruments/recorder.rsi
   - type: Tag
     tags:
@@ -141,7 +134,7 @@
     sprite: Objects/Fun/Instruments/panflute.rsi
     state: icon
   - type: Item
-    size: Small
+    size: 15
     sprite: Objects/Fun/Instruments/panflute.rsi
   - type: Tag
     tags:
@@ -160,9 +153,8 @@
     sprite: Objects/Fun/Instruments/ocarina.rsi
     state: icon
   - type: Item
-    size: Small
+    size: 15
     sprite: Objects/Fun/Instruments/ocarina.rsi
-    storedRotation: -90
   - type: Tag
     tags:
     - WoodwindInstrument
@@ -179,7 +171,7 @@
     sprite: Objects/Fun/Instruments/bagpipes.rsi
     state: icon
   - type: Item
-    size: Large
+    size: 48
     sprite: Objects/Fun/Instruments/bagpipes.rsi
   - type: Tag
     tags:

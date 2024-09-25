@@ -1,7 +1,7 @@
 - type: entity
   id: BaseMagazinePistol
   name: pistol magazine (.35 auto)
-  parent: [ BaseItem, BaseRestrictedContraband ]
+  parent: BaseItem
   abstract: true
   components:
   - type: Tag
@@ -14,11 +14,12 @@
         - CartridgePistol
     capacity: 10
   - type: Item
-    size: Small
+    size: 5
   - type: ContainerContainer
     containers:
       ballistic-ammo: !type:Container
   - type: Sprite
+    netsync: false
     sprite: Objects/Weapons/Guns/Ammunition/Magazine/Pistol/pistol_mag.rsi
     layers:
     - state: base
@@ -47,11 +48,12 @@
         - CartridgePistol
     capacity: 16
   - type: Item
-    size: Small
+    size: 5
   - type: ContainerContainer
     containers:
       ballistic-ammo: !type:Container
   - type: Sprite
+    netsync: false
     sprite: Objects/Weapons/Guns/Ammunition/Magazine/Pistol/pistol_high_capacity_mag.rsi
     layers:
     - state: base
@@ -67,7 +69,7 @@
 - type: entity
   id: BaseMagazinePistolSubMachineGun  # Yeah it's weird but it's pistol caliber
   name: SMG magazine (.35 auto)
-  parent: [ BaseItem, BaseRestrictedContraband ]
+  parent: BaseItem
   abstract: true
   components:
   - type: Tag
@@ -80,11 +82,12 @@
         - CartridgePistol
     capacity: 35
   - type: Item
-    size: Small
+    size: 10
   - type: ContainerContainer
     containers:
       ballistic-ammo: !type:Container
   - type: Sprite
+    netsync: false
     sprite: Objects/Weapons/Guns/Ammunition/Magazine/Pistol/smg_mag.rsi
     layers:
     - state: base
@@ -93,14 +96,14 @@
       map: ["enum.GunVisualLayers.Mag"]
   - type: MagazineVisuals
     magState: mag
-    steps: 6
+    steps: 2
     zeroVisible: false
   - type: Appearance
 
 - type: entity
   id: MagazinePistolSubMachineGunTopMounted
   name: WT550 magazine (.35 auto top-mounted)
-  parent: [ BaseItem, BaseRestrictedContraband ]
+  parent: BaseItem
   components:
   - type: Tag
     tags:
@@ -113,6 +116,7 @@
       - CartridgePistol
   - type: Sprite
     sprite: Objects/Weapons/Guns/Ammunition/Magazine/Pistol/smg_mag_top_mounted.rsi
+    netsync: false
     layers:
       - state: base
         map: ["enum.GunVisualLayers.Base"]
@@ -129,14 +133,6 @@
       ballistic-ammo: !type:Container
 
 - type: entity
-  id: MagazinePistolSubMachineGunTopMountedEmpty
-  name: WT550 magazine (.35 auto top-mounted any)
-  parent: MagazinePistolSubMachineGunTopMounted
-  components:
-  - type: BallisticAmmoProvider
-    proto: null
-
-- type: entity
   id: MagazinePistol
   name: pistol magazine (.35 auto)
   parent: BaseMagazinePistol
@@ -151,26 +147,18 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazinePistolEmpty
-  name: pistol magazine (.35 auto any)
-  suffix: empty
-  parent: MagazinePistol
+  id: MagazinePistolHighVelocity
+  name: pistol magazine (.35 auto high-velocity)
+  parent: BaseMagazinePistol
   components:
   - type: BallisticAmmoProvider
-    proto: null
+    proto: CartridgePistolHighVelocity
   - type: Sprite
     layers:
-    - state: base
+    - state: high_velocity
       map: ["enum.GunVisualLayers.Base"]
-
-
-- type: entity
-  id: MagazinePistolIncendiary
-  name: pistol magazine (.35 auto incendiary)
-  parent: MagazinePistol
-  components:
-  - type: BallisticAmmoProvider
-    proto: CartridgePistolIncendiary
+    - state: mag-1
+      map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
   id: MagazinePistolPractice
@@ -187,31 +175,18 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazinePistolUranium
-  name: pistol magazine (.35 auto uranium)
+  id: MagazinePistolRubber
+  name: pistol magazine (.35 auto rubber)
   parent: BaseMagazinePistol
   components:
   - type: BallisticAmmoProvider
-    proto: CartridgePistolUranium
+    proto: CartridgePistolRubber
   - type: Sprite
     layers:
-    - state: uranium
+    - state: rubber
       map: ["enum.GunVisualLayers.Base"]
     - state: mag-1
       map: ["enum.GunVisualLayers.Mag"]
-
-- type: entity
-  id: MagazinePistolHighCapacityEmpty
-  name: machine pistol magazine (.35 auto any)
-  suffix: empty
-  parent: BaseMagazinePistolHighCapacity
-  components:
-  - type: BallisticAmmoProvider
-    proto: null
-  - type: Sprite
-    layers:
-    - state: base
-      map: ["enum.GunVisualLayers.Base"]
 
 - type: entity
   id: MagazinePistolHighCapacity
@@ -223,6 +198,20 @@
   - type: Sprite
     layers:
     - state: red
+      map: ["enum.GunVisualLayers.Base"]
+    - state: mag-1
+      map: ["enum.GunVisualLayers.Mag"]
+
+- type: entity
+  id: MagazinePistolHighCapacityHighVelocity
+  name: machine pistol magazine (.35 auto high-velocity)
+  parent: BaseMagazinePistolHighCapacity
+  components:
+  - type: BallisticAmmoProvider
+    proto: CartridgePistolHighVelocity
+  - type: Sprite
+    layers:
+    - state: high_velocity
       map: ["enum.GunVisualLayers.Base"]
     - state: mag-1
       map: ["enum.GunVisualLayers.Mag"]
@@ -276,17 +265,18 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazinePistolSubMachineGunEmpty
-  name: SMG magazine (.35 auto any)
-  suffix: empty
+  id: MagazinePistolSubMachineGunHighVelocity
+  name: SMG magazine (.35 auto high-velocity)
   parent: BaseMagazinePistolSubMachineGun
   components:
   - type: BallisticAmmoProvider
-    proto: null
+    proto: CartridgePistolHighVelocity
   - type: Sprite
     layers:
-    - state: base
+    - state: high_velocity
       map: ["enum.GunVisualLayers.Base"]
+    - state: mag-1
+      map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
   id: MagazinePistolSubMachineGunPractice
@@ -303,15 +293,15 @@
       map: ["enum.GunVisualLayers.Mag"]
 
 - type: entity
-  id: MagazinePistolSubMachineGunUranium
-  name: SMG magazine (.35 auto uranium)
+  id: MagazinePistolSubMachineGunRubber
+  name: SMG magazine (.35 auto rubber)
   parent: BaseMagazinePistolSubMachineGun
   components:
   - type: BallisticAmmoProvider
-    proto: CartridgePistolUranium
+    proto: CartridgePistolRubber
   - type: Sprite
     layers:
-    - state: uranium
+    - state: rubber
       map: ["enum.GunVisualLayers.Base"]
     - state: mag-1
       map: ["enum.GunVisualLayers.Mag"]

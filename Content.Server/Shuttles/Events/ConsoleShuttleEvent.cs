@@ -8,8 +8,5 @@ namespace Content.Server.Shuttles.Events;
 [ByRefEvent]
 public struct ConsoleShuttleEvent
 {
-    /// <summary>
-    /// Console that we proxy into.
-    /// </summary>
     public EntityUid? Console;
 }

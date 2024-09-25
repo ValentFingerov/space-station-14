@@ -9,16 +9,17 @@
     layers:
       - state: icon
         map: ["analyzer"]
+    netsync: false
   - type: GasAnalyzer
   - type: ActivatableUI
     inHandsOnly: true
     singleUser: true
-    requireActiveHand: false
+    closeOnHandDeselect: false
     key: enum.GasAnalyzerUiKey.Key
   - type: UserInterface
     interfaces:
-      enum.GasAnalyzerUiKey.Key:
-        type: GasAnalyzerBoundUserInterface
+    - key: enum.GasAnalyzerUiKey.Key
+      type: GasAnalyzerBoundUserInterface
   - type: Appearance
   - type: GenericVisualizer
     visuals:
@@ -26,6 +27,9 @@
           enabled:
             True: { state: working }
             False: { state: icon }
+  - type: Tag
+    tags:
+      - DroneUsable
   - type: StaticPrice
     price: 80
   - type: PhysicalComposition

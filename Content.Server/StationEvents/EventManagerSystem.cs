@@ -1,14 +1,11 @@
-using System.Linq;
+﻿using System.Linq;
 using Content.Server.GameTicking;
-using Content.Server.RoundEnd;
 using Content.Server.StationEvents.Components;
 using Content.Shared.CCVar;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
-using Content.Shared.EntityTable.EntitySelectors;
-using Content.Shared.EntityTable;
 
 namespace Content.Server.StationEvents;
 
@@ -18,9 +15,9 @@ public sealed class EventManagerSystem : EntitySystem
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
     [Dependency] private readonly IPrototypeManager _prototype = default!;
-    [Dependency] private readonly EntityTableSystem _entityTable = default!;
     [Dependency] public readonly GameTicker GameTicker = default!;
-    [Dependency] private readonly RoundEndSystem _roundEnd = default!;
+
+    private ISawmill _sawmill = default!;
 
     public bool EventsEnabled { get; private set; }
     private void SetEnabled(bool value) => EventsEnabled = value;
@@ -29,101 +26,44 @@ public sealed class EventManagerSystem : EntitySystem
     {
         base.Initialize();
 
-        Subs.CVar(_configurationManager, CCVars.EventsEnabled, SetEnabled, true);
+        _sawmill = Logger.GetSawmill("events");
+
+        _configurationManager.OnValueChanged(CCVars.EventsEnabled, SetEnabled, true);
+
+        SubscribeLocalEvent<StationEventComponent, EntityUnpausedEvent>(OnUnpaused);
+    }
+
+    private void OnUnpaused(EntityUid uid, StationEventComponent component, ref EntityUnpausedEvent args)
+    {
+        component.StartTime += args.PausedTime;
+        if (component.EndTime != null)
+            component.EndTime = component.EndTime.Value + args.PausedTime;
+    }
+
+    public override void Shutdown()
+    {
+        base.Shutdown();
+        _configurationManager.UnsubValueChanged(CCVars.EventsEnabled, SetEnabled);
     }
 
     /// <summary>
     /// Randomly runs a valid event.
     /// </summary>
-    [Obsolete("use overload taking EnityTableSelector instead or risk unexpected results")]
-    public void RunRandomEvent()
+    public string RunRandomEvent()
     {
         var randomEvent = PickRandomEvent();
 
         if (randomEvent == null)
         {
             var errStr = Loc.GetString("station-event-system-run-random-event-no-valid-events");
-            Log.Error(errStr);
-            return;
+            _sawmill.Error(errStr);
+            return errStr;
         }
 
-        GameTicker.AddGameRule(randomEvent);
-    }
-
-    /// <summary>
-    /// Randomly runs an event from provided EntityTableSelector.
-    /// </summary>
-    public void RunRandomEvent(EntityTableSelector limitedEventsTable)
-    {
-        if (!TryBuildLimitedEvents(limitedEventsTable, out var limitedEvents))
-        {
-            Log.Warning("Provided event table could not build dict!");
-            return;
-        }
-
-        var randomLimitedEvent = FindEvent(limitedEvents); // this picks the event, It might be better to use the GetSpawns to do it, but that will be a major rebalancing fuck.
-        if (randomLimitedEvent == null)
-        {
-            Log.Warning("The selected random event is null!");
-            return;
-        }
-
-        if (!_prototype.TryIndex(randomLimitedEvent, out _))
-        {
-            Log.Warning("A requested event is not available!");
-            return;
-        }
-
-        GameTicker.AddGameRule(randomLimitedEvent);
-    }
-
-    /// <summary>
-    /// Returns true if the provided EntityTableSelector gives at least one prototype with a StationEvent comp.
-    /// </summary>
-    public bool TryBuildLimitedEvents(EntityTableSelector limitedEventsTable, out Dictionary<EntityPrototype, StationEventComponent> limitedEvents)
-    {
-        limitedEvents = new Dictionary<EntityPrototype, StationEventComponent>();
-
-        var availableEvents = AvailableEvents(); // handles the player counts and individual event restrictions
-
-        if (availableEvents.Count == 0)
-        {
-            Log.Warning("No events were available to run!");
-            return false;
-        }
-
-        var selectedEvents = _entityTable.GetSpawns(limitedEventsTable);
-
-        if (selectedEvents.Any() != true) // This is here so if you fuck up the table it wont die.
-            return false;
-
-        foreach (var eventid in selectedEvents)
-        {
-            if (!_prototype.TryIndex(eventid, out var eventproto))
-            {
-                Log.Warning("An event ID has no prototype index!");
-                continue;
-            }
-
-            if (limitedEvents.ContainsKey(eventproto)) // This stops it from dying if you add duplicate entries in a fucked table
-                continue;
-
-            if (eventproto.Abstract)
-                continue;
-
-            if (!eventproto.TryGetComponent<StationEventComponent>(out var stationEvent, EntityManager.ComponentFactory))
-                continue;
-
-            if (!availableEvents.ContainsKey(eventproto))
-                continue;
-
-            limitedEvents.Add(eventproto, stationEvent);
-        }
-
-        if (!limitedEvents.Any())
-            return false;
-
-        return true;
+        var ent = GameTicker.AddGameRule(randomEvent);
+        var str = Loc.GetString("station-event-system-run-event",("eventName", ToPrettyString(ent)));
+        _sawmill.Info(str);
+        return str;
     }
 
     /// <summary>
@@ -132,7 +72,7 @@ public sealed class EventManagerSystem : EntitySystem
     public string? PickRandomEvent()
     {
         var availableEvents = AvailableEvents();
-        Log.Info($"Picking from {availableEvents.Count} total available events");
+        _sawmill.Info($"Picking from {availableEvents.Count} total available events");
         return FindEvent(availableEvents);
     }
 
@@ -140,11 +80,11 @@ public sealed class EventManagerSystem : EntitySystem
     /// Pick a random event from the available events at this time, also considering their weightings.
     /// </summary>
     /// <returns></returns>
-    public string? FindEvent(Dictionary<EntityPrototype, StationEventComponent> availableEvents)
+    private string? FindEvent(Dictionary<EntityPrototype, StationEventComponent> availableEvents)
     {
         if (availableEvents.Count == 0)
         {
-            Log.Warning("No events were available to run!");
+            _sawmill.Warning("No events were available to run!");
             return null;
         }
 
@@ -167,27 +107,23 @@ public sealed class EventManagerSystem : EntitySystem
             }
         }
 
-        Log.Error("Event was not found after weighted pick process!");
+        _sawmill.Error("Event was not found after weighted pick process!");
         return null;
     }
 
     /// <summary>
     /// Gets the events that have met their player count, time-until start, etc.
     /// </summary>
-    /// <param name="playerCountOverride">Override for player count, if using this to simulate events rather than in an actual round.</param>
-    /// <param name="currentTimeOverride">Override for round time, if using this to simulate events rather than in an actual round.</param>
+    /// <param name="ignoreEarliestStart"></param>
     /// <returns></returns>
-    public Dictionary<EntityPrototype, StationEventComponent> AvailableEvents(
-        bool ignoreEarliestStart = false,
-        int? playerCountOverride = null,
-        TimeSpan? currentTimeOverride = null)
+    private Dictionary<EntityPrototype, StationEventComponent> AvailableEvents(bool ignoreEarliestStart = false)
     {
-        var playerCount = playerCountOverride ?? _playerManager.PlayerCount;
+        var playerCount = _playerManager.PlayerCount;
 
         // playerCount does a lock so we'll just keep the variable here
-        var currentTime = currentTimeOverride ?? (!ignoreEarliestStart
+        var currentTime = !ignoreEarliestStart
             ? GameTicker.RoundDuration()
-            : TimeSpan.Zero);
+            : TimeSpan.Zero;
 
         var result = new Dictionary<EntityPrototype, StationEventComponent>();
 
@@ -195,6 +131,7 @@ public sealed class EventManagerSystem : EntitySystem
         {
             if (CanRun(proto, stationEvent, playerCount, currentTime))
             {
+                _sawmill.Debug($"Adding event {proto.ID} to possibilities");
                 result.Add(proto, stationEvent);
             }
         }
@@ -263,11 +200,6 @@ public sealed class EventManagerSystem : EntitySystem
         var lastRun = TimeSinceLastEvent(prototype);
         if (lastRun != TimeSpan.Zero && currentTime.TotalMinutes <
             stationEvent.ReoccurrenceDelay + lastRun.TotalMinutes)
-        {
-            return false;
-        }
-
-        if (_roundEnd.IsRoundEndRequested() && !stationEvent.OccursDuringRoundEnd)
         {
             return false;
         }

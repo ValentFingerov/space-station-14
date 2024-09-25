@@ -8,6 +8,7 @@
   - type: Sprite
     sprite: Objects/Misc/inflatable_wall.rsi
     state: inflatable_wall
+    netsync: false
   - type: Physics
     bodyType: Static
   - type: Fixtures
@@ -20,7 +21,7 @@
         layer:
         - WallLayer
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Inflatable
   - type: Destructible
     thresholds:
@@ -68,7 +69,7 @@
     closeSound:
       path: /Audio/Misc/zip.ogg
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Inflatable
   - type: Destructible
     thresholds:

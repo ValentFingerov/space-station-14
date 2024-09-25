@@ -1,4 +1,4 @@
-﻿- type: entity
+- type: entity
   name: flashlight
   parent: BaseItem
   id: FlashlightLantern
@@ -7,6 +7,7 @@
   - type: Tag
     tags:
     - Flashlight
+    - DroneUsable
   - type: HandheldLight
     addPrefix: false
     blinkingBehaviourId: blinking
@@ -15,10 +16,13 @@
     behaviours:
       - !type:FadeBehaviour
         id: radiating
+        interpolate: Linear
         maxDuration: 2.0
         startValue: 3.0
         endValue: 2.0
         isLooped: true
+        property: Radius
+        enabled: false
         reverseWhenFinished: true
       - !type:PulseBehaviour
         id: blinking
@@ -27,6 +31,14 @@
         minValue: 0.1
         maxValue: 2.0
         isLooped: true
+        property: Radius
+        enabled: false
+    toggleAction:
+      name: action-name-toggle-light
+      description: action-description-toggle-light
+      icon: { sprite: Objects/Tools/flashlight.rsi, state: flashlight }
+      iconOn: Objects/Tools/flashlight.rsi/flashlight-on.png
+      event: !type:ToggleActionEvent
   - type: ToggleableLightVisuals
     spriteLayer: light
     inhandVisuals:
@@ -48,6 +60,7 @@
         startingItem: PowerCellMedium
   - type: Sprite
     sprite: Objects/Tools/flashlight.rsi
+    netsync: false
     layers:
       - state: flashlight
       - state: flashlight-overlay
@@ -56,27 +69,19 @@
         map: [ "light" ]
   - type: Item
     sprite: Objects/Tools/flashlight.rsi
-    storedRotation: -90
   - type: PointLight
+    netsync: false
     enabled: false
     mask: /Textures/Effects/LightMasks/cone.png
     autoRot: true
     radius: 6
-    netsync: false
   - type: Appearance
   - type: StaticPrice
     price: 40
-  - type: StealTarget
-    stealGroup: LAMP
-  - type: Clothing
-    sprite: Objects/Tools/flashlight.rsi
-    quickEquip: false
-    slots:
-      - Belt
 
 - type: entity
   name: seclite
-  parent: [FlashlightLantern, BaseRestrictedContraband]
+  parent: FlashlightLantern
   id: FlashlightSeclite
   description: A robust flashlight used by security.
   components:
@@ -106,23 +111,11 @@
         shader: unshaded
         visible: false
         map: [ "light" ]
-  - type: MeleeWeapon
-    wideAnimationRotation: 90
-    damage:
-      types:
-        Blunt: 10
-    soundHit:
-      collection: MetalThud
   - type: Item
     sprite: Objects/Tools/seclite.rsi
   - type: PointLight
     enabled: false
     radius: 8
-  - type: Clothing
-    sprite: Objects/Tools/seclite.rsi
-    quickEquip: false
-    slots:
-      - Belt
 
 - type: entity
   parent: FlashlightLantern

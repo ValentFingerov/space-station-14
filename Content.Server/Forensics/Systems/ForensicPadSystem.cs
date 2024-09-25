@@ -1,11 +1,10 @@
-using Content.Server.Labels;
-using Content.Server.Popups;
-using Content.Shared.DoAfter;
 using Content.Shared.Examine;
-using Content.Shared.Forensics;
-using Content.Shared.IdentityManagement;
 using Content.Shared.Interaction;
 using Content.Shared.Inventory;
+using Content.Server.Popups;
+using Content.Shared.DoAfter;
+using Content.Shared.Forensics;
+using Content.Shared.IdentityManagement;
 
 namespace Content.Server.Forensics
 {
@@ -17,8 +16,6 @@ namespace Content.Server.Forensics
         [Dependency] private readonly SharedDoAfterSystem _doAfterSystem = default!;
         [Dependency] private readonly InventorySystem _inventory = default!;
         [Dependency] private readonly PopupSystem _popupSystem = default!;
-        [Dependency] private readonly MetaDataSystem _metaData = default!;
-        [Dependency] private readonly LabelSystem _label = default!;
 
         public override void Initialize()
         {
@@ -83,10 +80,11 @@ namespace Content.Server.Forensics
         {
             var ev = new ForensicPadDoAfterEvent(sample);
 
-            var doAfterEventArgs = new DoAfterArgs(EntityManager, user, pad.ScanDelay, ev, used, target: target, used: used)
+            var doAfterEventArgs = new DoAfterArgs(user, pad.ScanDelay, ev, used, target: target, used: used)
             {
-                NeedHand = true,
-                BreakOnMove = true,
+                BreakOnTargetMove = true,
+                BreakOnUserMove = true,
+                NeedHand = true
             };
 
             _doAfterSystem.TryStartDoAfter(doAfterEventArgs);
@@ -101,8 +99,10 @@ namespace Content.Server.Forensics
 
             if (args.Args.Target != null)
             {
-                string label = Identity.Name(args.Args.Target.Value, EntityManager);
-                _label.Label(uid, label);
+                if (HasComp<FingerprintComponent>(args.Args.Target))
+                    MetaData(uid).EntityName = Loc.GetString("forensic-pad-fingerprint-name", ("entity", args.Args.Target));
+                else
+                    MetaData(uid).EntityName = Loc.GetString("forensic-pad-gloves-name", ("entity", args.Args.Target));
             }
 
             padComponent.Sample = args.Sample;

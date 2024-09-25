@@ -7,9 +7,9 @@ namespace Content.Shared.Shuttles.Components
     /// Interact with to start piloting a shuttle.
     /// </summary>
     [NetworkedComponent]
-    public abstract partial class SharedShuttleConsoleComponent : Component
+    public abstract class SharedShuttleConsoleComponent : Component
     {
-        public static string DiskSlotName = "disk_slot";
+
     }
 
     [Serializable, NetSerializable]

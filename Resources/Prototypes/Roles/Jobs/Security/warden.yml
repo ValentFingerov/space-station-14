@@ -6,33 +6,32 @@
   requirements:
     - !type:DepartmentTimeRequirement
       department: Security
-      time: 108000 #50 hrs # Corvax-RoleTime
+      time: 108000 # Corvax-RoleTime
   startingGear: WardenGear
-  icon: "JobIconWarden"
-  requireAdminNotify: true
+  icon: "Warden"
   supervisors: job-supervisors-hos
   canBeAntag: false
   access:
   - Security
-  - Brig
   - Armory
   - Maintenance
   - Service
+  - Brig
   - External
   - Detective
-  - Cryogenics
-  special:
-  - !type:AddImplantSpecial
-    implants: [ MindShieldImplant ]
 
 - type: startingGear
   id: WardenGear
   equipment:
+    head: ClothingHeadHatWarden
+    jumpsuit: ClothingUniformJumpsuitWarden
+    back: ClothingBackpackSecurityFilled
+    shoes: ClothingShoesBootsJackSec # Corvax-Resprite
     eyes: ClothingEyesGlassesSecurity
+    outerClothing: ClothingOuterCoatWarden
     id: WardenPDA
     ears: ClothingHeadsetSecurity
-    pocket1: WeaponPistolMk58
-  storage:
-    back:
-    - Flash
-    - MagazinePistol
+    belt: ClothingBeltSecurityFilled
+  innerclothingskirt: ClothingUniformJumpskirtWarden
+  satchel: ClothingBackpackSatchelSecurityFilled
+  duffelbag: ClothingBackpackDuffelSecurityFilled

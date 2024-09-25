@@ -6,36 +6,37 @@ using Content.Server.Power.EntitySystems;
 using Content.Server.Xenoarchaeology.Equipment.Components;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Events;
 using Content.Server.Xenoarchaeology.XenoArtifacts.Triggers.Components;
-using Content.Shared.CCVar;
 using Content.Shared.Xenoarchaeology.XenoArtifacts;
 using JetBrains.Annotations;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
-using Robust.Shared.Configuration;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
-using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Timing;
 
 namespace Content.Server.Xenoarchaeology.XenoArtifacts;
 
 public sealed partial class ArtifactSystem : EntitySystem
 {
-    [Dependency] private readonly IComponentFactory _componentFactory = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly IPrototypeManager _prototype = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly ISerializationManager _serialization = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
+
+    private ISawmill _sawmill = default!;
 
     public override void Initialize()
     {
         base.Initialize();
 
+        _sawmill = Logger.GetSawmill("artifact");
+
+        SubscribeLocalEvent<ArtifactComponent, MapInitEvent>(OnInit);
         SubscribeLocalEvent<ArtifactComponent, PriceCalculationEvent>(GetPrice);
+        SubscribeLocalEvent<RoundEndTextAppendEvent>(OnRoundEnd);
 
         InitializeCommands();
         InitializeActions();
+    }
+
+    private void OnInit(EntityUid uid, ArtifactComponent component, MapInitEvent args)
+    {
+        RandomizeArtifact(uid, component);
     }
 
     /// <summary>
@@ -50,7 +51,7 @@ public sealed partial class ArtifactSystem : EntitySystem
     /// </remarks>
     private void GetPrice(EntityUid uid, ArtifactComponent component, ref PriceCalculationEvent args)
     {
-        args.Price += (GetResearchPointValue(uid, component) + component.ConsumedPoints) * component.PriceMultiplier;
+        args.Price =+ GetResearchPointValue(uid, component) * component.PriceMultiplier;
     }
 
     /// <summary>
@@ -129,7 +130,7 @@ public sealed partial class ArtifactSystem : EntitySystem
     {
         var nodeAmount = _random.Next(component.NodesMin, component.NodesMax);
 
-        GenerateArtifactNodeTree(uid, component.NodeTree, nodeAmount);
+        GenerateArtifactNodeTree(uid, ref component.NodeTree, nodeAmount);
         var firstNode = GetRootNode(component.NodeTree);
         EnterNode(uid, ref firstNode, component);
     }
@@ -140,11 +141,10 @@ public sealed partial class ArtifactSystem : EntitySystem
     /// <param name="uid"></param>
     /// <param name="user"></param>
     /// <param name="component"></param>
-    /// <param name="logMissing">Set this to false if you don't know if the entity is an artifact.</param>
     /// <returns></returns>
-    public bool TryActivateArtifact(EntityUid uid, EntityUid? user = null, ArtifactComponent? component = null, bool logMissing = true)
+    public bool TryActivateArtifact(EntityUid uid, EntityUid? user = null, ArtifactComponent? component = null)
     {
-        if (!Resolve(uid, ref component, logMissing))
+        if (!Resolve(uid, ref component))
             return false;
 
         // check if artifact is under suppression field
@@ -173,7 +173,6 @@ public sealed partial class ArtifactSystem : EntitySystem
         if (component.CurrentNodeId == null)
             return;
 
-        _audio.PlayPvs(component.ActivationSound, uid);
         component.LastActivationTime = _gameTiming.CurTime;
 
         var ev = new ArtifactActivatedEvent
@@ -185,14 +184,13 @@ public sealed partial class ArtifactSystem : EntitySystem
         var currentNode = GetNodeFromId(component.CurrentNodeId.Value, component);
 
         currentNode.Triggered = true;
-        if (currentNode.Edges.Count == 0)
-            return;
-
-        var newNode = GetNewNode(uid, component);
-        if (newNode == null)
-            return;
-
-        EnterNode(uid, ref newNode, component);
+        if (currentNode.Edges.Any())
+        {
+            var newNode = GetNewNode(uid, component);
+            if (newNode == null)
+                return;
+            EnterNode(uid, ref newNode, component);
+        }
     }
 
     private ArtifactNode? GetNewNode(EntityUid uid, ArtifactComponent component)
@@ -203,39 +201,38 @@ public sealed partial class ArtifactSystem : EntitySystem
         var currentNode = GetNodeFromId(component.CurrentNodeId.Value, component);
 
         var allNodes = currentNode.Edges;
-        Log.Debug($"our node: {currentNode.Id}");
-        Log.Debug($"other nodes: {string.Join(", ", allNodes)}");
+        _sawmill.Debug($"our node: {currentNode.Id}");
+        _sawmill.Debug($"other nodes: {string.Join(", ", allNodes)}");
 
         if (TryComp<BiasedArtifactComponent>(uid, out var bias) &&
             TryComp<TraversalDistorterComponent>(bias.Provider, out var trav) &&
+            _random.Prob(trav.BiasChance) &&
             this.IsPowered(bias.Provider, EntityManager))
         {
             switch (trav.BiasDirection)
             {
-                case BiasDirection.Up:
-                    var upNodes = allNodes.Where(x => GetNodeFromId(x, component).Depth < currentNode.Depth).ToHashSet();
-                    if (upNodes.Count != 0)
-                        allNodes = upNodes;
+                case BiasDirection.In:
+                    var foo = allNodes.Where(x => GetNodeFromId(x, component).Depth < currentNode.Depth).ToHashSet();
+                    if (foo.Any())
+                        allNodes = foo;
                     break;
-                case BiasDirection.Down:
-                    var downNodes = allNodes.Where(x => GetNodeFromId(x, component).Depth > currentNode.Depth).ToHashSet();
-                    if (downNodes.Count != 0)
-                        allNodes = downNodes;
+                case BiasDirection.Out:
+                    var bar = allNodes.Where(x => GetNodeFromId(x, component).Depth > currentNode.Depth).ToHashSet();
+                    if (bar.Any())
+                        allNodes = bar;
                     break;
             }
         }
 
         var undiscoveredNodes = allNodes.Where(x => !GetNodeFromId(x, component).Discovered).ToList();
-        Log.Debug($"Undiscovered nodes: {string.Join(", ", undiscoveredNodes)}");
+        _sawmill.Debug($"Undiscovered nodes: {string.Join(", ", undiscoveredNodes)}");
         var newNode = _random.Pick(allNodes);
-
-        if (undiscoveredNodes.Count != 0 && _random.Prob(0.75f))
+        if (undiscoveredNodes.Any() && _random.Prob(0.75f))
         {
             newNode = _random.Pick(undiscoveredNodes);
         }
 
-        Log.Debug($"Going to node {newNode}");
-
+        _sawmill.Debug($"Going to node {newNode}");
         return GetNodeFromId(newNode, component);
     }
 
@@ -295,5 +292,20 @@ public sealed partial class ArtifactSystem : EntitySystem
     public ArtifactNode GetRootNode(List<ArtifactNode> allNodes)
     {
         return allNodes.First(n => n.Depth == 0);
+    }
+
+    /// <summary>
+    /// Make shit go ape on round-end
+    /// </summary>
+    private void OnRoundEnd(RoundEndTextAppendEvent ev)
+    {
+        return; // Corvax: No fun allowed
+        var query = EntityQueryEnumerator<ArtifactComponent>();
+        while (query.MoveNext(out var ent, out var artifactComp))
+        {
+            artifactComp.CooldownTime = TimeSpan.Zero;
+            var timerTrigger = EnsureComp<ArtifactTimerTriggerComponent>(ent);
+            timerTrigger.ActivationRate = TimeSpan.FromSeconds(0.5); //HAHAHAHAHAHAHAHAHAH -emo
+        }
     }
 }

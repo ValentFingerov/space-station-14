@@ -2,9 +2,10 @@
   name: books bag
   id: BooksBag
   parent: BaseStorageItem
-  description: A refined bag to carry your own library.
+  description: A refined bag to carry your own library
   components:
     - type: Sprite
+      netsync: false
       sprite: Objects/Specific/Library/Equipment/books_bag.rsi
       state: icon
     - type: Clothing
@@ -13,18 +14,11 @@
       slots:
         - belt
     - type: Item
-      size: Ginormous
+      size: 151
     - type: Storage
-      grid:
-      - 0,0,7,3
+      capacity: 150
       quickInsert: true
       areaInsert: true
       whitelist:
         tags:
           - Book
-          - Dice
-          - Document
-          - Figurine
-          - TabletopBoard
-          - Write
-    - type: Dumpable

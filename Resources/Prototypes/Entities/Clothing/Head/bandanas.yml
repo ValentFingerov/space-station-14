@@ -1,80 +1,87 @@
 - type: entity
-  parent: [ClothingHeadBaseButcherable, BaseFoldable]
-  id: ClothingHeadBandBase
-  abstract: true
-  components:
-  - type: Foldable
-    folded: true
-  - type: Mask
-    isToggled: true
-    enabled: false
-    disableOnFolded: true
-  - type: IngestionBlocker
-    enabled: false
-  - type: IdentityBlocker
-    enabled: false
-    coverage: MOUTH
-  - type: Sprite # needed for vendor inventory icons
-    layers:
-    - state: icon
-      map: ["foldedLayer"]
-      visible: true
-    - state: icon_mask
-      map: [ "unfoldedLayer" ]
-      visible: false
-  - type: HideLayerClothing # needed since head bandana inherits from mask bandana
-    slots: []
-  - type: Tag
-    tags:
-    - Bandana
-    - ClothMade
-
-- type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandBlack]
-  id: ClothingHeadBandBlack
+  parent: ClothingHeadBaseButcherable
+  id: HatBandBlack
   name: black bandana
+  description: A black bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/black.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/black.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandBlue]
-  id: ClothingHeadBandBlue
+  parent: ClothingHeadBaseButcherable
+  id: HatBandBlue
   name: blue bandana
+  description: A blue bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/blue.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/blue.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandBotany]
-  id: ClothingHeadBandBotany
+  parent: ClothingHeadBaseButcherable
+  id: HatBandBotany
   name: botany bandana
+  description: A botany bandana to make you look cool, made from natural fibers.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/botany.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/botany.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandGold]
-  id: ClothingHeadBandGold
+  parent: ClothingHeadBaseButcherable
+  id: HatBandGold
   name: gold bandana
+  description: A gold bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/gold.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/gold.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandGreen]
-  id: ClothingHeadBandGreen
+  parent: ClothingHeadBaseButcherable
+  id: HatBandGreen
   name: green bandana
+  description: A green bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/green.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/green.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandGrey]
-  id: ClothingHeadBandGrey
+  parent: ClothingHeadBaseButcherable
+  id: HatBandGrey
   name: grey bandana
+  description: A grey bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/grey.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/grey.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandRed]
-  id: ClothingHeadBandRed
+  parent: ClothingHeadBaseButcherable
+  id: HatBandRed
   name: red bandana
+  description: A red bandana to make you look cool.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/red.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/red.rsi
 
 - type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandSkull]
-  id: ClothingHeadBandSkull
+  parent: ClothingHeadBaseButcherable
+  id: HatBandSkull
   name: skull bandana
-
-- type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandMerc]
-  id: ClothingHeadBandMerc
-  name: mercenary bandana
-
-- type: entity
-  parent: [ClothingHeadBandBase, ClothingMaskBandBrown]
-  id: ClothingHeadBandBrown
-  name: brown bandana
+  description: A bandana with a skull to make you look even cooler.
+  components:
+  - type: Sprite
+    sprite: Clothing/Head/Bandanas/skull.rsi
+  - type: Clothing
+    sprite: Clothing/Head/Bandanas/skull.rsi

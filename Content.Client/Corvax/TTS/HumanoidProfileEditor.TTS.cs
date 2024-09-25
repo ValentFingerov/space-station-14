@@ -1,34 +1,42 @@
 ﻿using System.Linq;
+using Content.Client.Corvax.Sponsors;
 using Content.Client.Corvax.TTS;
-using Content.Client.Lobby;
-using Content.Corvax.Interfaces.Shared;
 using Content.Shared.Corvax.TTS;
 using Content.Shared.Preferences;
+using Robust.Shared.Random;
 
-namespace Content.Client.Lobby.UI;
+namespace Content.Client.Preferences.UI;
 
 public sealed partial class HumanoidProfileEditor
 {
-    private ISharedSponsorsManager? _sponsorsMgr;
-    private List<TTSVoicePrototype> _voiceList = new();
+    private TTSManager _ttsMgr = default!;
+    private TTSSystem _ttsSys = default!;
+    private List<TTSVoicePrototype> _voiceList = default!;
+    private readonly List<string> _sampleText = new()
+    {
+        "Съешь же ещё этих мягких французских булок, да выпей чаю.",
+        "Клоун, прекрати разбрасывать банановые кожурки офицерам под ноги!",
+        "Капитан, вы уверены что хотите назначить клоуна на должность главы персонала?",
+        "Эс Бэ! Тут человек в сером костюме, с тулбоксом и в маске! Помогите!!"
+    };
 
     private void InitializeVoice()
     {
+        _ttsMgr = IoCManager.Resolve<TTSManager>();
+        _ttsSys = _entMan.System<TTSSystem>();
         _voiceList = _prototypeManager
             .EnumeratePrototypes<TTSVoicePrototype>()
             .Where(o => o.RoundStart)
             .OrderBy(o => Loc.GetString(o.Name))
             .ToList();
 
-        VoiceButton.OnItemSelected += args =>
+        _voiceButton.OnItemSelected += args =>
         {
-            VoiceButton.SelectId(args.Id);
+            _voiceButton.SelectId(args.Id);
             SetVoice(_voiceList[args.Id].ID);
         };
-
-        VoicePlayButton.OnPressed += _ => PlayPreviewTTS();
-
-        IoCManager.Instance!.TryResolveType(out _sponsorsMgr);
+            
+        _voicePlayButton.OnPressed += _ => { PlayTTS(); };
     }
 
     private void UpdateTTSVoicesControls()
@@ -36,7 +44,7 @@ public sealed partial class HumanoidProfileEditor
         if (Profile is null)
             return;
 
-        VoiceButton.Clear();
+        _voiceButton.Clear();
 
         var firstVoiceChoiceId = 1;
         for (var i = 0; i < _voiceList.Count; i++)
@@ -44,35 +52,35 @@ public sealed partial class HumanoidProfileEditor
             var voice = _voiceList[i];
             if (!HumanoidCharacterProfile.CanHaveVoice(voice, Profile.Sex))
                 continue;
-
+                
             var name = Loc.GetString(voice.Name);
-            VoiceButton.AddItem(name, i);
+            _voiceButton.AddItem(name, i);
 
             if (firstVoiceChoiceId == 1)
                 firstVoiceChoiceId = i;
 
-            if (_sponsorsMgr is null)
-                continue;
-            if (voice.SponsorOnly && _sponsorsMgr != null &&
-                !_sponsorsMgr.GetClientPrototypes().Contains(voice.ID))
+            if (voice.SponsorOnly &&
+                IoCManager.Resolve<SponsorsManager>().TryGetInfo(out var sponsor) &&
+                !sponsor.AllowedMarkings.Contains(voice.ID))
             {
-                VoiceButton.SetItemDisabled(VoiceButton.GetIdx(i), true);
+                _voiceButton.SetItemDisabled(_voiceButton.GetIdx(i), true);
             }
         }
 
         var voiceChoiceId = _voiceList.FindIndex(x => x.ID == Profile.Voice);
-        if (!VoiceButton.TrySelectId(voiceChoiceId) &&
-            VoiceButton.TrySelectId(firstVoiceChoiceId))
+        if (!_voiceButton.TrySelectId(voiceChoiceId) &&
+            _voiceButton.TrySelectId(firstVoiceChoiceId))
         {
             SetVoice(_voiceList[firstVoiceChoiceId].ID);
         }
     }
 
-    private void PlayPreviewTTS()
+    private void PlayTTS()
     {
-        if (Profile is null)
+        if (_previewDummy is null || Profile is null)
             return;
 
-        _entManager.System<TTSSystem>().RequestPreviewTTS(Profile.Voice);
+        _ttsSys.StopAllStreams();
+        _ttsMgr.RequestTTS(_previewDummy.Value, _random.Pick(_sampleText), Profile.Voice);
     }
 }

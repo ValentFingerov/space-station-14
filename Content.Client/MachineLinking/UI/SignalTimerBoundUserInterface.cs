@@ -1,16 +1,16 @@
 using Content.Shared.MachineLinking;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 using Robust.Shared.Timing;
 
 namespace Content.Client.MachineLinking.UI;
 
 public sealed class SignalTimerBoundUserInterface : BoundUserInterface
 {
-    [ViewVariables]
+    [Dependency] private readonly IGameTiming _gameTiming = default!;
+
     private SignalTimerWindow? _window;
 
-    public SignalTimerBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    public SignalTimerBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
     {
     }
 
@@ -18,14 +18,19 @@ public sealed class SignalTimerBoundUserInterface : BoundUserInterface
     {
         base.Open();
 
-        _window = this.CreateWindow<SignalTimerWindow>();
-        _window.OnStartTimer += StartTimer;
+        _window = new SignalTimerWindow(this);
+
+        if (State != null)
+            UpdateState(State);
+
+        _window.OpenCentered();
+        _window.OnClose += Close;
         _window.OnCurrentTextChanged += OnTextChanged;
         _window.OnCurrentDelayMinutesChanged += OnDelayChanged;
         _window.OnCurrentDelaySecondsChanged += OnDelayChanged;
     }
 
-    public void StartTimer()
+    public void OnStartTimer()
     {
         SendMessage(new SignalTimerStartMessage());
     }
@@ -40,6 +45,11 @@ public sealed class SignalTimerBoundUserInterface : BoundUserInterface
         if (_window == null)
             return;
         SendMessage(new SignalTimerDelayChangedMessage(_window.GetDelay()));
+    }
+
+    public TimeSpan GetCurrentTime()
+    {
+        return _gameTiming.CurTime;
     }
 
     /// <summary>
@@ -60,5 +70,12 @@ public sealed class SignalTimerBoundUserInterface : BoundUserInterface
         _window.SetTriggerTime(cast.TriggerTime);
         _window.SetTimerStarted(cast.TimerStarted);
         _window.SetHasAccess(cast.HasAccess);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (!disposing) return;
+        _window?.Dispose();
     }
 }

@@ -14,18 +14,26 @@ public abstract class SharedDiceSystem : EntitySystem
         SubscribeLocalEvent<DiceComponent, UseInHandEvent>(OnUseInHand);
         SubscribeLocalEvent<DiceComponent, LandEvent>(OnLand);
         SubscribeLocalEvent<DiceComponent, ExaminedEvent>(OnExamined);
-        SubscribeLocalEvent<DiceComponent, AfterAutoHandleStateEvent>(OnDiceAfterHandleState);
+        SubscribeLocalEvent<DiceComponent, ComponentGetState>(OnGetState);
+        SubscribeLocalEvent<DiceComponent, ComponentHandleState>(OnHandleState);
     }
 
-    private void OnDiceAfterHandleState(EntityUid uid, DiceComponent component, ref AfterAutoHandleStateEvent args)
+    private void OnHandleState(EntityUid uid, DiceComponent component, ref ComponentHandleState args)
     {
+        if (args.Current is DiceComponent.DiceState state)
+            component.CurrentValue = state.CurrentValue;
+
         UpdateVisuals(uid, component);
+    }
+
+    private void OnGetState(EntityUid uid, DiceComponent component, ref ComponentGetState args)
+    {
+        args.State = new DiceComponent.DiceState(component.CurrentValue);
     }
 
     private void OnUseInHand(EntityUid uid, DiceComponent component, UseInHandEvent args)
     {
-        if (args.Handled)
-            return;
+        if (args.Handled) return;
 
         args.Handled = true;
         Roll(uid, component);
@@ -39,12 +47,8 @@ public abstract class SharedDiceSystem : EntitySystem
     private void OnExamined(EntityUid uid, DiceComponent dice, ExaminedEvent args)
     {
         //No details check, since the sprite updates to show the side.
-        using (args.PushGroup(nameof(DiceComponent)))
-        {
-            args.PushMarkup(Loc.GetString("dice-component-on-examine-message-part-1", ("sidesAmount", dice.Sides)));
-            args.PushMarkup(Loc.GetString("dice-component-on-examine-message-part-2",
-                ("currentSide", dice.CurrentValue)));
-        }
+        args.PushMarkup(Loc.GetString("dice-component-on-examine-message-part-1", ("sidesAmount", dice.Sides)));
+        args.PushMarkup(Loc.GetString("dice-component-on-examine-message-part-2", ("currentSide", dice.CurrentValue)));
     }
 
     public void SetCurrentSide(EntityUid uid, int side, DiceComponent? die = null)
@@ -54,12 +58,12 @@ public abstract class SharedDiceSystem : EntitySystem
 
         if (side < 1 || side > die.Sides)
         {
-            Log.Error($"Attempted to set die {ToPrettyString(uid)} to an invalid side ({side}).");
+            Logger.Error($"Attempted to set die {ToPrettyString(uid)} to an invalid side ({side}).");
             return;
         }
 
         die.CurrentValue = (side - die.Offset) * die.Multiplier;
-        Dirty(uid, die);
+        Dirty(die);
         UpdateVisuals(uid, die);
     }
 
@@ -70,7 +74,7 @@ public abstract class SharedDiceSystem : EntitySystem
 
         if (value % die.Multiplier != 0 || value/ die.Multiplier + die.Offset < 1)
         {
-            Log.Error($"Attempted to set die {ToPrettyString(uid)} to an invalid value ({value}).");
+            Logger.Error($"Attempted to set die {ToPrettyString(uid)} to an invalid value ({value}).");
             return;
         }
 

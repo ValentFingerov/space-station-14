@@ -11,16 +11,9 @@ namespace Content.Shared.Nutrition.Components
     }
 
     [Serializable, NetSerializable]
-    public enum OpenableVisuals : byte
+    public enum DrinkCanStateVisual : byte
     {
-        Opened,
-        Layer
-    }
-
-    [Serializable, NetSerializable]
-    public enum SealableVisuals : byte
-    {
-        Sealed,
-        Layer,
+        Closed,
+        Opened
     }
 }

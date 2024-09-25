@@ -20,19 +20,6 @@
         - CrateSalvageEquipment
         - CrateMaterialSteel
         - CrateMaterialGlass
-        - CrateServiceJanitorialSupplies
-        - CrateHydroponicsSeedsMedicinal
-        - CrateEmergencyInternals
-        - CrateFoodMRE
-        - CrateMaterialTextiles
-        - CrateMedicalSupplies
-        - CrateEngineeringCableBulk
-        - CrateMaterialCardboard
-        - CrateServiceBooks
-        - CrateServiceSmokeables
-        - CrateTrashCartFilled
-        - ClosetMaintenanceFilledRandom
-        - ClosetEmergencyFilledRandom
       rareChance: 0.4
       prototypes:
         - CrateSalvageAssortedGoodies
@@ -40,21 +27,66 @@
       offset: 0.0
 
 - type: entity
-  name: salvage loot spawner
-  id: SalvageLootSpawner
+  name: Salvage Canister Spawner
+  id: SalvageCanisterSpawner
   parent: MarkerBase
   components:
     - type: Sprite
       layers:
         - state: red
-        - sprite: Objects/Weapons/Melee/crusher.rsi
-          state: icon
+        - sprite: Structures/Storage/canister.rsi
+          state: blue
+    - type: RandomSpawner
+      rarePrototypes:
+        - PlasmaCanister
+      rareChance: 0.03
+      prototypes:
+        - AirCanister
+        - NitrogenCanister
+        - OxygenCanister
+        - CarbonDioxideCanister
+        - WaterVaporCanister
+      chance: 0.9
+      offset: 0.0
+
+- type: entity
+  name: Salvage T2 Machine Parts Spawner
+  id: SalvagePartsT2Spawner
+  parent: MarkerBase
+  components:
+    - type: Sprite
+      layers:
+        - state: red
+        - sprite: Objects/Misc/stock_parts.rsi
+          state: advanced_matter_bin
     - type: RandomSpawner
       prototypes:
-      - WeaponCrusher
-      - WeaponCrusherDagger
-      - WeaponCrusherGlaive
-      - MiningDrill
+        - AdvancedCapacitorStockPart
+        - NanoManipulatorStockPart
+        - AdvancedMatterBinStockPart
+      offset: 0.0
+
+- type: entity
+  name: Salvage T3/4 Machine Parts Spawner
+  id: SalvagePartsT3Spawner
+  parent: MarkerBase
+  components:
+    - type: Sprite
+      layers:
+        - state: red
+        - sprite: Objects/Misc/stock_parts.rsi
+          state: super_matter_bin
+    - type: RandomSpawner
+      rarePrototypes:
+        - QuadraticCapacitorStockPart
+        - FemtoManipulatorStockPart
+        - BluespaceMatterBinStockPart
+      rareChance: 0.05
+      prototypes:
+        - SuperCapacitorStockPart
+        - PicoManipulatorStockPart
+        - SuperMatterBinStockPart
+      chance: 0.95
       offset: 0.0
 
 - type: entity
@@ -69,9 +101,6 @@
         - sprite: Mobs/Aliens/Carps/space.rsi
           state: icon
     - type: RandomSpawner
-      rarePrototypes:
-      - MobSharkSalvage
-      rareChance: 0.2
       prototypes:
         - MobCarpSalvage
         - MobCarpSalvage
@@ -121,9 +150,6 @@
   suffix: 75
   components:
   - type: RandomSpawner
-    rarePrototypes:
-    - MobSharkSalvage
-    rareChance: 0.2
     prototypes:
     - MobCarpSalvage
     - MobCarpSalvage
@@ -160,48 +186,6 @@
   - type: Sprite
     layers:
     - state: green
-    - state: spacespider
-      sprite: Mobs/Animals/spacespider.rsi
   - type: ConditionalSpawner
     prototypes:
     - MobSpiderSpaceSalvage
-
-- type: entity
-  name: Salvage Space Cobra Spawner
-  id: SpawnMobCobraSalvage
-  parent: MarkerBase
-  components:
-  - type: Sprite
-    layers:
-      - state: green
-      - state: spacecobra
-        sprite: Mobs/Animals/spacecobra.rsi
-  - type: ConditionalSpawner
-    prototypes:
-    - MobCobraSpaceSalvage
-
-- type: entity
-  name: Salvage Flesh Spawner
-  id: SalvageFleshSpawner
-  parent: SalvageMobSpawner
-  suffix: 100
-  components:
-    - type: Sprite
-      layers:
-        - state: red
-        - sprite: Mobs/Aliens/flesh.rsi
-          state: jared
-    - type: RandomSpawner
-      rarePrototypes:
-      - MobSharkSalvage
-      rareChance: 0
-      prototypes:
-      - MobFleshJaredSalvage
-      - MobFleshGolemSalvage
-      - MobFleshGolemSalvage
-      - MobFleshClampSalvage
-      - MobFleshClampSalvage
-      - MobFleshLoverSalvage
-      - MobFleshLoverSalvage
-      chance: 1
-      offset: 0.2

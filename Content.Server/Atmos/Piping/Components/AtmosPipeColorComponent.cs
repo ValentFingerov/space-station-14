@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 namespace Content.Server.Atmos.Piping.Components
 {
     [RegisterComponent]
-    public sealed partial class AtmosPipeColorComponent : Component
+    public sealed class AtmosPipeColorComponent : Component
     {
         [DataField("color")]
         public Color Color { get; set; } = Color.White;
@@ -13,7 +13,7 @@ namespace Content.Server.Atmos.Piping.Components
         public Color ColorVV
         {
             get => Color;
-            set => IoCManager.Resolve<IEntityManager>().System<AtmosPipeColorSystem>().SetColor(Owner, this, value);
+            set => EntitySystem.Get<AtmosPipeColorSystem>().SetColor(Owner, this, value);
         }
     }
 }

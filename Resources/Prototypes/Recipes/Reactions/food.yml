@@ -14,21 +14,6 @@
       entity: FoodCheese
 
 - type: reaction
-  id: ChevreCurdling
-  impact: low
-  quantized: true
-  conserveEnergy: false
-  reactants:
-    MilkGoat:
-      amount: 10 #Batches of chevre are traditionally made in far lower quantities than that of milk
-    Enzyme:
-      amount: 5
-      catalyst: true
-  effects:
-    - !type:CreateEntityReactionEffect
-      entity: FoodChevre
-
-- type: reaction
   id: CreateDough
   impact: Low
   quantized: true
@@ -59,36 +44,6 @@
       entity: FoodDoughCornmeal
 
 - type: reaction
-  id: CreateTortillaDough
-  impact: Low
-  quantized: true
-  conserveEnergy: false
-  reactants:
-    Cornmeal:
-      amount: 15
-    Water:
-      amount: 10
-  effects:
-    - !type:CreateEntityReactionEffect
-      entity: FoodDoughTortilla
-
-- type: reaction
-  id: CreateDoughCotton
-  impact: Low
-  quantized: true
-  conserveEnergy: false
-  reactants:
-    Fiber:
-      amount: 10
-    Flour:
-      amount: 5
-    Water:
-      amount: 10
-  effects:
-  - !type:CreateEntityReactionEffect
-    entity: FoodDoughCotton
-
-- type: reaction
   id: CreateCakeBatter
   impact: Low
   quantized: true
@@ -99,8 +54,6 @@
     Egg:
       amount: 12
     Sugar:
-      amount: 5
-    Milk:
       amount: 5
   effects:
     - !type:CreateEntityReactionEffect
@@ -166,42 +119,9 @@
       amount: 30
     Enzyme:
       amount: 5
-      catalyst: true
   effects:
     - !type:CreateEntityReactionEffect
       entity: FoodTofu
-
-- type: reaction
-  id: CreateMeatball
-  impact: Low
-  quantized: true
-  conserveEnergy: false
-  reactants:
-    UncookedAnimalProteins:
-      amount: 5
-    Flour:
-      amount: 5
-    Egg:
-      amount: 6
-  effects:
-    - !type:CreateEntityReactionEffect
-      entity: FoodMeatMeatball
-
-- type: reaction
-  id: CreateChocolate
-  impact: Low
-  quantized: true
-  conserveEnergy: false
-  reactants:
-    CocoaPowder:
-      amount: 4
-    Milk:
-      amount: 2
-    Sugar:
-      amount: 2
-  effects:
-    - !type:CreateEntityReactionEffect
-      entity: FoodSnackChocolateBar
 
 # Condiments
 
@@ -209,11 +129,11 @@
   id: CookingKetchup
   reactants:
     JuiceTomato:
-      amount: 2
+      amount: 10
     Sugar:
-      amount: 1
+      amount: 5
   products:
-    Ketchup: 3
+    Ketchup: 15
 
 - type: reaction
   id: CookingMayoVinegar
@@ -239,208 +159,84 @@
   products:
     Mayo: 15
 
-# Gas not included
-- type: reaction
-  id: CookingMustard
-  reactants:
-    Bleach:
-      amount: 1
-    Ammonia:
-      amount: 1
-  products:
-    Mustard: 2
-
 - type: reaction
   id: CookingKetchunaise
   reactants:
     Ketchup:
-      amount: 1
+      amount: 5
     Mayo:
-      amount: 1
+      amount: 5
   products:
-    Ketchunaise: 2
+    Ketchunaise: 10
 
 - type: reaction
   id: CookingBbqSauce
   reactants:
     Ketchup:
-      amount: 1
+      amount: 5
     Vinegar:
-      amount: 1
+      amount: 5
     Sugar:
-      amount: 1
+      amount: 5
   products:
-    BbqSauce: 3
+    BbqSauce: 15
 
 - type: reaction
   id: CookingHotsauce
   reactants:
     JuiceTomato:
-      amount: 1
+      amount: 5
     TableSalt:
-      amount: 1
+      amount: 5
     CapsaicinOil:
-      amount: 1
+      amount: 5
   products:
-    Hotsauce: 3
+    Hotsauce: 15
 
 - type: reaction
   id: CookingVinegar
   reactants:
     Ethanol:
-      amount: 1
+      amount: 5
     Oxygen:
-      amount: 1
+      amount: 5
   products:
-    Vinegar: 2
+    Vinegar: 10
 
 - type: reaction
   id: CookingSoysauce
   reactants:
     MilkSoy:
-      amount: 2
+      amount: 10
     SulfuricAcid:
-      amount: 1
+      amount: 5
   products:
-    Soysauce: 3
+    Soysauce: 15
 
 - type: reaction
   id: CookingVinaigrette
   reactants:
     Vinegar:
-      amount: 1
+      amount: 5
     OilOlive:
-      amount: 1
+      amount: 5
     Blackpepper:
-      amount: 1
-  products:
-    Vinaigrette: 3
-
-- type: reaction
-  id: BananaBreakdown
-  source: true
-  requiredMixerCategories:
-  - Centrifuge
-  reactants:
-    JuiceBanana:
-      amount: 10
-  products:
-    Sugar: 5
-    Potassium: 5
-
-- type: reaction
-  id: OilBreakdown
-  requiredMixerCategories:
-  - Centrifuge
-  reactants:
-    Oil:
-      amount: 10
-  products:
-    Fat: 6
-    Water: 3
-    Protein: 1 #water & protein represent aqueous proteins
-
-#- type: reaction
-#  id: SugarBreakdown
-#  source: true
-#  minTemp: 520
-#  reactants:
-#    Sugar:
-#      amount: 4
-#  products:
-#    Carbon: 1
-#    Oxygen: 1
-#    Hydrogen: 2
-
-- type: reaction
-  id: AllicinBreakdown
-  source: true
-  requiredMixerCategories:
-  - Centrifuge
-  reactants:
-    Allicin:
-      amount: 4
-  products:
-    Sulfur: 2
-    Carbon: 1
-    Water: 1
-
-- type: reaction
-  id: NutrimentBreakdown
-  source: true
-  requiredMixerCategories:
-  - Centrifuge
-  reactants:
-    Nutriment:
       amount: 5
   products:
-    Water: 2
-    Carbon: 2
-    Sugar: 1
+    Vinaigrette: 15
 
 - type: reaction
-  id: FatBreakdown
-  source: true
-  requiredMixerCategories:
-  - Electrolysis
-  reactants:
-    Fat:
-      amount: 15
-  products:
-    Carbon: 5
-    Hydrogen: 10
-    Oxygen: 1
-
-# Proteins are hydrocarbons
-- type: reaction
-  id: UncookedAnimalProteinBreakdown
-  source: true
-  requiredMixerCategories:
-  - Electrolysis
+  id: CreateMeatball
+  impact: Low
+  quantized: true
+  conserveEnergy: false
   reactants:
     UncookedAnimalProteins:
-      amount: 10
-  products:
-    Carbon: 2
-    Hydrogen: 4
-    Phosphorus: 3
-    Oxygen: 1
-
-- type: reaction
-  id: ProteinBreakdown
-  source: true
-  requiredMixerCategories:
-  - Electrolysis
-  reactants:
-    Protein:
-      amount: 10
-  products:
-    Carbon: 2
-    Hydrogen: 4
-    Phosphorus: 3
-    Oxygen: 1
-
-# Vitamin = Healthy = Green = Nitrogenous
-- type: reaction
-  id: VitaminBreakdown
-  source: true
-  requiredMixerCategories:
-  - Centrifuge
-  reactants:
-    Vitamin:
-      amount: 4
-  products:
-    Carbon: 1
-    Water: 1
-    Nitrogen: 2
-
-- type: reaction
-  id: ReduceMilk #makes Cream renewable
-  minTemp: 320
-  requiredMixerCategories:
-  - Shake
-  reactants:
-   Milk:
-    amount: 2
-  products:
-   Cream: 1
+      amount: 5
+    Flour:
+      amount: 5
+    Egg:
+      amount: 6
+  effects:
+    - !type:CreateEntityReactionEffect
+      entity: FoodMeatMeatball

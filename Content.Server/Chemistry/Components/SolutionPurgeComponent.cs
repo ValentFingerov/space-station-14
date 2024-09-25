@@ -9,9 +9,9 @@ namespace Content.Server.Chemistry.Components;
 /// <summary>
 /// Passively decreases a solution's quantity of reagent(s).
 /// </summary>
-[RegisterComponent, AutoGenerateComponentPause]
+[RegisterComponent]
 [Access(typeof(SolutionPurgeSystem))]
-public sealed partial class SolutionPurgeComponent : Component
+public sealed class SolutionPurgeComponent : Component
 {
     /// <summary>
     /// The name of the solution to detract from.
@@ -42,6 +42,5 @@ public sealed partial class SolutionPurgeComponent : Component
     /// The time when the next purge will occur.
     /// </summary>
     [DataField("nextPurgeTime", customTypeSerializer: typeof(TimeOffsetSerializer)), ViewVariables(VVAccess.ReadWrite)]
-    [AutoPausedField]
     public TimeSpan NextPurgeTime = TimeSpan.FromSeconds(0);
 }

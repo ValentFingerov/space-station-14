@@ -1,5 +1,7 @@
+using System.Threading.Tasks;
 using Content.IntegrationTests.Tests.Interaction;
 using Content.Shared.Placeable;
+using NUnit.Framework;
 
 namespace Content.IntegrationTests.Tests.Construction.Interaction;
 
@@ -13,9 +15,9 @@ public sealed class PlaceableDeconstruction : InteractionTest
     {
         await StartDeconstruction("Table");
         Assert.That(Comp<PlaceableSurfaceComponent>().IsPlaceable);
-        await InteractUsing(Wrench);
+        await Interact(Wrench);
         AssertPrototype("TableFrame");
-        await InteractUsing(Wrench);
+        await Interact(Wrench);
         AssertDeleted();
         await AssertEntityLookup((Steel, 1), (Rod, 2));
     }

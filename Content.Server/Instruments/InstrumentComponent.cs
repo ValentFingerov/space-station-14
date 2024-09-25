@@ -1,28 +1,37 @@
 using Content.Server.UserInterface;
 using Content.Shared.Instruments;
-using Robust.Shared.Player;
-using ActivatableUIComponent = Content.Shared.UserInterface.ActivatableUIComponent;
+using Robust.Server.GameObjects;
+using Robust.Server.Player;
 
 namespace Content.Server.Instruments;
 
-[RegisterComponent]
-public sealed partial class InstrumentComponent : SharedInstrumentComponent
+[RegisterComponent, ComponentReference(typeof(SharedInstrumentComponent))]
+public sealed class InstrumentComponent : SharedInstrumentComponent
 {
     [Dependency] private readonly IEntityManager _entMan = default!;
 
-    [ViewVariables] public float Timer = 0f;
-    [ViewVariables] public int BatchesDropped = 0;
-    [ViewVariables] public int LaggedBatches = 0;
-    [ViewVariables] public int MidiEventCount = 0;
-    [ViewVariables] public uint LastSequencerTick = 0;
+    [ViewVariables]
+    public float Timer = 0f;
+
+    [ViewVariables]
+    public int BatchesDropped = 0;
+
+    [ViewVariables]
+    public int LaggedBatches = 0;
+
+    [ViewVariables]
+    public int MidiEventCount = 0;
+
+    [ViewVariables]
+    public uint LastSequencerTick = 0;
 
     // TODO Instruments: Make this ECS
-    public EntityUid? InstrumentPlayer =>
+    public IPlayerSession? InstrumentPlayer =>
         _entMan.GetComponentOrNull<ActivatableUIComponent>(Owner)?.CurrentSingleUser
-        ?? _entMan.GetComponentOrNull<ActorComponent>(Owner)?.PlayerSession.AttachedEntity;
+        ?? _entMan.GetComponentOrNull<ActorComponent>(Owner)?.PlayerSession;
+
+    [ViewVariables] public BoundUserInterface? UserInterface => Owner.GetUIOrNull(InstrumentUiKey.Key);
 }
 
 [RegisterComponent]
-public sealed partial class ActiveInstrumentComponent : Component
-{
-}
+public sealed class ActiveInstrumentComponent : Component {}

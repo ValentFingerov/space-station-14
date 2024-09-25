@@ -1,4 +1,3 @@
-using System.Numerics;
 using Content.Shared.NPC;
 
 namespace Content.Server.NPC.Pathfinding;
@@ -17,10 +16,23 @@ public sealed partial class PathfindingSystem
         return dx + dy;
     }
 
+    public float ManhattanDistance(Vector2i start, Vector2i end)
+    {
+        var distance = end - start;
+        return Math.Abs(distance.X) + Math.Abs(distance.Y);
+    }
+
     public float OctileDistance(PathPoly start, PathPoly end)
     {
         var (dx, dy) = GetDiff(start, end);
         return dx + dy + (1.41f - 2) * Math.Min(dx, dy);
+    }
+
+    public float OctileDistance(Vector2i start, Vector2i end)
+    {
+        var diff = start - end;
+        var ab = Vector2.Abs(diff);
+        return ab.X + ab.Y + (1.41f - 2) * Math.Min(ab.X, ab.Y);
     }
 
     private Vector2 GetDiff(PathPoly start, PathPoly end)
@@ -30,13 +42,13 @@ public sealed partial class PathfindingSystem
 
         if (end.GraphUid != start.GraphUid)
         {
-            if (!TryComp(start.GraphUid, out TransformComponent? startXform) ||
-                !TryComp(end.GraphUid, out TransformComponent? endXform))
+            if (!TryComp<TransformComponent>(start.GraphUid, out var startXform) ||
+                !TryComp<TransformComponent>(end.GraphUid, out var endXform))
             {
                 return Vector2.Zero;
             }
 
-            endPos = Vector2.Transform(Vector2.Transform(endPos, endXform.WorldMatrix), startXform.InvWorldMatrix);
+            endPos = startXform.InvWorldMatrix.Transform(endXform.WorldMatrix.Transform(endPos));
         }
 
         // TODO: Numerics when we changeover.

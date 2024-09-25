@@ -55,11 +55,11 @@ marking-DionaPalmHead = Diona Palmhead (Leafs)
 marking-DionaRootHead-root = Diona Root (Roots)
 marking-DionaRootHead = Diona Root (Roots)
 
-marking-DionaRoseHead-rose = Diona Rose (Flower)
-marking-DionaRoseHead = Diona Rose (Flower)
+marking-DionaRoseHead-rose = Diona Rose (Flwoer)
+marking-DionaRoseHead = Diona Rose (Flwoer)
 
-marking-DionaRoseyHead-rosey = Diona Rosey (Flowers)
-marking-DionaRoseyHead = Diona Rosey (Flowers)
+marking-DionaRoseyHead-rosey = Diona Rosey (Flwoers)
+marking-DionaRoseyHead = Diona Rosey (Flwoers)
 
 marking-DionaShrubHeadTop-shrub = Diona Shrub (Thorns)
 marking-DionaShrubHeadTop = Diona Shrub (Thorns)
@@ -81,6 +81,3 @@ marking-DionaVinesHead = Diona Vines Short (Vines)
 
 marking-DionaWildflowerHead-wildflower = Diona Wild Flowers (Flowers)
 marking-DionaWildflowerHead = Diona Wild Flowers (Flowers)
-
-marking-DionaVineOverlay-overlay = Diona Body Vines
-marking-DionaVineOverlay = Diona Body Vines

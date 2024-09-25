@@ -1,10 +1,11 @@
 - type: entity
   id: EffectEmpPulse
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: TimedDespawn
     lifetime: 0.8
   - type: Sprite
+    netsync: false
     drawdepth: Effects
     noRot: true
     layers:
@@ -23,11 +24,12 @@
 
 - type: entity
   id: EffectEmpDisabled
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: TimedDespawn
     lifetime: 0.4
   - type: Sprite
+    netsync: false
     drawdepth: Effects
     noRot: true
     layers:

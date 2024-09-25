@@ -1,9 +1,11 @@
+using System;
+using System.Threading.Tasks;
 using Content.Server.GameTicking;
 using Content.Server.GameTicking.Commands;
 using Content.Shared.CCVar;
+using NUnit.Framework;
 using Robust.Shared.Configuration;
 using Robust.Shared.GameObjects;
-using Robust.Shared.IoC;
 using Robust.Shared.Timing;
 
 namespace Content.IntegrationTests.Tests.Commands
@@ -17,18 +19,14 @@ namespace Content.IntegrationTests.Tests.Commands
         [TestCase(false)]
         public async Task RestartRoundAfterStart(bool lobbyEnabled)
         {
-            await using var pair = await PoolManager.GetServerClient(new PoolSettings
-            {
-                DummyTicker = false,
-                Dirty = true
-            });
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings(){Dirty = true});
+            var server = pairTracker.Pair.Server;
 
             var configManager = server.ResolveDependency<IConfigurationManager>();
             var entityManager = server.ResolveDependency<IEntityManager>();
-            var gameTicker = entityManager.System<GameTicker>();
+            var gameTicker = entityManager.EntitySysManager.GetEntitySystem<GameTicker>();
 
-            await pair.RunTicksSync(5);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 5);
 
             GameTick tickBeforeRestart = default;
 
@@ -41,7 +39,8 @@ namespace Content.IntegrationTests.Tests.Commands
 
                 tickBeforeRestart = entityManager.CurrentTick;
 
-                gameTicker.RestartRound();
+                var command = new RestartRoundNowCommand();
+                command.Execute(null, string.Empty, Array.Empty<string>());
 
                 if (lobbyEnabled)
                 {
@@ -49,17 +48,17 @@ namespace Content.IntegrationTests.Tests.Commands
                 }
             });
 
-            await pair.RunTicksSync(15);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 15);
 
             await server.WaitAssertion(() =>
             {
                 var tickAfterRestart = entityManager.CurrentTick;
 
-                Assert.That(tickBeforeRestart, Is.LessThan(tickAfterRestart));
+                Assert.That(tickBeforeRestart < tickAfterRestart);
             });
 
-            await pair.RunTicksSync(5);
-            await pair.CleanReturnAsync();
+            await PoolManager.RunTicksSync(pairTracker.Pair, 5);
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

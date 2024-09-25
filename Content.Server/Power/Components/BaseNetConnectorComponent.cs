@@ -5,9 +5,6 @@ using Content.Server.NodeContainer.NodeGroups;
 
 namespace Content.Server.Power.Components
 {
-    // TODO find a way to just remove this or turn it into one component.
-    // Component interface queries require enumerating over ALL of an entities components.
-    // So BaseNetConnectorNodeGroup<TNetType> is slow as shit.
     public interface IBaseNetConnectorComponent<in TNetType>
     {
         public TNetType? Net { set; }
@@ -15,8 +12,7 @@ namespace Content.Server.Power.Components
         public string? NodeId { get; }
     }
 
-    public abstract partial class BaseNetConnectorComponent<TNetType> : Component, IBaseNetConnectorComponent<TNetType>
-        where TNetType : class
+    public abstract class BaseNetConnectorComponent<TNetType> : Component, IBaseNetConnectorComponent<TNetType>
     {
         [Dependency] private readonly IEntityManager _entMan = default!;
 
@@ -29,9 +25,26 @@ namespace Content.Server.Power.Components
         public TNetType? Net { get => _net; set => SetNet(value); }
         private TNetType? _net;
 
-        [ViewVariables] public bool NeedsNet => _net != null;
+        [ViewVariables]
+        private bool _needsNet => _net != null;
 
         [DataField("node")] public string? NodeId { get; set; }
+
+        protected override void Initialize()
+        {
+            base.Initialize();
+
+            if (_needsNet)
+            {
+                TryFindAndSetNet();
+            }
+        }
+
+        protected override void OnRemove()
+        {
+            ClearNet();
+            base.OnRemove();
+        }
 
         public void TryFindAndSetNet()
         {
@@ -44,10 +57,7 @@ namespace Content.Server.Power.Components
         public void ClearNet()
         {
             if (_net != null)
-            {
                 RemoveSelfFromNet(_net);
-                _net = null;
-            }
         }
 
         protected abstract void AddSelfToNet(TNetType net);
@@ -56,7 +66,7 @@ namespace Content.Server.Power.Components
 
         private bool TryFindNet([NotNullWhen(true)] out TNetType? foundNet)
         {
-            if (_entMan.TryGetComponent(Owner, out NodeContainerComponent? container))
+            if (_entMan.TryGetComponent<NodeContainerComponent?>(Owner, out var container))
             {
                 var compatibleNet = container.Nodes.Values
                     .Where(node => (NodeId == null || NodeId == node.Name) && node.NodeGroupID == (NodeGroupID) Voltage)

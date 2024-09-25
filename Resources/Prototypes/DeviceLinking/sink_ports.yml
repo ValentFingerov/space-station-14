@@ -79,46 +79,21 @@
   description: signal-port-description-artifact-analyzer-receiver
 
 - type: sinkPort
-  id: InputA
-  name: signal-port-name-logic-input-a
-  description: signal-port-description-logic-input-a
+  id: A1
+  name: "Input A1"
+  description: "Input A1"
 
 - type: sinkPort
-  id: InputB
-  name: signal-port-name-logic-input-b
-  description: signal-port-description-logic-input-b
+  id: B1
+  name: "Input B1"
+  description: "Input B1"
 
 - type: sinkPort
-  id: Input
-  name: signal-port-name-logic-input
-  description: signal-port-description-logic-input
+  id: A2
+  name: "Input A2"
+  description: "Input A2"
 
 - type: sinkPort
-  id: MemoryInput
-  name: signal-port-name-logic-input
-  description: signal-port-description-logic-memory-input
-
-- type: sinkPort
-  id: MemoryEnable
-  name: signal-port-name-logic-enable
-  description: signal-port-description-logic-enable
-
-- type: sinkPort
-  id: SetParticleDelta
-  name: signal-port-name-set-particle-delta
-  description: signal-port-description-set-particle-delta
-
-- type: sinkPort
-  id: SetParticleEpsilon
-  name: signal-port-name-set-particle-epsilon
-  description: signal-port-description-set-particle-epsilon
-
-- type: sinkPort
-  id: SetParticleZeta
-  name: signal-port-name-set-particle-zeta
-  description: signal-port-description-set-particle-zeta
-
-- type: sinkPort
-  id: SetParticleSigma
-  name: signal-port-name-set-particle-sigma
-  description: signal-port-description-set-particle-sigma
+  id: B2
+  name: "Input B2"
+  description: "Input B2"

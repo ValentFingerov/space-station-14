@@ -1,4 +1,3 @@
-using System.Numerics;
 using System.Text;
 using Content.Client.Resources;
 using Robust.Client.Graphics;
@@ -6,7 +5,6 @@ using Robust.Client.Input;
 using Robust.Client.ResourceManagement;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using static Content.Shared.NodeContainer.NodeVis;
@@ -20,11 +18,9 @@ namespace Content.Client.NodeContainer
         private readonly IMapManager _mapManager;
         private readonly IInputManager _inputManager;
         private readonly IEntityManager _entityManager;
-        private readonly SharedTransformSystem _transformSystem;
 
         private readonly Dictionary<(int, int), NodeRenderData> _nodeIndex = new();
         private readonly Dictionary<EntityUid, Dictionary<Vector2i, List<(GroupData, NodeDatum)>>> _gridIndex = new ();
-        private List<Entity<MapGridComponent>> _grids = new();
 
         private readonly Font _font;
 
@@ -47,7 +43,6 @@ namespace Content.Client.NodeContainer
             _mapManager = mapManager;
             _inputManager = inputManager;
             _entityManager = entityManager;
-            _transformSystem = _entityManager.System<SharedTransformSystem>();
 
             _font = cache.GetFont("/Fonts/NotoSans/NotoSans-Regular.ttf", 12);
         }
@@ -69,7 +64,7 @@ namespace Content.Client.NodeContainer
             var mousePos = _inputManager.MouseScreenPosition.Position;
             _mouseWorldPos = args
                 .ViewportControl!
-                .PixelToMap(mousePos)
+                .ScreenToMap(new Vector2(mousePos.X, mousePos.Y))
                 .Position;
 
             if (_hovered == null)
@@ -81,8 +76,8 @@ namespace Content.Client.NodeContainer
             var node = _system.NodeLookup[(groupId, nodeId)];
 
 
-            var xform = _entityManager.GetComponent<TransformComponent>(_entityManager.GetEntity(node.Entity));
-            if (!_entityManager.TryGetComponent<MapGridComponent>(xform.GridUid, out var grid))
+            var xform = _entityManager.GetComponent<TransformComponent>(node.Entity);
+            if (!_mapManager.TryGetGrid(xform.GridUid, out var grid))
                 return;
             var gridTile = grid.TileIndicesFor(xform.Coordinates);
 
@@ -94,7 +89,7 @@ namespace Content.Client.NodeContainer
             sb.Append($"grid pos: {gridTile}\n");
             sb.Append(group.DebugData);
 
-            args.ScreenHandle.DrawString(_font, mousePos + new Vector2(20, -20), sb.ToString());
+            args.ScreenHandle.DrawString(_font, mousePos + (20, -20), sb.ToString());
         }
 
         private void DrawWorld(in OverlayDrawArgs overlayDrawArgs)
@@ -110,30 +105,27 @@ namespace Content.Client.NodeContainer
 
             _hovered = default;
 
-            var cursorBox = Box2.CenteredAround(_mouseWorldPos, new Vector2(nodeSize, nodeSize));
+            var cursorBox = Box2.CenteredAround(_mouseWorldPos, (nodeSize, nodeSize));
 
             // Group visible nodes by grid tiles.
             var worldAABB = overlayDrawArgs.WorldAABB;
             var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
 
-            _grids.Clear();
-            _mapManager.FindGridsIntersecting(map, worldAABB, ref _grids);
-
-            foreach (var grid in _grids)
+            foreach (var grid in _mapManager.FindGridsIntersecting(map, worldAABB))
             {
-                foreach (var entity in _lookup.GetEntitiesIntersecting(grid, worldAABB))
+                foreach (var entity in _lookup.GetEntitiesIntersecting(grid.Owner, worldAABB))
                 {
                     if (!_system.Entities.TryGetValue(entity, out var nodeData))
                         continue;
 
-                    var gridDict = _gridIndex.GetOrNew(grid);
+                    var gridDict = _gridIndex.GetOrNew(grid.Owner);
                     var coords = xformQuery.GetComponent(entity).Coordinates;
 
                     // TODO: This probably shouldn't be capable of returning NaN...
                     if (float.IsNaN(coords.Position.X) || float.IsNaN(coords.Position.Y))
                         continue;
 
-                    var tile = gridDict.GetOrNew(grid.Comp.TileIndicesFor(coords));
+                    var tile = gridDict.GetOrNew(grid.TileIndicesFor(coords));
 
                     foreach (var (group, nodeDatum) in nodeData)
                     {
@@ -147,20 +139,20 @@ namespace Content.Client.NodeContainer
 
             foreach (var (gridId, gridDict) in _gridIndex)
             {
-                var grid = _entityManager.GetComponent<MapGridComponent>(gridId);
-                var (_, _, worldMatrix, invMatrix) = _transformSystem.GetWorldPositionRotationMatrixWithInv(gridId);
+                var grid = _mapManager.GetGrid(gridId);
+                var (_, _, worldMatrix, invMatrix) = _entityManager.GetComponent<TransformComponent>(grid.Owner).GetWorldPositionRotationMatrixWithInv();
 
                 var lCursorBox = invMatrix.TransformBox(cursorBox);
                 foreach (var (pos, list) in gridDict)
                 {
-                    var centerPos = (Vector2) pos + grid.TileSizeHalfVector;
+                    var centerPos = (Vector2) pos + grid.TileSize / 2f;
                     list.Sort(NodeDisplayComparer.Instance);
 
                     var offset = -(list.Count - 1) * nodeOffset / 2;
 
                     foreach (var (group, node) in list)
                     {
-                        var nodePos = centerPos + new Vector2(offset, offset);
+                        var nodePos = centerPos + (offset, offset);
                         if (lCursorBox.Contains(nodePos))
                             _hovered = (group.NetId, node.NetId);
 
@@ -174,7 +166,7 @@ namespace Content.Client.NodeContainer
                 foreach (var nodeRenderData in _nodeIndex.Values)
                 {
                     var pos = nodeRenderData.NodePos;
-                    var bounds = Box2.CenteredAround(pos, new Vector2(nodeSize, nodeSize));
+                    var bounds = Box2.CenteredAround(pos, (nodeSize, nodeSize));
 
                     var groupData = nodeRenderData.GroupData;
                     var color = groupData.Color;
@@ -201,7 +193,7 @@ namespace Content.Client.NodeContainer
             }
 
 
-            handle.SetTransform(Matrix3x2.Identity);
+            handle.SetTransform(Matrix3.Identity);
             _gridIndex.Clear();
         }
 

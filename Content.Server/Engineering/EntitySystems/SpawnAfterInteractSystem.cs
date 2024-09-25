@@ -1,22 +1,21 @@
+using Content.Server.Coordinates.Helpers;
 using Content.Server.Engineering.Components;
 using Content.Server.Stack;
-using Content.Shared.Coordinates.Helpers;
 using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
 using Content.Shared.Maps;
-using Content.Shared.Physics;
 using Content.Shared.Stacks;
 using JetBrains.Annotations;
-using Robust.Shared.Map.Components;
+using Robust.Shared.Map;
 
 namespace Content.Server.Engineering.EntitySystems
 {
     [UsedImplicitly]
     public sealed class SpawnAfterInteractSystem : EntitySystem
     {
+        [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly SharedDoAfterSystem _doAfterSystem = default!;
         [Dependency] private readonly StackSystem _stackSystem = default!;
-        [Dependency] private readonly TurfSystem _turfSystem = default!;
 
         public override void Initialize()
         {
@@ -31,14 +30,14 @@ namespace Content.Server.Engineering.EntitySystems
                 return;
             if (string.IsNullOrEmpty(component.Prototype))
                 return;
-            if (!TryComp<MapGridComponent>(args.ClickLocation.GetGridUid(EntityManager), out var grid))
+            if (!_mapManager.TryGetGrid(args.ClickLocation.GetGridUid(EntityManager), out var grid))
                 return;
             if (!grid.TryGetTileRef(args.ClickLocation, out var tileRef))
                 return;
 
             bool IsTileClear()
             {
-                return tileRef.Tile.IsEmpty == false && !_turfSystem.IsTileBlocked(tileRef, CollisionGroup.MobMask);
+                return tileRef.Tile.IsEmpty == false && !tileRef.IsBlockedTurf(true);
             }
 
             if (!IsTileClear())
@@ -46,9 +45,9 @@ namespace Content.Server.Engineering.EntitySystems
 
             if (component.DoAfterTime > 0)
             {
-                var doAfterArgs = new DoAfterArgs(EntityManager, args.User, component.DoAfterTime, new AwaitedDoAfterEvent(), null)
+                var doAfterArgs = new DoAfterArgs(args.User, component.DoAfterTime, new AwaitedDoAfterEvent(), null)
                 {
-                    BreakOnMove = true,
+                    BreakOnUserMove = true,
                 };
                 var result = await _doAfterSystem.WaitDoAfter(doAfterArgs);
 
@@ -59,7 +58,7 @@ namespace Content.Server.Engineering.EntitySystems
             if (component.Deleted || !IsTileClear())
                 return;
 
-            if (EntityManager.TryGetComponent(uid, out StackComponent? stackComp)
+            if (EntityManager.TryGetComponent<StackComponent?>(component.Owner, out var stackComp)
                 && component.RemoveOnInteract && !_stackSystem.Use(uid, 1, stackComp))
             {
                 return;
@@ -67,8 +66,8 @@ namespace Content.Server.Engineering.EntitySystems
 
             EntityManager.SpawnEntity(component.Prototype, args.ClickLocation.SnapToGrid(grid));
 
-            if (component.RemoveOnInteract && stackComp == null)
-                TryQueueDel(uid);
+            if (component.RemoveOnInteract && stackComp == null && !((!EntityManager.EntityExists(component.Owner) ? EntityLifeStage.Deleted : EntityManager.GetComponent<MetaDataComponent>(component.Owner).EntityLifeStage) >= EntityLifeStage.Deleted))
+                EntityManager.DeleteEntity(component.Owner);
         }
     }
 }

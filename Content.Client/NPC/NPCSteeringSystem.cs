@@ -1,4 +1,3 @@
-using System.Numerics;
 using Content.Client.Physics.Controllers;
 using Content.Shared.Movement.Components;
 using Content.Shared.NPC;
@@ -38,10 +37,9 @@ public sealed class NPCSteeringSystem : SharedNPCSteeringSystem
                     Enabled = false
                 });
 
-                var query = AllEntityQuery<NPCSteeringComponent>();
-                while (query.MoveNext(out var uid, out var npc))
+                foreach (var comp in EntityQuery<NPCSteeringComponent>(true))
                 {
-                    RemCompDeferred<NPCSteeringComponent>(uid);
+                    RemCompDeferred<NPCSteeringComponent>(comp.Owner);
                 }
             }
         }
@@ -62,12 +60,10 @@ public sealed class NPCSteeringSystem : SharedNPCSteeringSystem
 
         foreach (var data in ev.Data)
         {
-            var entity = GetEntity(data.EntityUid);
-
-            if (!Exists(entity))
+            if (!Exists(data.EntityUid))
                 continue;
 
-            var comp = EnsureComp<NPCSteeringComponent>(entity);
+            var comp = EnsureComp<NPCSteeringComponent>(data.EntityUid);
             comp.Direction = data.Direction;
             comp.DangerMap = data.Danger;
             comp.InterestMap = data.Interest;
@@ -81,12 +77,10 @@ public sealed class NPCSteeringOverlay : Overlay
     public override OverlaySpace Space => OverlaySpace.WorldSpace;
 
     private readonly IEntityManager _entManager;
-    private readonly SharedTransformSystem _transformSystem;
 
     public NPCSteeringOverlay(IEntityManager entManager)
     {
         _entManager = entManager;
-        _transformSystem = _entManager.System<SharedTransformSystem>();
     }
 
     protected override void Draw(in OverlayDrawArgs args)
@@ -98,7 +92,7 @@ public sealed class NPCSteeringOverlay : Overlay
                 continue;
             }
 
-            var (worldPos, worldRot) = _transformSystem.GetWorldPositionRotation(xform);
+            var (worldPos, worldRot) = xform.GetWorldPositionRotation();
 
             if (!args.WorldAABB.Contains(worldPos))
                 continue;

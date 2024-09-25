@@ -2,19 +2,15 @@
 using Content.Client.Administration.Systems;
 using Content.Client.Administration.UI;
 using Content.Client.Administration.UI.Tabs.ObjectsTab;
-using Content.Client.Administration.UI.Tabs.PanicBunkerTab;
-using Content.Client.Administration.UI.Tabs.BabyJailTab;
 using Content.Client.Administration.UI.Tabs.PlayerTab;
 using Content.Client.Gameplay;
 using Content.Client.Lobby;
 using Content.Client.UserInterface.Controls;
 using Content.Client.Verbs.UI;
-using Content.Shared.Administration.Events;
 using Content.Shared.Input;
 using JetBrains.Annotations;
 using Robust.Client.Console;
 using Robust.Client.Input;
-using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controllers;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -24,10 +20,7 @@ using static Robust.Client.UserInterface.Controls.BaseButton;
 namespace Content.Client.UserInterface.Systems.Admin;
 
 [UsedImplicitly]
-public sealed class AdminUIController : UIController,
-    IOnStateEntered<GameplayState>,
-    IOnStateEntered<LobbyState>,
-    IOnSystemChanged<AdminSystem>
+public sealed class AdminUIController : UIController, IOnStateEntered<GameplayState>, IOnStateEntered<LobbyState>, IOnSystemChanged<AdminSystem>
 {
     [Dependency] private readonly IClientAdminManager _admin = default!;
     [Dependency] private readonly IClientConGroupController _conGroups = default!;
@@ -37,39 +30,6 @@ public sealed class AdminUIController : UIController,
 
     private AdminMenuWindow? _window;
     private MenuButton? AdminButton => UIManager.GetActiveUIWidgetOrNull<MenuBar.Widgets.GameTopMenuBar>()?.AdminButton;
-    private PanicBunkerStatus? _panicBunker;
-    private BabyJailStatus? _babyJail;
-
-    public override void Initialize()
-    {
-        base.Initialize();
-        SubscribeNetworkEvent<PanicBunkerChangedEvent>(OnPanicBunkerUpdated);
-        SubscribeNetworkEvent<BabyJailChangedEvent>(OnBabyJailUpdated);
-    }
-
-    private void OnPanicBunkerUpdated(PanicBunkerChangedEvent msg, EntitySessionEventArgs args)
-    {
-        var showDialog = _panicBunker == null && msg.Status.Enabled;
-        _panicBunker = msg.Status;
-        _window?.PanicBunkerControl.UpdateStatus(msg.Status);
-
-        if (showDialog)
-        {
-            UIManager.CreateWindow<PanicBunkerStatusWindow>().OpenCentered();
-        }
-    }
-
-    private void OnBabyJailUpdated(BabyJailChangedEvent msg, EntitySessionEventArgs args)
-    {
-        var showDialog = _babyJail == null && msg.Status.Enabled;
-        _babyJail = msg.Status;
-        _window?.BabyJailControl.UpdateStatus(msg.Status);
-
-        if (showDialog)
-        {
-            UIManager.CreateWindow<BabyJailStatusWindow>().OpenCentered();
-        }
-    }
 
     public void OnStateEntered(GameplayState state)
     {
@@ -113,18 +73,8 @@ public sealed class AdminUIController : UIController,
         _window = UIManager.CreateWindow<AdminMenuWindow>();
         LayoutContainer.SetAnchorPreset(_window, LayoutContainer.LayoutPreset.Center);
 
-        if (_panicBunker != null)
-            _window.PanicBunkerControl.UpdateStatus(_panicBunker);
-
-        /*
-         * TODO: Remove baby jail code once a more mature gateway process is established. This code is only being issued as a stopgap to help with potential tiding in the immediate future.
-         */
-
-        if (_babyJail != null)
-            _window.BabyJailControl.UpdateStatus(_babyJail);
-
-        _window.PlayerTabControl.OnEntryKeyBindDown += PlayerTabEntryKeyBindDown;
-        _window.ObjectsTabControl.OnEntryKeyBindDown += ObjectsTabEntryKeyBindDown;
+        _window.PlayerTabControl.OnEntryPressed += PlayerTabEntryPressed;
+        _window.ObjectsTabControl.OnEntryPressed += ObjectsTabEntryPressed;
         _window.OnOpen += OnWindowOpen;
         _window.OnClose += OnWindowClosed;
         _window.OnDisposed += OnWindowDisposed;
@@ -152,12 +102,14 @@ public sealed class AdminUIController : UIController,
 
     private void OnWindowOpen()
     {
-        AdminButton?.SetClickPressed(true);
+        if (AdminButton != null)
+            AdminButton.Pressed = true;
     }
 
     private void OnWindowClosed()
     {
-        AdminButton?.SetClickPressed(false);
+        if (AdminButton != null)
+            AdminButton.Pressed = false;
     }
 
     private void OnWindowDisposed()
@@ -168,8 +120,8 @@ public sealed class AdminUIController : UIController,
         if (_window == null)
             return;
 
-        _window.PlayerTabControl.OnEntryKeyBindDown -= PlayerTabEntryKeyBindDown;
-        _window.ObjectsTabControl.OnEntryKeyBindDown -= ObjectsTabEntryKeyBindDown;
+        _window.PlayerTabControl.OnEntryPressed -= PlayerTabEntryPressed;
+        _window.ObjectsTabControl.OnEntryPressed -= ObjectsTabEntryPressed;
         _window.OnOpen -= OnWindowOpen;
         _window.OnClose -= OnWindowClosed;
         _window.OnDisposed -= OnWindowDisposed;
@@ -199,42 +151,40 @@ public sealed class AdminUIController : UIController,
         }
     }
 
-    private void PlayerTabEntryKeyBindDown(GUIBoundKeyEventArgs args, ListData? data)
+    private void PlayerTabEntryPressed(ButtonEventArgs args)
     {
-        if (data is not PlayerListData {Info: var info})
+        if (args.Button is not PlayerTabEntry button
+            || button.PlayerUid == null)
             return;
 
-        if (info.NetEntity == null)
-            return;
-
-        var entity = info.NetEntity.Value;
-        var function = args.Function;
-
-        if (function == EngineKeyFunctions.UIClick)
-            _conHost.ExecuteCommand($"vv {entity}");
-        else if (function == EngineKeyFunctions.UIRightClick)
-            _verb.OpenVerbMenu(entity, true);
-        else
-            return;
-
-        args.Handle();
-    }
-
-    private void ObjectsTabEntryKeyBindDown(GUIBoundKeyEventArgs args, ListData? data)
-    {
-        if (data is not ObjectsListData { Info: var info })
-            return;
-
-        var uid = info.Entity;
-        var function = args.Function;
+        var uid = button.PlayerUid.Value;
+        var function = args.Event.Function;
 
         if (function == EngineKeyFunctions.UIClick)
             _conHost.ExecuteCommand($"vv {uid}");
-        else if (function == EngineKeyFunctions.UIRightClick)
+        else if (function == EngineKeyFunctions.UseSecondary)
             _verb.OpenVerbMenu(uid, true);
         else
             return;
 
-        args.Handle();
+        args.Event.Handle();
+    }
+
+    private void ObjectsTabEntryPressed(ButtonEventArgs args)
+    {
+        if (args.Button is not ObjectsTabEntry button)
+            return;
+
+        var uid = button.AssocEntity;
+        var function = args.Event.Function;
+
+        if (function == EngineKeyFunctions.UIClick)
+            _conHost.ExecuteCommand($"vv {uid}");
+        else if (function == EngineKeyFunctions.UseSecondary)
+            _verb.OpenVerbMenu(uid, true);
+        else
+            return;
+
+        args.Event.Handle();
     }
 }

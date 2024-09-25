@@ -1,7 +1,9 @@
-﻿using Content.Server.Anomaly;
+﻿using System.Linq;
+using Content.Server.Anomaly;
+using Content.Server.GameTicking.Rules.Components;
 using Content.Server.Station.Components;
 using Content.Server.StationEvents.Components;
-﻿using Content.Shared.GameTicking.Components;
+using Robust.Shared.Random;
 
 namespace Content.Server.StationEvents.Events;
 
@@ -11,32 +13,33 @@ public sealed class AnomalySpawnRule : StationEventSystem<AnomalySpawnRuleCompon
 
     protected override void Added(EntityUid uid, AnomalySpawnRuleComponent component, GameRuleComponent gameRule, GameRuleAddedEvent args)
     {
-        if (!TryComp<StationEventComponent>(uid, out var stationEvent))
-            return;
+        base.Added(uid, component, gameRule, args);
 
         var str = Loc.GetString("anomaly-spawn-event-announcement",
             ("sighting", Loc.GetString($"anomaly-spawn-sighting-{RobustRandom.Next(1, 6)}")));
-        stationEvent.StartAnnouncement = str;
-
-        base.Added(uid, component, gameRule, args);
+        ChatSystem.DispatchGlobalAnnouncement(str, colorOverride: Color.FromHex("#18abf5"));
     }
 
     protected override void Started(EntityUid uid, AnomalySpawnRuleComponent component, GameRuleComponent gameRule, GameRuleStartedEvent args)
     {
         base.Started(uid, component, gameRule, args);
 
-        if (!TryGetRandomStation(out var chosenStation))
-            return;
-
+        if (StationSystem.Stations.Count == 0)
+            return; // No stations
+        var chosenStation = RobustRandom.Pick(StationSystem.Stations.ToList());
         if (!TryComp<StationDataComponent>(chosenStation, out var stationData))
             return;
 
-        var grid = StationSystem.GetLargestGrid(stationData);
+        EntityUid? grid = null;
+        foreach (var g in stationData.Grids.Where(HasComp<BecomesStationComponent>))
+        {
+            grid = g;
+        }
 
-        if (grid is null)
+        if (grid is not { })
             return;
 
-        var amountToSpawn = 1;
+        var amountToSpawn = Math.Max(1, (int) MathF.Round(GetSeverityModifier() / 2));
         for (var i = 0; i < amountToSpawn; i++)
         {
             _anomaly.SpawnOnRandomGridLocation(grid.Value, component.AnomalySpawnerPrototype);

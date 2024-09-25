@@ -1,6 +1,6 @@
 ent-PaintingBase = { ent-BaseSign }
     .desc = { ent-BaseSign.desc }
-ent-PaintingEmpty = empty frame
+ent-PaintingEmpty = Empty Frame
     .desc = An empty frame, waiting to be filled with art.
 ent-PaintingMoony = Abstract No.1
     .desc = An imposing abstract painting. It feels like it's pressuring you to do good.
@@ -38,5 +38,3 @@ ent-PaintingAmogusTriptych = Amogus Triptych (Untitled.)
     .desc = This painting is made up of 3 individual sections. Each depicts a religious figure.
 ent-PaintingHelloWorld = Hello World
     .desc = This painting is made up of lots of multicolored squares arranged in a peculiar pattern. Perhaps it means something?
-ent-PaintingSadClown = Sad Clown
-    .desc = This painting is a sad clown! It sparks joy.

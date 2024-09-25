@@ -2,23 +2,23 @@ using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Nuke;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 
 namespace Content.Client.Nuke
 {
     [UsedImplicitly]
     public sealed class NukeBoundUserInterface : BoundUserInterface
     {
-        [ViewVariables]
         private NukeMenu? _menu;
 
-        public NukeBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+        public NukeBoundUserInterface([NotNull] ClientUserInterfaceComponent owner, [NotNull] Enum uiKey) : base(owner, uiKey)
         {
         }
 
         protected override void Open()
         {
-            _menu = this.CreateWindow<NukeMenu>();
+            _menu = new NukeMenu();
+            _menu.OpenCentered();
+            _menu.OnClose += Close;
 
             _menu.OnKeypadButtonPressed += i =>
             {
@@ -57,9 +57,21 @@ namespace Content.Client.Nuke
             switch (state)
             {
                 case NukeUiState msg:
+                {
                     _menu.UpdateState(msg);
                     break;
+                }
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (!disposing)
+                return;
+
+            _menu?.Close();
+            _menu?.Dispose();
         }
     }
 }

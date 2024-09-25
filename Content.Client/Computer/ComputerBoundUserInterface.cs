@@ -1,6 +1,7 @@
 using Robust.Client.GameObjects;
-using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.CustomControls;
+using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
 
 namespace Content.Client.Computer
 {
@@ -11,21 +12,21 @@ namespace Content.Client.Computer
     [Virtual]
     public class ComputerBoundUserInterface<TWindow, TState> : ComputerBoundUserInterfaceBase where TWindow : BaseWindow, IComputerWindow<TState>, new() where TState : BoundUserInterfaceState
     {
-        [ViewVariables]
+        [Dependency] private readonly IDynamicTypeFactory _dynamicTypeFactory = default!;
         private TWindow? _window;
 
         protected override void Open()
         {
             base.Open();
 
-            _window = this.CreateWindow<TWindow>();
+            _window = (TWindow) _dynamicTypeFactory.CreateInstance(typeof(TWindow));
             _window.SetupComputerWindow(this);
+            _window.OnClose += Close;
+            _window.OpenCentered();
         }
 
         // Alas, this constructor has to be copied to the subclass. :(
-        public ComputerBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
-        {
-        }
+        public ComputerBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey) {}
 
         protected override void UpdateState(BoundUserInterfaceState state)
         {
@@ -39,9 +40,14 @@ namespace Content.Client.Computer
             _window.UpdateState((TState) state);
         }
 
-        protected override void ReceiveMessage(BoundUserInterfaceMessage message)
+        protected override void Dispose(bool disposing)
         {
-            _window?.ReceiveMessage(message);
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                _window?.Dispose();
+            }
         }
     }
 
@@ -52,9 +58,7 @@ namespace Content.Client.Computer
     [Virtual]
     public class ComputerBoundUserInterfaceBase : BoundUserInterface
     {
-        public ComputerBoundUserInterfaceBase(EntityUid owner, Enum uiKey) : base(owner, uiKey)
-        {
-        }
+        public ComputerBoundUserInterfaceBase(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey) {}
 
         public new void SendMessage(BoundUserInterfaceMessage msg)
         {
@@ -64,17 +68,8 @@ namespace Content.Client.Computer
 
     public interface IComputerWindow<TState>
     {
-        void SetupComputerWindow(ComputerBoundUserInterfaceBase cb)
-        {
-        }
-
-        void UpdateState(TState state)
-        {
-        }
-
-        void ReceiveMessage(BoundUserInterfaceMessage message)
-        {
-        }
+        void SetupComputerWindow(ComputerBoundUserInterfaceBase cb) {}
+        void UpdateState(TState state) {}
     }
 }
 

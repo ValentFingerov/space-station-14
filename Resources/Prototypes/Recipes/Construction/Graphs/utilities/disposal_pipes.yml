@@ -19,24 +19,12 @@
       - material: Steel
         amount: 2
         doAfter: 1
-    # DisposalRouter
     - to: router
       steps:
       - material: Steel
         amount: 2
         doAfter: 1
-    - to: routerflipped
-      steps:
-      - material: Steel
-        amount: 2
-        doAfter: 1
-    # DisposalJunction
     - to: junction
-      steps:
-      - material: Steel
-        amount: 2
-        doAfter: 1
-    - to: junctionflipped
       steps:
       - material: Steel
         amount: 2
@@ -50,23 +38,6 @@
       steps:
       - material: Steel
         amount: 2
-        doAfter: 1
-    # DisposalSignalRouter
-    - to: signal_router
-      steps:
-      - material: Steel
-        amount: 2
-        doAfter: 1
-      - material: Cable
-        amount: 1
-        doAfter: 1
-    - to: signal_router_flipped
-      steps:
-      - material: Steel
-        amount: 2
-        doAfter: 1
-      - material: Cable
-        amount: 1
         doAfter: 1
   - node: broken
     entity: DisposalPipeBroken
@@ -115,7 +86,6 @@
       steps:
       - tool: Welding
         doAfter: 1
-  # DisposalRouter
   - node: router
     entity: DisposalRouter
     edges:
@@ -128,37 +98,8 @@
       steps:
       - tool: Welding
         doAfter: 1
-  - node: routerflipped
-    entity: DisposalRouterFlipped
-    edges:
-    - to: start
-      completed:
-      - !type:SpawnPrototype
-        prototype: SheetSteel1
-        amount: 2
-      - !type:DeleteEntity
-      steps:
-      - tool: Welding
-        doAfter: 1
-  # DisposalJunction
   - node: junction
     entity: DisposalJunction
-    edges:
-    - to: start
-      completed:
-      - !type:SpawnPrototype
-        prototype: SheetSteel1
-        amount: 2
-      - !type:DeleteEntity
-      steps:
-      - tool: Welding
-        doAfter: 1
-    - to: yJunction
-      steps:
-      - tool: Screwing
-        doAfter: 1
-  - node: junctionflipped
-    entity: DisposalJunctionFlipped
     edges:
     - to: start
       completed:
@@ -189,10 +130,6 @@
       steps:
       - tool: Screwing
         doAfter: 1
-    - to: junctionflipped
-      steps:
-      - tool: Screwing
-        doAfter: 1
   - node: bend
     entity: DisposalBend
     edges:
@@ -201,35 +138,6 @@
       - !type:SpawnPrototype
         prototype: SheetSteel1
         amount: 2
-      - !type:DeleteEntity
-      steps:
-      - tool: Welding
-        doAfter: 1
-  # DisposalRouter
-  - node: signal_router
-    entity: DisposalSignalRouter
-    edges:
-    - to: start
-      completed:
-      - !type:SpawnPrototype
-        prototype: SheetSteel1
-        amount: 2
-      - !type:SpawnPrototype
-        prototype: CableApcStack1
-      - !type:DeleteEntity
-      steps:
-      - tool: Welding
-        doAfter: 1
-  - node: signal_router_flipped
-    entity: DisposalSignalRouterFlipped
-    edges:
-    - to: start
-      completed:
-      - !type:SpawnPrototype
-        prototype: SheetSteel1
-        amount: 2
-      - !type:SpawnPrototype
-        prototype: CableApcStack1
       - !type:DeleteEntity
       steps:
       - tool: Welding

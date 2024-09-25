@@ -3,6 +3,7 @@
 
 ## General
 
+shell-server-cannot = Сервер не может выполнить это.
 shell-command-success = Команда выполнена.
 shell-invalid-command = Неверная команда.
 shell-invalid-command-specific = Неверная команда { $commandName }.
@@ -27,8 +28,6 @@ shell-argument-must-be-number = Аргумент должен быть числ�
 shell-argument-must-be-boolean = Аргумент должен быть boolean.
 shell-wrong-arguments-number = Неправильное количество аргументов.
 shell-need-between-arguments = Нужно от { $lower } до { $upper } аргументов!
-shell-need-minimum-arguments = Нужно не менее { $minimum } аргументов!
-shell-need-minimum-one-argument = Нужен хотя бы один аргумент!
 shell-argument-uid = EntityUid
 
 ## Guards
@@ -52,6 +51,3 @@ shell-argument-number-must-be-between = Аргумент { $index } должен
 shell-argument-station-id-invalid = Аргумент { $index } должен быть валидным station id!
 shell-argument-map-id-invalid = Аргумент { $index } должен быть валидным map id!
 shell-argument-number-invalid = Аргумент { $index } должен быть валидным числом!
-# Hints
-shell-argument-username-hint = <username>
-shell-argument-username-optional-hint = [username]

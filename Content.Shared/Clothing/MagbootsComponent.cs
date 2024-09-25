@@ -1,25 +1,15 @@
-using Content.Shared.Alert;
+using Content.Shared.Actions.ActionTypes;
 using Robust.Shared.GameStates;
-using Robust.Shared.Prototypes;
 
 namespace Content.Shared.Clothing;
 
-[RegisterComponent, NetworkedComponent]
+[RegisterComponent, NetworkedComponent(), AutoGenerateComponentState]
 [Access(typeof(SharedMagbootsSystem))]
 public sealed partial class MagbootsComponent : Component
 {
-    [DataField]
-    public ProtoId<AlertPrototype> MagbootsAlert = "Magboots";
+    [DataField("toggleAction", required: true)]
+    public InstantAction ToggleAction = new();
 
-    /// <summary>
-    /// If true, the user must be standing on a grid or planet map to experience the weightlessness-canceling effect
-    /// </summary>
-    [DataField]
-    public bool RequiresGrid = true;
-
-    /// <summary>
-    /// Slot the clothing has to be worn in to work.
-    /// </summary>
-    [DataField]
-    public string Slot = "shoes";
+    [DataField("on"), AutoNetworkedField]
+    public bool On;
 }

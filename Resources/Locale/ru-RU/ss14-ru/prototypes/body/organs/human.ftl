@@ -1,7 +1,5 @@
-ent-BaseHumanOrganUnGibbable = { ent-BaseItem }
+ent-BaseHumanOrgan = { ent-BaseItem }
     .desc = { ent-BaseItem.desc }
-ent-BaseHumanOrgan = { ent-BaseHumanOrganUnGibbable }
-    .desc = { ent-BaseHumanOrganUnGibbable.desc }
 ent-OrganHumanBrain = мозг
     .desc = Источник невероятного, бесконечного интеллекта. Хонк.
 ent-OrganHumanEyes = глаза
@@ -11,7 +9,7 @@ ent-OrganHumanTongue = язык
 ent-OrganHumanAppendix = аппендикс
     .desc = { ent-BaseHumanOrgan.desc }
 ent-OrganHumanEars = уши
-    .desc = Ухо состоит из трёх частей. Внутренней, средней, и наружной. В нормальных условиях видно только одну.
+    .desc = Ухо состоит из трех частей. Внутренней, средней, и наружной. В нормальных условиях видно только одну.
 ent-OrganHumanLungs = лёгкие
     .desc = Фильтрует кислород из атмосферы, который затем поступает в кровь для использования в качестве переносчика электронов.
 ent-OrganHumanHeart = сердце

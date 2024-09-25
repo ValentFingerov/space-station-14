@@ -3,17 +3,19 @@ using JetBrains.Annotations;
 namespace Content.Server.Tabletop
 {
     [UsedImplicitly]
-    public sealed partial class TabletopBackgammonSetup : TabletopSetup
+    public sealed class TabletopBackgammonSetup : TabletopSetup
     {
+        [DataField("boardPrototype")]
+        public string BackgammonBoardPrototype { get; } = "BackgammonBoardTabletop";
 
         [DataField("whitePiecePrototype")]
-        public string WhitePiecePrototype { get; private set; } = "WhiteTabletopPiece";
+        public string WhitePiecePrototype { get; } = "WhiteTabletopPiece";
 
         [DataField("blackPiecePrototype")]
-        public string BlackPiecePrototype { get; private set; } = "BlackTabletopPiece";
+        public string BlackPiecePrototype { get; } = "BlackTabletopPiece";
         public override void SetupTabletop(TabletopSession session, IEntityManager entityManager)
         {
-            var board = entityManager.SpawnEntity(BoardPrototype, session.Position);
+            var board = entityManager.SpawnEntity(BackgammonBoardPrototype, session.Position);
 
             const float borderLengthX = 7.35f; //BORDER
             const float borderLengthY = 5.60f; //BORDER

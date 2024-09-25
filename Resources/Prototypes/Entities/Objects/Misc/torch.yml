@@ -1,5 +1,5 @@
 - type: entity
-  name: torch
+  name: torch # todo: we need some sort of IgnitionSourceComponent we can add to this, so when it's lit it will cause fires when touching fuel
   parent: BaseItem
   id: Torch
   description: A torch fashioned from some wood.
@@ -25,8 +25,6 @@
           color: "#FFFFFF"
           visible: false
           shader: unshaded
-        - map: [ enum.ExpendableLightVisualLayers.Overlay ]
-          state: torch_nocloth
     - type: Icon
       sprite: Objects/Misc/torch.rsi
       state: icon
@@ -59,9 +57,11 @@
           isLooped: true
         - !type:FadeBehaviour # have the radius start small and get larger as it starts to burn
           id: turn_on
+          interpolate: Linear
           maxDuration: 8.0
           startValue: 1.0
           endValue: 6.0
+          property: Radius
         - !type:RandomizeBehaviour # weaker flicker as it fades out
           id: fade_out
           interpolate: Nearest
@@ -73,9 +73,8 @@
           isLooped: true
         - !type:FadeBehaviour # fade out radius as it burns out
           id: fade_out
+          interpolate: Linear
           maxDuration: 4.0
           startValue: 6.0
           endValue: 1.0
-    - type: Tag
-      tags:
-      - Torch
+          property: Radius

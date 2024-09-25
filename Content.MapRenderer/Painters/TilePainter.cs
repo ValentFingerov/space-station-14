@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
-using Robust.Shared.ContentPack;
-using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Timing;
@@ -20,18 +18,15 @@ namespace Content.MapRenderer.Painters
         public const int TileImageSize = EyeManager.PixelsPerMeter;
 
         private readonly ITileDefinitionManager _sTileDefinitionManager;
-        private readonly SharedMapSystem _sMapSystem;
-        private readonly IResourceManager _resManager;
+        private readonly IResourceCache _cResourceCache;
 
         public TilePainter(ClientIntegrationInstance client, ServerIntegrationInstance server)
         {
             _sTileDefinitionManager = server.ResolveDependency<ITileDefinitionManager>();
-            _resManager = client.ResolveDependency<IResourceManager>();
-            var esm = server.ResolveDependency<IEntitySystemManager>();
-            _sMapSystem = esm.GetEntitySystem<SharedMapSystem>();
+            _cResourceCache = client.ResolveDependency<IResourceCache>();
         }
 
-        public void Run(Image gridCanvas, EntityUid gridUid, MapGridComponent grid)
+        public void Run(Image gridCanvas, MapGridComponent grid)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -41,10 +36,10 @@ namespace Content.MapRenderer.Painters
             var yOffset = -bounds.Bottom;
             var tileSize = grid.TileSize * TileImageSize;
 
-            var images = GetTileImages(_sTileDefinitionManager, _resManager, tileSize);
+            var images = GetTileImages(_sTileDefinitionManager, _cResourceCache, tileSize);
             var i = 0;
 
-            _sMapSystem.GetAllTiles(gridUid, grid).AsParallel().ForAll(tile =>
+            grid.GetAllTiles().AsParallel().ForAll(tile =>
             {
                 var path = _sTileDefinitionManager[tile.Tile.TypeId].Sprite.ToString();
 
@@ -60,12 +55,12 @@ namespace Content.MapRenderer.Painters
                 i++;
             });
 
-            Console.WriteLine($"{nameof(TilePainter)} painted {i} tiles on grid {gridUid} in {(int) stopwatch.Elapsed.TotalMilliseconds} ms");
+            Console.WriteLine($"{nameof(TilePainter)} painted {i} tiles on grid {grid.Owner} in {(int) stopwatch.Elapsed.TotalMilliseconds} ms");
         }
 
         private Dictionary<string, List<Image>> GetTileImages(
             ITileDefinitionManager tileDefinitionManager,
-            IResourceManager resManager,
+            IResourceCache resourceCache,
             int tileSize)
         {
             var stopwatch = new Stopwatch();
@@ -82,7 +77,7 @@ namespace Content.MapRenderer.Painters
 
                 images[path] = new List<Image>(definition.Variants);
 
-                using var stream = resManager.ContentFileRead(path);
+                using var stream = resourceCache.ContentFileRead(path);
                 Image tileSheet = Image.Load<Rgba32>(stream);
 
                 if (tileSheet.Width != tileSize * definition.Variants || tileSheet.Height != tileSize)
@@ -92,8 +87,7 @@ namespace Content.MapRenderer.Painters
 
                 for (var i = 0; i < definition.Variants; i++)
                 {
-                    var index = i;
-                    var tileImage = tileSheet.Clone(o => o.Crop(new Rectangle(tileSize * index, 0, 32, 32)));
+                    var tileImage = tileSheet.Clone(o => o.Crop(new Rectangle(tileSize * i, 0, 32, 32)));
                     images[path].Add(tileImage);
                 }
             }

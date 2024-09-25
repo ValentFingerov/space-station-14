@@ -1,36 +1,49 @@
+﻿using Content.Client.Alerts;
+using Content.Client.Gameplay;
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Mobs.Systems;
 using JetBrains.Annotations;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controllers;
-using Robust.Shared.Player;
 
 namespace Content.Client.UserInterface.Systems.DamageOverlays;
 
 [UsedImplicitly]
-public sealed class DamageOverlayUiController : UIController
+public sealed class DamageOverlayUiController : UIController, IOnStateChanged<GameplayState>
 {
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
+    [UISystemDependency] private readonly ClientAlertsSystem _alertsSystem = default!;
     [UISystemDependency] private readonly MobThresholdSystem _mobThresholdSystem = default!;
     private Overlays.DamageOverlay _overlay = default!;
 
     public override void Initialize()
     {
         _overlay = new Overlays.DamageOverlay();
-        SubscribeLocalEvent<LocalPlayerAttachedEvent>(OnPlayerAttach);
-        SubscribeLocalEvent<LocalPlayerDetachedEvent>(OnPlayerDetached);
+        SubscribeLocalEvent<PlayerAttachedEvent>(OnPlayerAttach);
+        SubscribeLocalEvent<PlayerDetachedEvent>(OnPlayerDetached);
         SubscribeLocalEvent<MobStateChangedEvent>(OnMobStateChanged);
         SubscribeLocalEvent<MobThresholdChecked>(OnThresholdCheck);
     }
 
-    private void OnPlayerAttach(LocalPlayerAttachedEvent args)
+    public void OnStateEntered(GameplayState state)
+    {
+        _overlayManager.AddOverlay(_overlay);
+    }
+
+    public void OnStateExited(GameplayState state)
+    {
+        _overlayManager.RemoveOverlay(_overlay);
+    }
+
+    private void OnPlayerAttach(PlayerAttachedEvent args)
     {
         ClearOverlay();
         if (!EntityManager.TryGetComponent<MobStateComponent>(args.Entity, out var mobState))
@@ -40,7 +53,7 @@ public sealed class DamageOverlayUiController : UIController
         _overlayManager.AddOverlay(_overlay);
     }
 
-    private void OnPlayerDetached(LocalPlayerDetachedEvent args)
+    private void OnPlayerDetached(PlayerDetachedEvent args)
     {
         _overlayManager.RemoveOverlay(_overlay);
         ClearOverlay();
@@ -48,7 +61,7 @@ public sealed class DamageOverlayUiController : UIController
 
     private void OnMobStateChanged(MobStateChangedEvent args)
     {
-        if (args.Target != _playerManager.LocalEntity)
+        if (args.Target != _playerManager.LocalPlayer?.ControlledEntity)
             return;
 
         UpdateOverlays(args.Target, args.Component);
@@ -57,7 +70,7 @@ public sealed class DamageOverlayUiController : UIController
     private void OnThresholdCheck(ref MobThresholdChecked args)
     {
 
-        if (args.Target != _playerManager.LocalEntity)
+        if (args.Target != _playerManager.LocalPlayer?.ControlledEntity)
             return;
         UpdateOverlays(args.Target, args.MobState, args.Damageable, args.Threshold);
     }
@@ -78,15 +91,9 @@ public sealed class DamageOverlayUiController : UIController
             damageable == null && !EntityManager.TryGetComponent(entity, out  damageable))
             return;
 
+
         if (!_mobThresholdSystem.TryGetIncapThreshold(entity, out var foundThreshold, thresholds))
             return; //this entity cannot die or crit!!
-
-        if (!thresholds.ShowOverlays)
-        {
-            ClearOverlay();
-            return; //this entity intentionally has no overlays
-        }
-
         var critThreshold = foundThreshold.Value;
         _overlay.State = mobState.CurrentState;
 

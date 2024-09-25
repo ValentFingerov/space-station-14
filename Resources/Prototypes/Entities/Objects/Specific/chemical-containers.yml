@@ -8,18 +8,18 @@
       solutions:
         beaker:
           maxVol: 200
+          canMix: true
     - type: Sprite
       sprite: Objects/Specific/Chemistry/jug.rsi
+      netsync: false
       layers:
         - state: jug
         - state: jug1
           map: [ "enum.SolutionContainerLayers.Fill" ]
           visible: false
     - type: Item
-      size: Normal
+      size: 10
       sprite: Objects/Specific/Chemistry/jug.rsi
-    - type: MixableSolution
-      solution: beaker
     - type: RefillableSolution
       solution: beaker
     - type: DrainableSolution
@@ -32,13 +32,12 @@
       solution: beaker
     - type: SolutionTransfer
       canChangeTransferAmount: true
-    - type: SolutionItemStatus
-      solution: beaker
     - type: UserInterface
       interfaces:
-        enum.TransferAmountUiKey.Key:
+        - key: enum.TransferAmountUiKey.Key
           type: TransferAmountBoundUserInterface
     - type: Drink
+      isOpen: true
       solution: beaker
     - type: Spillable
       solution: beaker
@@ -46,400 +45,335 @@
     - type: SolutionContainerVisuals
       maxFillLevels: 6
       fillBaseName: jug
-      inHandsMaxFillLevels: 5
-      inHandsFillBaseName: -fill-
     - type: StaticPrice
-      price: 60
-    - type: Damageable
-      damageContainer: Inorganic
-    - type: Destructible
-      thresholds:
-      - trigger:
-          !type:DamageTrigger
-          damage: 200
-        behaviors:
-          - !type:DoActsBehavior
-            acts: [ "Destruction" ]
-      - trigger:
-          !type:DamageTrigger
-          damage: 20
-        behaviors:
-        - !type:PlaySoundBehavior
-          sound:
-            collection: MetalBreak
-            params:
-              volume: -4
-        - !type:SpillBehavior { }
-        - !type:SpawnEntitiesBehavior
-          spawn:
-            SheetPlastic1:
-              min: 0
-              max: 1
-          transferForensics: true
-        - !type:DoActsBehavior
-          acts: [ "Destruction" ]
-    - type: Label
-    - type: Tag
-      tags:
-      - ChemDispensable
-    - type: DnaSubstanceTrace
+      price: 80
 
 - type: entity
   parent: Jug
-  suffix: carbon
+  name: jug (carbon)
   id: JugCarbon
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-carbon
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Carbon
-          Quantity: 200
+    - type: Label
+      currentLabel: Carbon
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Carbon
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: iodine
+  name: jug (iodine)
   id: JugIodine
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-iodine
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Iodine
-          Quantity: 200
+    - type: Label
+      currentLabel: Iodine
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Iodine
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: fluorine
+  name: jug (fluorine)
   id: JugFluorine
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-fluorine
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Fluorine
-          Quantity: 200
+    - type: Label
+      currentLabel: Fluorine
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Fluorine
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: chlorine
+  name: jug (chlorine)
   id: JugChlorine
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-chlorine
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Chlorine
-          Quantity: 200
+    - type: Label
+      currentLabel: Chlorine
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Chlorine
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: aluminium
+  name: jug (aluminium)
   id: JugAluminium
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-aluminium
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Aluminium
-          Quantity: 200
+    - type: Label
+      currentLabel: Aluminium
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Aluminium
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: phosphorus
+  name: jug (phosphorus)
   id: JugPhosphorus
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-phosphorus
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Phosphorus
-          Quantity: 200
+    - type: Label
+      currentLabel: Phosphorus
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Phosphorus
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: sulfur
+  name: jug (sulfur)
   id: JugSulfur
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-sulfur
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Sulfur
-          Quantity: 200
+    - type: Label
+      currentLabel: Sulfur
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Sulfur
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: silicon
+  name: jug (silicon)
   id: JugSilicon
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-silicon
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Silicon
-          Quantity: 200
+    - type: Label
+      currentLabel: Silicon
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Silicon
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: hydrogen
+  name: jug (hydrogen)
   id: JugHydrogen
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-hydrogen
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Hydrogen
-          Quantity: 200
+    - type: Label
+      currentLabel: Hydrogen
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Hydrogen
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: lithium
+  name: jug (lithium)
   id: JugLithium
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-lithium
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Lithium
-          Quantity: 200
+    - type: Label
+      currentLabel: Lithium
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Lithium
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: sodium
+  name: jug (sodium)
   id: JugSodium
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-sodium
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Sodium
-          Quantity: 200
+    - type: Label
+      currentLabel: Sodium
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Sodium
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: potassium
+  name: jug (potassium)
   id: JugPotassium
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-potassium
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Potassium
-          Quantity: 200
+    - type: Label
+      currentLabel: Potassium
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Potassium
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: radium
+  name: jug (radium)
   id: JugRadium
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-radium
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Radium
-          Quantity: 200
+    - type: Label
+      currentLabel: Radium
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Radium
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: iron
+  name: jug (iron)
   id: JugIron
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-iron
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Iron
-          Quantity: 200
+    - type: Label
+      currentLabel: Iron
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Iron
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: copper
+  name: jug (copper)
   id: JugCopper
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-copper
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Copper
-          Quantity: 200
+    - type: Label
+      currentLabel: Copper
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Copper
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: gold
+  name: jug (gold)
   id: JugGold
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-gold
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Gold
-          Quantity: 200
+    - type: Label
+      currentLabel: Gold
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Gold
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: mercury
+  name: jug (mercury)
   id: JugMercury
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-mercury
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Mercury
-          Quantity: 200
+    - type: Label
+      currentLabel: Mercury
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Mercury
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: silver
+  name: jug (silver)
   id: JugSilver
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-silver
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Silver
-          Quantity: 200
+    - type: Label
+      currentLabel: Silver
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Silver
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: ethanol
+  name: jug (ethanol)
   id: JugEthanol
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-ethanol
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Ethanol
-          Quantity: 200
+    - type: Label
+      currentLabel: Ethanol
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Ethanol
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: sugar
+  name: jug (sugar)
   id: JugSugar
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-sugar
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Sugar
-          Quantity: 200
+    - type: Label
+      currentLabel: Sugar
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Sugar
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: nitrogen
+  name: jug (nitrogen)
   id: JugNitrogen
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-nitrogen
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Nitrogen
-          Quantity: 200
+    - type: Label
+      currentLabel: Nitrogen
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Nitrogen
+              Quantity: 200
 
 - type: entity
   parent: Jug
-  suffix: oxygen
+  name: jug (oxygen)
   id: JugOxygen
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
-  - type: Label
-    currentLabel: reagent-name-oxygen
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: Oxygen
-          Quantity: 200
-
-- type: entity
-  parent: Jug
-  suffix: Plant-B-Gone
-  id: JugPlantBGone
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Label
-    currentLabel: reagent-name-plant-b-gone
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: PlantBGone
-          Quantity: 200
-
-- type: entity
-  parent: Jug
-  suffix: welding fuel
-  id: JugWeldingFuel
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Label
-    currentLabel: reagent-name-welding-fuel
-  - type: SolutionContainerManager
-    solutions:
-      beaker:
-        reagents:
-        - ReagentId: WeldingFuel
-          Quantity: 200
+    - type: Label
+      currentLabel: Oxygen
+    - type: SolutionContainerManager
+      solutions:
+        beaker:
+          reagents:
+            - ReagentId: Oxygen
+              Quantity: 200

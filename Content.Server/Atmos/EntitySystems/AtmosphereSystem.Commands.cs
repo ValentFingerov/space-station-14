@@ -3,7 +3,7 @@ using Content.Server.Administration;
 using Content.Server.Atmos.Components;
 using Content.Shared.Administration;
 using Content.Shared.Atmos;
-using Content.Shared.Atmos.Components;
+using Content.Shared.Maps;
 using Robust.Shared.Console;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
@@ -36,7 +36,7 @@ public sealed partial class AtmosphereSystem
            return;
        }
 
-       var mixtures = new GasMixture[8];
+       var mixtures = new GasMixture[7];
        for (var i = 0; i < mixtures.Length; i++)
            mixtures[i] = new GasMixture(Atmospherics.CellVolume) { Temperature = Atmospherics.T20C };
 
@@ -65,12 +65,9 @@ public sealed partial class AtmosphereSystem
        mixtures[6].AdjustMoles(Gas.Nitrogen, Atmospherics.NitrogenMolesStandard);
        mixtures[6].Temperature = 235f; // Little colder than an actual freezer but gives a grace period to get e.g. themomachines set up, should keep warm for a few door openings
 
-       // 7: Nitrogen (101kpa) for vox rooms
-       mixtures[7].AdjustMoles(Gas.Nitrogen, Atmospherics.MolesCellStandard);
-
        foreach (var arg in args)
        {
-           if (!NetEntity.TryParse(arg, out var netEntity) || !TryGetEntity(netEntity, out var euid))
+           if(!EntityUid.TryParse(arg, out var euid))
            {
                shell.WriteError($"Failed to parse euid '{arg}'.");
                return;
@@ -88,70 +85,36 @@ public sealed partial class AtmosphereSystem
                continue;
            }
 
-           // Force Invalidate & update air on all tiles
-           Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> grid =
-               new(euid.Value, gridAtmosphere, Comp<GasTileOverlayComponent>(euid.Value), gridComp, Transform(euid.Value));
+           var transform = Transform(euid);
 
-           RebuildGridTiles(grid);
-
-           var query = GetEntityQuery<AtmosFixMarkerComponent>();
-           foreach (var (indices, tile) in gridAtmosphere.Tiles.ToArray())
+           foreach (var (indices, tileMain) in gridAtmosphere.Tiles)
            {
-               if (tile.Air is not {Immutable: false} air)
+               var tile = tileMain.Air;
+               if (tile == null)
                    continue;
 
-               air.Clear();
-               var mixtureId = 0;
-               var enumerator = _mapSystem.GetAnchoredEntitiesEnumerator(grid, grid, indices);
-               while (enumerator.MoveNext(out var entUid))
+               if (tile.Immutable && !IsTileSpace(euid, transform.MapUid, indices, gridComp))
                {
-                   if (query.TryComp(entUid, out var marker))
-                       mixtureId = marker.Mode;
+                   tile = new GasMixture(tile.Volume) { Temperature = tile.Temperature };
+                   tileMain.Air = tile;
                }
 
+               tile.Clear();
+               var mixtureId = 0;
+               foreach (var entUid in gridComp.GetAnchoredEntities(indices))
+               {
+                   if (!TryComp(entUid, out AtmosFixMarkerComponent? afm))
+                       continue;
+                   mixtureId = afm.Mode;
+                   break;
+               }
                var mixture = mixtures[mixtureId];
-               Merge(air, mixture);
-               air.Temperature = mixture.Temperature;
+               Merge(tile, mixture);
+               tile.Temperature = mixture.Temperature;
+
+               gridAtmosphere.InvalidatedCoords.Add(indices);
            }
        }
-    }
-
-    /// <summary>
-    /// Clears & re-creates all references to <see cref="TileAtmosphere"/>s stored on a grid.
-    /// </summary>
-    private void RebuildGridTiles(
-        Entity<GridAtmosphereComponent, GasTileOverlayComponent, MapGridComponent, TransformComponent> ent)
-    {
-        foreach (var indices in ent.Comp1.Tiles.Keys)
-        {
-            InvalidateVisuals((ent, ent), indices);
-        }
-
-        var atmos = ent.Comp1;
-        atmos.MapTiles.Clear();
-        atmos.ActiveTiles.Clear();
-        atmos.ExcitedGroups.Clear();
-        atmos.HotspotTiles.Clear();
-        atmos.SuperconductivityTiles.Clear();
-        atmos.HighPressureDelta.Clear();
-        atmos.CurrentRunTiles.Clear();
-        atmos.CurrentRunExcitedGroups.Clear();
-        atmos.InvalidatedCoords.Clear();
-        atmos.CurrentRunInvalidatedTiles.Clear();
-        atmos.PossiblyDisconnectedTiles.Clear();
-        atmos.Tiles.Clear();
-
-        var volume = GetVolumeForTiles(ent);
-        TryComp(ent.Comp4.MapUid, out MapAtmosphereComponent? mapAtmos);
-
-        var enumerator = _map.GetAllTilesEnumerator(ent, ent);
-        while (enumerator.MoveNext(out var tileRef))
-        {
-            var tile = GetOrNewTile(ent, ent, tileRef.Value.GridIndices);
-            UpdateTileData(ent, mapAtmos, tile);
-            UpdateAdjacentTiles(ent, tile, activate: true);
-            UpdateTileAir(ent, tile, volume);
-        }
     }
 
     private CompletionResult FixGridAtmosCommandCompletions(IConsoleShell shell, string[] args)
@@ -165,13 +128,12 @@ public sealed partial class AtmosphereSystem
         if (playerMap == null)
             return CompletionResult.FromOptions(options);
 
-        foreach (var grid in _mapManager.GetAllGrids(playerMap.Value).OrderBy(o => o.Owner))
+        foreach (var grid in _mapManager.GetAllMapGrids(playerMap.Value).OrderBy(o => o.Owner))
         {
-            var uid = grid.Owner;
-            if (!TryComp(uid, out TransformComponent? gridXform))
+            if (!TryComp<TransformComponent>(grid.Owner, out var gridXform))
                 continue;
 
-            options.Add(new CompletionOption(uid.ToString(), $"{MetaData(uid).EntityName} - Map {gridXform.MapID}"));
+            options.Add(new CompletionOption(grid.Owner.ToString(), $"{MetaData(grid.Owner).EntityName} - Map {gridXform.MapID}"));
         }
 
         return CompletionResult.FromOptions(options);

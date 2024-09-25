@@ -1,27 +1,28 @@
-## Implanter Attempt Messages
+﻿## Implanter Attempt Messages
 
 implanter-component-implanting-target = {$user} is trying to implant you with something!
-implanter-component-implant-failed = The {$implant} cannot be given to {$target}!
-implanter-draw-failed-permanent = The {$implant} in {$target} is fused with { OBJECT($target) } and cannot be removed!
+implanter-draw-failed-permanent = The {$implant} in {$target} is fused with them and cannot be removed!
 implanter-draw-failed = You tried to remove an implant but found nothing.
-implanter-component-implant-already = {$target} already has the {$implant}!
 
 ## UI
 implanter-draw-text = Draw
 implanter-inject-text = Inject
 
-implanter-empty-text = Empty
+implanter-empty-text = None
+implanter-implant-text = {$implantName}{$lineBreak}{$implantDescription}
 
-implanter-label = [color=green]{$implantName}[/color]
-    Mode: [color=white]{$modeString}[/color]
+implanter-label = [color=white]Implant: {$currentEntities}{$lineBreak}Mode: {$modeString}[/color]
 
-implanter-contained-implant-text = [color=green]{$desc}[/color]
+## Implanter Actions
 
-## Implant Popups
+open-storage-implant-action-name = Open Storage Implant
+open-storage-implant-action-description = Opens the storage implant embedded under your skin
 
-scramble-implant-activated-popup = Your appearance shifts and changes!
+activate-micro-bomb-action-name = Activate Microbomb
+activate-micro-bomb-action-description = Activates your internal microbomb, completely destroying you and your equipment
 
-## Implant Messages
+use-freedom-implant-action-name = Break Free
+use-freedom-implant-action-description = Activating your freedom implant will free you from any hand restraints
 
-deathrattle-implant-dead-message = {$user} has died {$position}.
-deathrattle-implant-critical-message = {$user} life signs critical, immediate assistance required {$position}.
+open-uplink-implant-action-name = Open Uplink
+open-uplink-implant-action-description = Opens the syndicate uplink embedded under your skin

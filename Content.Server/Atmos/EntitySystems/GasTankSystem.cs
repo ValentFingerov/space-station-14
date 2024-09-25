@@ -3,22 +3,18 @@ using Content.Server.Body.Components;
 using Content.Server.Body.Systems;
 using Content.Server.Cargo.Systems;
 using Content.Server.Explosion.EntitySystems;
-using Content.Shared.UserInterface;
+using Content.Server.UserInterface;
 using Content.Shared.Actions;
 using Content.Shared.Atmos;
 using Content.Shared.Atmos.Components;
-using Content.Shared.Examine;
-using Content.Shared.Throwing;
 using Content.Shared.Toggleable;
-using Content.Shared.Verbs;
+using Content.Shared.Examine;
 using JetBrains.Annotations;
 using Robust.Server.GameObjects;
+using Robust.Server.Player;
 using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
-using Robust.Shared.Random;
-using Robust.Shared.Configuration;
-using Content.Shared.CCVar;
+using Robust.Shared.Player;
 
 namespace Content.Server.Atmos.EntitySystems
 {
@@ -32,14 +28,9 @@ namespace Content.Server.Atmos.EntitySystems
         [Dependency] private readonly SharedContainerSystem _containers = default!;
         [Dependency] private readonly SharedActionsSystem _actions = default!;
         [Dependency] private readonly UserInterfaceSystem _ui = default!;
-        [Dependency] private readonly IRobustRandom _random = default!;
-        [Dependency] private readonly ThrowingSystem _throwing = default!;
-        [Dependency] private readonly IConfigurationManager _cfg = default!;
 
         private const float TimerDelay = 0.5f;
         private float _timer = 0f;
-        private const float MinimumSoundValvePressure = 10.0f;
-        private float _maxExplosionRange;
 
         public override void Initialize()
         {
@@ -54,51 +45,43 @@ namespace Content.Server.Atmos.EntitySystems
             SubscribeLocalEvent<GasTankComponent, GasTankToggleInternalsMessage>(OnGasTankToggleInternals);
             SubscribeLocalEvent<GasTankComponent, GasAnalyzerScanEvent>(OnAnalyzed);
             SubscribeLocalEvent<GasTankComponent, PriceCalculationEvent>(OnGasTankPrice);
-            SubscribeLocalEvent<GasTankComponent, GetVerbsEvent<AlternativeVerb>>(OnGetAlternativeVerb);
-            Subs.CVar(_cfg, CCVars.AtmosTankFragment, UpdateMaxRange, true);
         }
 
-        private void UpdateMaxRange(float value)
+        private void OnGasShutdown(EntityUid uid, GasTankComponent component, ComponentShutdown args)
         {
-            _maxExplosionRange = value;
+            DisconnectFromInternals(component);
         }
 
-        private void OnGasShutdown(Entity<GasTankComponent> gasTank, ref ComponentShutdown args)
+        private void OnGasTankToggleInternals(EntityUid uid, GasTankComponent component, GasTankToggleInternalsMessage args)
         {
-            DisconnectFromInternals(gasTank);
+            if (args.Session is not IPlayerSession playerSession ||
+                playerSession.AttachedEntity is not {} player) return;
+
+            ToggleInternals(component);
         }
 
-        private void OnGasTankToggleInternals(Entity<GasTankComponent> ent, ref GasTankToggleInternalsMessage args)
+        private void OnGasTankSetPressure(EntityUid uid, GasTankComponent component, GasTankSetPressureMessage args)
         {
-            ToggleInternals(ent);
+            component.OutputPressure = args.Pressure;
         }
 
-        private void OnGasTankSetPressure(Entity<GasTankComponent> ent, ref GasTankSetPressureMessage args)
+        public void UpdateUserInterface(GasTankComponent component, bool initialUpdate = false)
         {
-            var pressure = Math.Clamp(args.Pressure, 0f, ent.Comp.MaxOutputPressure);
-
-            ent.Comp.OutputPressure = pressure;
-
-            UpdateUserInterface(ent, true);
-        }
-
-        public void UpdateUserInterface(Entity<GasTankComponent> ent, bool initialUpdate = false)
-        {
-            var (owner, component) = ent;
-            _ui.SetUiState(owner, SharedGasTankUiKey.Key,
+            var internals = GetInternalsComponent(component);
+            _ui.TrySetUiState(component.Owner, SharedGasTankUiKey.Key,
                 new GasTankBoundUserInterfaceState
                 {
                     TankPressure = component.Air?.Pressure ?? 0,
                     OutputPressure = initialUpdate ? component.OutputPressure : null,
                     InternalsConnected = component.IsConnected,
-                    CanConnectInternals = CanConnectToInternals(ent)
+                    CanConnectInternals = CanConnectToInternals(component)
                 });
         }
 
-        private void BeforeUiOpen(Entity<GasTankComponent> ent, ref BeforeActivatableUIOpenEvent args)
+        private void BeforeUiOpen(EntityUid uid, GasTankComponent component, BeforeActivatableUIOpenEvent args)
         {
             // Only initial update includes output pressure information, to avoid overwriting client-input as the updates come in.
-            UpdateUserInterface(ent, true);
+            UpdateUserInterface(component, true);
         }
 
         private void OnParentChange(EntityUid uid, GasTankComponent component, ref EntParentChangedMessage args)
@@ -111,25 +94,23 @@ namespace Content.Server.Atmos.EntitySystems
 
         private void OnGetActions(EntityUid uid, GasTankComponent component, GetItemActionsEvent args)
         {
-            args.AddAction(ref component.ToggleActionEntity, component.ToggleAction);
+            args.Actions.Add(component.ToggleAction);
         }
 
         private void OnExamined(EntityUid uid, GasTankComponent component, ExaminedEvent args)
         {
-            using var _ = args.PushGroup(nameof(GasTankComponent));
             if (args.IsInDetailsRange)
                 args.PushMarkup(Loc.GetString("comp-gas-tank-examine", ("pressure", Math.Round(component.Air?.Pressure ?? 0))));
             if (component.IsConnected)
                 args.PushMarkup(Loc.GetString("comp-gas-tank-connected"));
-            args.PushMarkup(Loc.GetString(component.IsValveOpen ? "comp-gas-tank-examine-open-valve" : "comp-gas-tank-examine-closed-valve"));
         }
 
-        private void OnActionToggle(Entity<GasTankComponent> gasTank, ref ToggleActionEvent args)
+        private void OnActionToggle(EntityUid uid, GasTankComponent component, ToggleActionEvent args)
         {
             if (args.Handled)
                 return;
 
-            ToggleInternals(gasTank);
+            ToggleInternals(component);
             args.Handled = true;
         }
 
@@ -139,85 +120,57 @@ namespace Content.Server.Atmos.EntitySystems
 
             _timer += frameTime;
 
-            if (_timer < TimerDelay)
-                return;
-
+            if (_timer < TimerDelay) return;
             _timer -= TimerDelay;
 
-            var query = EntityQueryEnumerator<GasTankComponent>();
-            while (query.MoveNext(out var uid, out var comp))
+            foreach (var gasTank in EntityManager.EntityQuery<GasTankComponent>())
             {
-                var gasTank = (uid, comp);
-                if (comp.IsValveOpen && !comp.IsLowPressure && comp.OutputPressure > 0)
+                if (gasTank.CheckUser)
                 {
-                    ReleaseGas(gasTank);
-                }
-
-                if (comp.CheckUser)
-                {
-                    comp.CheckUser = false;
-                    if (Transform(uid).ParentUid != comp.User)
+                    gasTank.CheckUser = false;
+                    if (Transform(gasTank.Owner).ParentUid != gasTank.User)
                     {
                         DisconnectFromInternals(gasTank);
                         continue;
                     }
                 }
 
-                if (comp.Air != null)
-                {
-                    _atmosphereSystem.React(comp.Air, comp);
-                }
+                _atmosphereSystem.React(gasTank.Air, gasTank);
                 CheckStatus(gasTank);
-                if (_ui.IsUiOpen(uid, SharedGasTankUiKey.Key))
+                if (_ui.IsUiOpen(gasTank.Owner, SharedGasTankUiKey.Key))
                 {
                     UpdateUserInterface(gasTank);
                 }
             }
         }
 
-        private void ReleaseGas(Entity<GasTankComponent> gasTank)
+        private void ToggleInternals(GasTankComponent component)
         {
-            var removed = RemoveAirVolume(gasTank, gasTank.Comp.ValveOutputRate * TimerDelay);
-            var environment = _atmosphereSystem.GetContainingMixture(gasTank.Owner, false, true);
-            if (environment != null)
+            if (component.IsConnected)
             {
-                _atmosphereSystem.Merge(environment, removed);
-            }
-            var strength = removed.TotalMoles * MathF.Sqrt(removed.Temperature);
-            var dir = _random.NextAngle().ToWorldVec();
-            _throwing.TryThrow(gasTank, dir * strength, strength);
-            if (gasTank.Comp.OutputPressure >= MinimumSoundValvePressure)
-                _audioSys.PlayPvs(gasTank.Comp.RuptureSound, gasTank);
-        }
-
-        private void ToggleInternals(Entity<GasTankComponent> ent)
-        {
-            if (ent.Comp.IsConnected)
-            {
-                DisconnectFromInternals(ent);
+                DisconnectFromInternals(component);
             }
             else
             {
-                ConnectToInternals(ent);
+                ConnectToInternals(component);
             }
         }
 
-        public GasMixture? RemoveAir(Entity<GasTankComponent> gasTank, float amount)
+        public GasMixture? RemoveAir(GasTankComponent component, float amount)
         {
-            var gas = gasTank.Comp.Air?.Remove(amount);
-            CheckStatus(gasTank);
+            var gas = component.Air?.Remove(amount);
+            CheckStatus(component);
             return gas;
         }
 
-        public GasMixture RemoveAirVolume(Entity<GasTankComponent> gasTank, float volume)
+        public GasMixture RemoveAirVolume(GasTankComponent component, float volume)
         {
-            var component = gasTank.Comp;
             if (component.Air == null)
                 return new GasMixture(volume);
 
             var molesNeeded = component.OutputPressure * volume / (Atmospherics.R * component.Air.Temperature);
 
-            var air = RemoveAir(gasTank, molesNeeded);
+            var air = RemoveAir(component, molesNeeded);
 
             if (air != null)
                 air.Volume = volume;
@@ -227,110 +180,81 @@ namespace Content.Server.Atmos.EntitySystems
             return air;
         }
 
-        public bool CanConnectToInternals(Entity<GasTankComponent> ent)
+        public bool CanConnectToInternals(GasTankComponent component)
         {
-            TryGetInternalsComp(ent, out _, out var internalsComp, ent.Comp.User);
-            return internalsComp != null && internalsComp.BreathTools.Count != 0 && !ent.Comp.IsValveOpen;
+            var internals = GetInternalsComponent(component);
+            return internals != null && internals.BreathToolEntity != null;
         }
 
-        public void ConnectToInternals(Entity<GasTankComponent> ent)
+        public void ConnectToInternals(GasTankComponent component)
         {
-            var (owner, component) = ent;
-            if (component.IsConnected || !CanConnectToInternals(ent))
+            if (component.IsConnected || !CanConnectToInternals(component))
                 return;
 
-            TryGetInternalsComp(ent, out var internalsUid, out var internalsComp, ent.Comp.User);
-            if (internalsUid == null || internalsComp == null)
+            var internals = GetInternalsComponent(component);
+            if (internals == null)
                 return;
 
-            if (_internals.TryConnectTank((internalsUid.Value, internalsComp), owner))
-                component.User = internalsUid.Value;
+            if (_internals.TryConnectTank(internals, component.Owner))
+                component.User = internals.Owner;
 
-            _actions.SetToggled(component.ToggleActionEntity, component.IsConnected);
+            _actions.SetToggled(component.ToggleAction, component.IsConnected);
 
             // Couldn't toggle!
             if (!component.IsConnected)
                 return;
 
-            component.ConnectStream = _audioSys.Stop(component.ConnectStream);
-            component.ConnectStream = _audioSys.PlayPvs(component.ConnectSound, owner)?.Entity;
+            component.ConnectStream?.Stop();
 
-            UpdateUserInterface(ent);
+            if (component.ConnectSound != null)
+                component.ConnectStream = _audioSys.PlayPvs(component.ConnectSound, component.Owner);
+
+            UpdateUserInterface(component);
         }
 
-        public void DisconnectFromInternals(Entity<GasTankComponent> ent)
+        public void DisconnectFromInternals(GasTankComponent component)
         {
-            var (owner, component) = ent;
-
             if (component.User == null)
                 return;
 
-            TryGetInternalsComp(ent, out var internalsUid, out var internalsComp, component.User);
+            var internals = GetInternalsComponent(component);
             component.User = null;
 
-            _actions.SetToggled(component.ToggleActionEntity, false);
+            _actions.SetToggled(component.ToggleAction, false);
 
-            if (internalsUid != null && internalsComp != null)
-                _internals.DisconnectTank((internalsUid.Value, internalsComp));
-            component.DisconnectStream = _audioSys.Stop(component.DisconnectStream);
-            component.DisconnectStream = _audioSys.PlayPvs(component.DisconnectSound, owner)?.Entity;
+            _internals.DisconnectTank(internals);
+            component.DisconnectStream?.Stop();
 
-            UpdateUserInterface(ent);
+            if (component.DisconnectSound != null)
+                component.DisconnectStream = _audioSys.PlayPvs(component.DisconnectSound, component.Owner);
+
+            UpdateUserInterface(component);
         }
 
-        /// <summary>
-        /// Tries to retrieve the internals component of either the gas tank's user,
-        /// or the gas tank's... containing container
-        /// </summary>
-        /// <param name="user">The user of the gas tank</param>
-        /// <returns>True if internals comp isn't null, false if it is null</returns>
-        private bool TryGetInternalsComp(Entity<GasTankComponent> ent, out EntityUid? internalsUid, out InternalsComponent? internalsComp, EntityUid? user = null)
+        private InternalsComponent? GetInternalsComponent(GasTankComponent component, EntityUid? owner = null)
         {
-            internalsUid = default;
-            internalsComp = default;
-
-            // If the gas tank doesn't exist for whatever reason, don't even bother
-            if (TerminatingOrDeleted(ent.Owner))
-                return false;
-
-            user ??= ent.Comp.User;
-            // Check if the gas tank's user actually has the component that allows them to use a gas tank and mask
-            if (TryComp<InternalsComponent>(user, out var userInternalsComp) && userInternalsComp != null)
-            {
-                internalsUid = user;
-                internalsComp = userInternalsComp;
-                return true;
-            }
-
-            // Yeah I have no clue what this actually does, I appreciate the lack of comments on the original function
-            if (_containers.TryGetContainingContainer((ent.Owner, Transform(ent.Owner)), out var container) && container != null)
-            {
-                if (TryComp<InternalsComponent>(container.Owner, out var containerInternalsComp) && containerInternalsComp != null)
-                {
-                    internalsUid = container.Owner;
-                    internalsComp = containerInternalsComp;
-                    return true;
-                }
-            }
-
-            return false;
+            owner ??= component.User;
+            if (Deleted(component.Owner)) return null;
+            if (owner != null) return CompOrNull<InternalsComponent>(owner.Value);
+            return _containers.TryGetContainingContainer(component.Owner, out var container)
+                ? CompOrNull<InternalsComponent>(container.Owner)
+                : null;
         }
 
-        public void AssumeAir(Entity<GasTankComponent> ent, GasMixture giver)
+        public void AssumeAir(GasTankComponent component, GasMixture giver)
         {
-            _atmosphereSystem.Merge(ent.Comp.Air, giver);
-            CheckStatus(ent);
+            _atmosphereSystem.Merge(component.Air, giver);
+            CheckStatus(component);
         }
 
-        public void CheckStatus(Entity<GasTankComponent> ent)
+        public void CheckStatus(GasTankComponent component)
         {
-            var (owner, component) = ent;
             if (component.Air == null)
                 return;
 
             var pressure = component.Air.Pressure;
 
-            if (pressure > component.TankFragmentPressure && _maxExplosionRange > 0)
+            if (pressure > component.TankFragmentPressure)
             {
                 // Give the gas a chance to build up more pressure.
                 for (var i = 0; i < 3; i++)
@@ -343,9 +267,12 @@ namespace Content.Server.Atmos.EntitySystems
 
                 // Let's cap the explosion, yeah?
                 // !1984
-                range = Math.Min(Math.Min(range, GasTankComponent.MaxExplosionRange), _maxExplosionRange);
+                if (range > GasTankComponent.MaxExplosionRange)
+                {
+                    range = GasTankComponent.MaxExplosionRange;
+                }
 
-                _explosions.TriggerExplosive(owner, radius: range);
+                _explosions.TriggerExplosive(component.Owner, radius: range);
 
                 return;
             }
@@ -354,13 +281,13 @@ namespace Content.Server.Atmos.EntitySystems
             {
                 if (component.Integrity <= 0)
                 {
-                    var environment = _atmosphereSystem.GetContainingMixture(owner, false, true);
-                    if (environment != null)
+                    var environment = _atmosphereSystem.GetContainingMixture(component.Owner, false, true);
+                    if(environment != null)
                         _atmosphereSystem.Merge(environment, component.Air);
 
-                    _audioSys.PlayPvs(component.RuptureSound, Transform(owner).Coordinates, AudioParams.Default.WithVariation(0.125f));
+                    _audioSys.Play(component.RuptureSound, Filter.Pvs(component.Owner), Transform(component.Owner).Coordinates, true, AudioParams.Default.WithVariation(0.125f));
 
-                    QueueDel(owner);
+                    QueueDel(component.Owner);
                     return;
                 }
 
@@ -372,7 +299,7 @@ namespace Content.Server.Atmos.EntitySystems
             {
                 if (component.Integrity <= 0)
                 {
-                    var environment = _atmosphereSystem.GetContainingMixture(owner, false, true);
+                    var environment = _atmosphereSystem.GetContainingMixture(component.Owner, false, true);
                     if (environment == null)
                         return;
 
@@ -396,29 +323,12 @@ namespace Content.Server.Atmos.EntitySystems
         /// </summary>
         private void OnAnalyzed(EntityUid uid, GasTankComponent component, GasAnalyzerScanEvent args)
         {
-            args.GasMixtures ??= new List<(string, GasMixture?)>();
-            args.GasMixtures.Add((Name(uid), component.Air));
+            args.GasMixtures = new Dictionary<string, GasMixture?> { {Name(uid), component.Air} };
         }
 
         private void OnGasTankPrice(EntityUid uid, GasTankComponent component, ref PriceCalculationEvent args)
         {
             args.Price += _atmosphereSystem.GetPrice(component.Air);
-        }
-
-        private void OnGetAlternativeVerb(EntityUid uid, GasTankComponent component, GetVerbsEvent<AlternativeVerb> args)
-        {
-            if (!args.CanAccess || !args.CanInteract || args.Hands == null)
-                return;
-            args.Verbs.Add(new AlternativeVerb()
-            {
-                Text = component.IsValveOpen ? Loc.GetString("comp-gas-tank-close-valve") : Loc.GetString("comp-gas-tank-open-valve"),
-                Act = () =>
-                {
-                    component.IsValveOpen = !component.IsValveOpen;
-                    _audioSys.PlayPvs(component.ValveSound, uid);
-                },
-                Disabled = component.IsConnected,
-            });
         }
     }
 }

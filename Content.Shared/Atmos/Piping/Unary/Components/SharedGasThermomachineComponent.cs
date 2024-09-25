@@ -2,14 +2,19 @@
 
 namespace Content.Shared.Atmos.Piping.Unary.Components;
 
-[Serializable, NetSerializable]
-public sealed record GasThermoMachineData(float EnergyDelta);
-
 [Serializable]
 [NetSerializable]
 public enum ThermomachineUiKey
 {
     Key
+}
+
+[Serializable]
+[NetSerializable]
+public enum ThermoMachineMode : byte
+{
+    Freezer = 0,
+    Heater = 1,
 }
 
 [Serializable]
@@ -38,14 +43,14 @@ public sealed class GasThermomachineBoundUserInterfaceState : BoundUserInterface
     public float MaxTemperature { get; }
     public float Temperature { get; }
     public bool Enabled { get; }
-    public bool IsHeater { get; }
+    public ThermoMachineMode Mode { get; }
 
-    public GasThermomachineBoundUserInterfaceState(float minTemperature, float maxTemperature, float temperature, bool enabled, bool isHeater)
+    public GasThermomachineBoundUserInterfaceState(float minTemperature, float maxTemperature, float temperature, bool enabled, ThermoMachineMode mode)
     {
         MinTemperature = minTemperature;
         MaxTemperature = maxTemperature;
         Temperature = temperature;
         Enabled = enabled;
-        IsHeater = isHeater;
+        Mode = mode;
     }
 }

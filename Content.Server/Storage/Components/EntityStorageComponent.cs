@@ -1,12 +1,11 @@
 using Content.Server.Atmos;
-using Content.Shared.Atmos;
 using Content.Shared.Storage.Components;
 using Robust.Shared.GameStates;
 
 namespace Content.Server.Storage.Components;
 
-[RegisterComponent]
-public sealed partial class EntityStorageComponent : SharedEntityStorageComponent, IGasMixtureHolder
+[RegisterComponent, ComponentReference(typeof(SharedEntityStorageComponent))]
+public sealed class EntityStorageComponent : SharedEntityStorageComponent, IGasMixtureHolder
 {
     /// <summary>
     ///     Gas currently contained in this entity storage.

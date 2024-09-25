@@ -32,13 +32,13 @@
   - togglelight
   - togglelightbuf
   - toggleshadows
+  - testbed
   - lightbb
   - vv
   - szr_stats
   - addview
   - removeview
   - hwid
-  - showaudio
   - showpos
   - showray
   - showchunkbb
@@ -64,10 +64,6 @@
   - tilelookup
   - net_entityreport
   - scene
-  - replay_recording_stats
-  - print_pvs_ack
-  - pvs_override_info
-  - merge_grids
 
 
 - Flags: MAPPING
@@ -89,14 +85,12 @@
 
 - Flags: ADMIN
   Commands:
+  - delete
+  - kick
   - listplayers
   - tp
   - tpto
-
-- Flags: FUN
-  Commands:
-  - tippy
-  - tip
+  - respawn
 
 - Flags: SERVER
   Commands:
@@ -110,17 +104,12 @@
   Commands:
   - spawn
   - cspawn
-  - delete
-
-- Flags: MODERATOR
-  Commands:
-  - kick
-  - respawn
 
 - Flags: HOST
   Commands:
   - gc_mode
   - gc
+  - loglevel
   - saveconfig
   - testlog
   - sudo
@@ -131,15 +120,7 @@
   - gcf
   - getcomponentregistration
   - fuck
-  - replay_recording_start
-  - replay_recording_stop
 
 - Flags: QUERY
   Commands:
-  - uploadfile
-  - loadprototype
-  - uploadfolder
-
-- Commands:
-  - "|"
-  - oldhelp
+  - forall

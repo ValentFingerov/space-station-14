@@ -1,10 +1,11 @@
-using Robust.Shared.Utility;
-
 namespace Content.Shared.Atmos.Components;
 
 [RegisterComponent]
-public sealed partial class PipeAppearanceComponent : Component
+public sealed class PipeAppearanceComponent : Component
 {
-    [DataField("sprite")]
-    public SpriteSpecifier.Rsi Sprite = new(new("Structures/Piping/Atmospherics/pipe.rsi"), "pipeConnector");
+    [DataField("rsi")]
+    public string RsiPath = "Structures/Piping/Atmospherics/pipe.rsi";
+
+    [DataField("baseState")]
+    public string State = "pipeConnector";
 }

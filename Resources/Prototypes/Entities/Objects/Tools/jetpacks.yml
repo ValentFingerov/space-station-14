@@ -1,10 +1,11 @@
 - type: entity
   id: JetpackEffect
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: TimedDespawn
     lifetime: 2
   - type: Sprite
+    netsync: false
     drawdepth: SmallMobs
     noRot: true
     layers:
@@ -22,8 +23,8 @@
   parent: GasTankBase
   abstract: true
   id: BaseJetpack
-  name: jetpack
-  description: It's a jetpack. It can hold 5 L of gas.
+  name: Jetpack
+  description: It's a jetpack.
   components:
     - type: InputMover
       toParent: true
@@ -31,16 +32,16 @@
       weightlessAcceleration: 1
       weightlessFriction: 0.3
       weightlessModifier: 1.2
-    - type: CanMoveInAir
     - type: Sprite
       sprite: Objects/Tanks/Jetpacks/blue.rsi
       state: icon
+      netsync: false
     - type: Item
       sprite: Objects/Tanks/Jetpacks/blue.rsi
-      size: Huge
+      size: 100
     - type: UserInterface
       interfaces:
-        enum.SharedGasTankUiKey.Key:
+        - key: enum.SharedGasTankUiKey.Key
           type: GasTankBoundUserInterface
     - type: Clothing
       sprite: Objects/Tanks/Jetpacks/blue.rsi
@@ -48,30 +49,25 @@
       slots:
         - Back
     - type: GasTank
-      outputPressure: 21.3
+      outputPressure: 21.27825
       air:
-        volume: 5
+        volume: 70
         temperature: 293.15
     - type: Jetpack
-      moleUsage: 0.00085
+      toggleAction:
+        icon:
+          sprite: Objects/Tanks/Jetpacks/blue.rsi
+          state: icon
+        iconOn:
+          sprite: Objects/Tanks/Jetpacks/blue.rsi
+          state: icon-on
+        name: action-name-jetpack-toggle
+        description: action-description-jetpack-toggle
+        useDelay: 1.0
+        event: !type:ToggleJetpackEvent
     - type: Appearance
     - type: StaticPrice
       price: 100
-
-- type: entity
-  id: ActionToggleJetpack
-  name: Toggle jetpack
-  description: Toggles the jetpack, giving you movement outside the station.
-  components:
-  - type: InstantAction
-    icon:
-      sprite: Objects/Tanks/Jetpacks/blue.rsi
-      state: icon
-    iconOn:
-      sprite: Objects/Tanks/Jetpacks/blue.rsi
-      state: icon-on
-    useDelay: 1.0
-    event: !type:ToggleJetpackEvent
 
 #Empty blue
 - type: entity
@@ -97,17 +93,16 @@
   - type: GasTank
     outputPressure: 42.6
     air:
-      # 13 minutes of thrust
-      volume: 5
+      volume: 70
       temperature: 293.15
       moles:
-        - 1.025689525 # oxygen
-        - 1.025689525 # nitrogen
+        - 11.315
+        - 11.315
 
 #Empty black
 - type: entity
   id: JetpackBlack
-  parent: [BaseJetpack, BaseSyndicateContraband]
+  parent: BaseJetpack
   name: jetpack
   suffix: Empty
   components:
@@ -130,17 +125,16 @@
   - type: GasTank
     outputPressure: 42.6
     air:
-      # 13 minutes of thrust
-      volume: 5
+      volume: 70
       temperature: 293.15
       moles:
-        - 1.025689525 # oxygen
-        - 1.025689525 # nitrogen
+        - 11.315
+        - 11.315
 
 #Empty captain
 - type: entity
   id: JetpackCaptain
-  parent: [BaseJetpack, BaseGrandTheftContraband]
+  parent: BaseJetpack
   name: captain's jetpack
   suffix: Empty
   components:
@@ -150,15 +144,12 @@
     sprite: Objects/Tanks/Jetpacks/captain.rsi
     slots:
       - Back
-      - SuitStorage
   - type: Item
     sprite: Objects/Tanks/Jetpacks/captain.rsi
-    size: Normal
+    size: 30
   - type: Tag
     tags:
     - HighRiskItem
-  - type: StealTarget
-    stealGroup: JetpackCaptainFilled
 
 # Filled captain
 - type: entity
@@ -170,19 +161,17 @@
   - type: GasTank
     outputPressure: 42.6
     air:
-      # 13 minutes of thrust
-      volume: 5
+      volume: 70
       temperature: 293.15
       moles:
-        - 1.025689525 # oxygen
-        - 1.025689525 # nitrogen
+        - 11.315
+        - 11.315
 
 #Empty mini
 - type: entity
   id: JetpackMini
   parent: BaseJetpack
   name: mini jetpack
-  description: It's a jetpack. It can hold 1.5 L of gas.
   suffix: Empty
   components:
     - type: Item
@@ -194,11 +183,10 @@
       slots:
         - Back
         - suitStorage
-        - Belt
     - type: GasTank
       outputPressure: 42.6
       air:
-        volume: 1.5
+        volume: 20
 
 # Filled mini
 - type: entity
@@ -210,17 +198,16 @@
   - type: GasTank
     outputPressure: 42.6
     air:
-      # 4 minutes of thrust
-      volume: 1.5
       temperature: 293.15
+      volume: 20
       moles:
-        - 0.307706858 # oxygen
-        - 0.307706858 # nitrogen
+      - 0.747
+      - 0.747
 
 #Empty security
 - type: entity
   id: JetpackSecurity
-  parent: [BaseJetpack, BaseRestrictedContraband]
+  parent: BaseJetpack
   name: security jetpack
   suffix: Empty
   components:
@@ -243,12 +230,11 @@
   - type: GasTank
     outputPressure: 42.6
     air:
-      # 13 minutes thrust
-      volume: 5
+      volume: 70
       temperature: 293.15
       moles:
-        - 1.025689525 # oxygen
-        - 1.025689525 # nitrogen
+        - 11.315
+        - 11.315
 
 #Empty void
 - type: entity
@@ -266,7 +252,6 @@
     slots:
       - Back
       - suitStorage
-      - Belt
 
 # Filled void
 - type: entity
@@ -278,9 +263,8 @@
   - type: GasTank
     outputPressure: 42.6
     air:
-      # 13 minutes of thrust
-      volume: 5
+      volume: 70
       temperature: 293.15
       moles:
-        - 1.025689525 # oxygen
-        - 1.025689525 # nitrogen
+        - 11.315
+        - 11.315

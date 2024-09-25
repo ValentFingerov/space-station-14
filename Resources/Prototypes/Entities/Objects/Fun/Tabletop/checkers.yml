@@ -1,6 +1,6 @@
 # Uses the chessboard and generic pieces
 - type: entity
-  parent: BaseBoardEntity
+  parent: BaseItem
   id: CheckerBoard
   name: checkerboard
   description: A checkerboard. Pieces included!
@@ -11,58 +11,64 @@
   - type: TabletopGame
     boardName: tabletop-checkers-board-name
     size: 338, 274
-    setup:
-      !type:TabletopCheckerSetup
-      boardPrototype: &checkerboard CheckerBoardTabletop
-      prototypePieceWhite: &pieceWhite CheckerPieceWhite
-      prototypeCrownWhite: &crownWhite CheckerCrownWhite
-      prototypePieceBlack: &pieceBlack CheckerPieceBlack
-      prototypeCrownBlack: &crownBlack CheckerCrownBlack
+    setup: !type:TabletopCheckerSetup
 
 # Checkerboard tabletop item (item only visible in tabletop game)
 - type: entity
-  id: *checkerboard
+  id: CheckerBoardTabletop
   name: checkerboard
-  parent: BaseBoardTabletop
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Sprite
     sprite: Objects/Fun/Tabletop/chessboard_tabletop.rsi
     state: chessboard_tabletop
+    noRot: false
+    drawdepth: FloorTiles
+
+- type: entity
+  id: BaseCheckerPiece
+  parent: BaseItem
+  noSpawn: true
+  components:
+  - type: TabletopDraggable
+  - type: Sprite
+    netsync: false
+    noRot: true
+  - type: Appearance
 
 # The pieces
 - type: entity
-  id: *pieceWhite
-  name: white checker piece
-  parent: BaseTabletopPiece
+  id: WhiteCheckerPiece
+  name: white piece
+  parent: BaseCheckerPiece
   components:
     - type: Sprite
       sprite: Objects/Fun/Tabletop/checker_pieces.rsi
       state: w_checker_piece
 
 - type: entity
-  id: *crownWhite
-  name: white checker crown
-  parent: BaseTabletopPiece
+  id: WhiteCheckerQueen
+  name: white queen
+  parent: BaseCheckerPiece
   components:
     - type: Sprite
       sprite: Objects/Fun/Tabletop/checker_pieces.rsi
-      state: w_checker_crown
+      state: w_checker_queen
 
 - type: entity
-  id: *pieceBlack
-  name: black checker piece
-  parent: BaseTabletopPiece
+  id: BlackCheckerPiece
+  name: black piece
+  parent: BaseCheckerPiece
   components:
     - type: Sprite
       sprite: Objects/Fun/Tabletop/checker_pieces.rsi
       state: b_checker_piece
 
 - type: entity
-  id: *crownBlack
-  name: black checker crown
-  parent: BaseTabletopPiece
+  id: BlackCheckerQueen
+  name: black queen
+  parent: BaseCheckerPiece
   components:
     - type: Sprite
       sprite: Objects/Fun/Tabletop/checker_pieces.rsi
-      state: b_checker_crown
+      state: b_checker_queen

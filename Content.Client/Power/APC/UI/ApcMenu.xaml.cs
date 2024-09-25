@@ -17,19 +17,14 @@ namespace Content.Client.Power.APC.UI
     [GenerateTypedNameReferences]
     public sealed partial class ApcMenu : FancyWindow
     {
-        public event Action? OnBreaker;
-
-        public ApcMenu()
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+        public ApcMenu(ApcBoundUserInterface owner, ClientUserInterfaceComponent component)
         {
             IoCManager.InjectDependencies(this);
             RobustXamlLoader.Load(this);
 
-            BreakerButton.OnPressed += _ => OnBreaker?.Invoke();
-        }
-
-        public void SetEntity(EntityUid entity)
-        {
-            EntityView.SetEntity(entity);
+            EntityView.Sprite = _entityManager.GetComponent<SpriteComponent>(component.Owner);
+            BreakerButton.OnPressed += _ => owner.BreakerPressed();
         }
 
         public void UpdateState(BoundUserInterfaceState state)
@@ -53,7 +48,7 @@ namespace Content.Client.Power.APC.UI
 
             if (PowerLabel != null)
             {
-                PowerLabel.Text = castState.Power + " W";
+                PowerLabel.Text = castState.Power + "W";
             }
 
             if (ExternalPowerStateLabel != null)

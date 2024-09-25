@@ -1,4 +1,4 @@
-- type: entity
+﻿- type: entity
   id: BaseShutter
   parent: BaseStructure
   name: shutter
@@ -7,10 +7,10 @@
   placement:
     mode: SnapgridCenter
   components:
-  - type: StationAiWhitelist
   - type: Sprite
+    netsync: false
     sprite: Structures/Doors/Shutters/shutters.rsi
-    drawdepth: BlastDoors
+    drawdepth: Overdoors
     layers:
     - state: closed
       map: ["enum.DoorVisualLayers.Base"]
@@ -33,10 +33,7 @@
   - type: ContainerContainer
     containers:
       board: !type:Container
-  - type: NavMapDoor
   - type: Door
-    openDrawDepth: BlastDoors
-    closedDrawDepth: BlastDoors
     bumpOpen: false
     clickOpen: false
     closeTimeOne: 0.2
@@ -53,18 +50,20 @@
     closeSound:
       path: /Audio/Machines/blastdoor.ogg
   - type: Weldable
+    fuel: 3
     time: 3
   - type: Appearance
   - type: UserInterface
     interfaces:
-      enum.WiresUiKey.Key:
-        type: WiresBoundUserInterface
+    - key: enum.WiresUiKey.Key
+      type: WiresBoundUserInterface
   - type: Airtight
+    fixVacuum: true
   - type: RadiationBlocker
     resistance: 2
   - type: Damageable
-    damageContainer: StructuralInorganic
-    damageModifierSet: StructuralMetallic
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
   - type: Destructible
     thresholds:
     - trigger:
@@ -90,14 +89,11 @@
   - type: DeviceLinkSource
     ports:
     - DoorStatus
-    lastSignals:
-      DoorStatus: false
   - type: InteractionPopup
     interactSuccessString: comp-window-knock
     messagePerceivedByOthers: comp-window-knock
     interactSuccessSound:
       path: /Audio/Effects/glass_knock.ogg
-  - type: BlockWeather
 
 - type: entity
   id: ShuttersNormal
@@ -133,6 +129,7 @@
   description: Why did they make these shutters radioactive?
   components:
   - type: Sprite
+    netsync: false
     sprite: Structures/Doors/Shutters/shutters_radiation.rsi
     layers:
     - state: closed
@@ -143,8 +140,6 @@
     node: ShuttersRadiation
     containers:
     - board
-  - type: RadiationBlocker
-    resistance: 4
 
 - type: entity
   id: ShuttersRadiationOpen
@@ -169,6 +164,7 @@
   description: The Best (TM) place to see your friends explode!
   components:
   - type: Sprite
+    netsync: false
     sprite: Structures/Doors/Shutters/shutters_window.rsi
     layers:
     - state: closed
@@ -178,8 +174,6 @@
     node: ShuttersWindow
     containers:
     - board
-  - type: RadiationBlocker
-    resistance: 1
 
 - type: entity
   id: ShuttersWindowOpen
@@ -205,6 +199,7 @@
   - type: Sprite
     sprite: Structures/Doors/Shutters/shutters.rsi
     state: frame
+    netsync: false
   - type: Construction
     graph: Shutters
     node: frame1
@@ -212,7 +207,7 @@
     - board
   - type: InteractionOutline
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:

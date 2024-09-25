@@ -10,13 +10,13 @@ namespace Content.Client.Toggleable;
 ///     visuals. This will modify the color of any attached point lights.
 /// </remarks>
 [RegisterComponent]
-public sealed partial class ToggleableLightVisualsComponent : Component
+public sealed class ToggleableLightVisualsComponent : Component
 {
     /// <summary>
-    ///     Sprite layer that will have its visibility toggled when this item is toggled.
+    ///     Sprite layer that will have it's visibility toggled when this item is toggled.
     /// </summary>
     [DataField("spriteLayer")]
-    public string? SpriteLayer = "light";
+    public string SpriteLayer = "light";
 
     /// <summary>
     ///     Layers to add to the sprite of the player that is holding this entity (while the component is toggled on).
@@ -28,5 +28,5 @@ public sealed partial class ToggleableLightVisualsComponent : Component
     ///     Layers to add to the sprite of the player that is wearing this entity (while the component is toggled on).
     /// </summary>
     [DataField("clothingVisuals")]
-    public Dictionary<string, List<PrototypeLayerData>> ClothingVisuals = new();
+    public readonly Dictionary<string, List<PrototypeLayerData>> ClothingVisuals = new();
 }

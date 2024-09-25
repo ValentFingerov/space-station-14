@@ -9,7 +9,6 @@ on:
       - 'Content.Shared/Chemistry/**.cs'
       - 'Content.Server/Chemistry/**.cs'
       - 'Content.Server/GuideGenerator/**.cs'
-      - 'Content.Server/Corvax/GuideGenerator/**.cs'
       - 'Resources/Prototypes/Reagents/**.yml'
       - 'Resources/Prototypes/Chemistry/**.yml'
       - 'Resources/Prototypes/Recipes/Reactions/**.yml'
@@ -22,7 +21,7 @@ jobs:
 
     steps:
     - name: Checkout Master
-      uses: actions/checkout@v3.6.0
+      uses: actions/checkout@v2
 
     - name: Setup Submodule
       run: |
@@ -37,9 +36,9 @@ jobs:
         git submodule update --init --recursive
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v3.2.0
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 6.0.100
 
     - name: Install Dependencies
       run: dotnet restore
@@ -71,22 +70,3 @@ jobs:
         username: ${{ secrets.WIKI_BOT_USER }}
         password: ${{ secrets.WIKI_BOT_PASS }}
 
-    - name: Upload entity_prototypes.json to wiki
-      uses: jtmullen/mediawiki-edit-action@v0.1.1
-      with:
-        wiki_text_file: ./bin/Content.Server/data/entity_prototypes.json
-        edit_summary: Update entity_prototypes.json via GitHub Actions
-        page_name: "${{ secrets.WIKI_PAGE_ROOT }}/entity_prototypes.json"
-        api_url: ${{ secrets.WIKI_ROOT_URL }}/api.php
-        username: ${{ secrets.WIKI_BOT_USER }}
-        password: ${{ secrets.WIKI_BOT_PASS }}
-
-    - name: Upload mealrecipes_prototypes.json to wiki
-      uses: jtmullen/mediawiki-edit-action@v0.1.1
-      with:
-        wiki_text_file: ./bin/Content.Server/data/mealrecipes_prototypes.json
-        edit_summary: Update mealrecipes_prototypes.json via GitHub Actions
-        page_name: "${{ secrets.WIKI_PAGE_ROOT }}/mealrecipes_prototypes.json"
-        api_url: ${{ secrets.WIKI_ROOT_URL }}/api.php
-        username: ${{ secrets.WIKI_BOT_USER }}
-        password: ${{ secrets.WIKI_BOT_PASS }}

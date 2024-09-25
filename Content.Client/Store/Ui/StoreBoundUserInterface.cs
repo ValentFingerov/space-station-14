@@ -1,93 +1,77 @@
 using Content.Shared.Store;
 using JetBrains.Annotations;
+using Robust.Client.GameObjects;
 using System.Linq;
-using Content.Shared.Store.Components;
-using Robust.Client.UserInterface;
-using Robust.Shared.Prototypes;
 
 namespace Content.Client.Store.Ui;
 
 [UsedImplicitly]
 public sealed class StoreBoundUserInterface : BoundUserInterface
 {
-    private IPrototypeManager _prototypeManager = default!;
-
-    [ViewVariables]
     private StoreMenu? _menu;
 
-    [ViewVariables]
-    private string _search = string.Empty;
+    private string _windowName = Loc.GetString("store-ui-default-title");
 
-    [ViewVariables]
-    private HashSet<ListingDataWithCostModifiers> _listings = new();
-
-    public StoreBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey)
+    public StoreBoundUserInterface(ClientUserInterfaceComponent owner, Enum uiKey) : base(owner, uiKey)
     {
+
     }
 
     protected override void Open()
     {
-        _menu = this.CreateWindow<StoreMenu>();
-        if (EntMan.TryGetComponent<StoreComponent>(Owner, out var store))
-            _menu.Title = Loc.GetString(store.Name);
+        _menu = new StoreMenu(_windowName);
+
+        _menu.OpenCentered();
+        _menu.OnClose += Close;
 
         _menu.OnListingButtonPressed += (_, listing) =>
         {
-            SendMessage(new StoreBuyListingMessage(listing.ID));
+            SendMessage(new StoreBuyListingMessage(listing));
         };
 
         _menu.OnCategoryButtonPressed += (_, category) =>
         {
             _menu.CurrentCategory = category;
-            _menu?.UpdateListing();
+            SendMessage(new StoreRequestUpdateInterfaceMessage());
         };
 
         _menu.OnWithdrawAttempt += (_, type, amount) =>
         {
             SendMessage(new StoreRequestWithdrawMessage(type, amount));
         };
-
-        _menu.SearchTextUpdated += (_, search) =>
-        {
-            _search = search.Trim().ToLowerInvariant();
-            UpdateListingsWithSearchFilter();
-        };
-
-        _menu.OnRefundAttempt += (_) =>
-        {
-            SendMessage(new StoreRequestRefundMessage());
-        };
     }
     protected override void UpdateState(BoundUserInterfaceState state)
     {
         base.UpdateState(state);
 
+        if (_menu == null)
+            return;
+
         switch (state)
         {
             case StoreUpdateState msg:
-                _listings = msg.Listings;
-
-                _menu?.UpdateBalance(msg.Balance);
-
-                UpdateListingsWithSearchFilter();
-                _menu?.SetFooterVisibility(msg.ShowFooter);
-                _menu?.UpdateRefund(msg.AllowRefund);
+                _menu.UpdateBalance(msg.Balance);
+                _menu.PopulateStoreCategoryButtons(msg.Listings);
+                _menu.UpdateListing(msg.Listings.ToList());
+                _menu.SetFooterVisibility(msg.ShowFooter);
+                break;
+            case StoreInitializeState msg:
+                _windowName = msg.Name;
+                if (_menu != null && _menu.Window != null)
+                {
+                    _menu.Window.Title = msg.Name;
+                }
                 break;
         }
     }
 
-    private void UpdateListingsWithSearchFilter()
+    protected override void Dispose(bool disposing)
     {
-        if (_menu == null)
+        base.Dispose(disposing);
+        if (!disposing)
             return;
 
-        var filteredListings = new HashSet<ListingDataWithCostModifiers>(_listings);
-        if (!string.IsNullOrEmpty(_search))
-        {
-            filteredListings.RemoveWhere(listingData => !ListingLocalisationHelpers.GetLocalisedNameOrEntityName(listingData, _prototypeManager).Trim().ToLowerInvariant().Contains(_search) &&
-                                                        !ListingLocalisationHelpers.GetLocalisedDescriptionOrEntityDescription(listingData, _prototypeManager).Trim().ToLowerInvariant().Contains(_search));
-        }
-        _menu.PopulateStoreCategoryButtons(filteredListings);
-        _menu.UpdateListing(filteredListings.ToList());
+        _menu?.Close();
+        _menu?.Dispose();
     }
 }

@@ -8,13 +8,12 @@
     - type: Sprite
       drawdepth: SmallObjects
       sprite: Objects/Specific/Xenoarchaeology/xeno_artifacts.rsi
-      noRot: true
+      netsync: false
       layers:
-      - state: ano30
+      - state: ano01
         map: [ "enum.ArtifactsVisualLayers.Base" ]
-      - state: ano30_on
-        map: [ "enum.ArtifactsVisualLayers.Effect" ]
-        visible: false
+      state: ano01
+      noRot: true
     - type: Damageable
     - type: Physics
       bodyType: Dynamic
@@ -22,17 +21,12 @@
       noRot: true
     - type: UserInterface #needs to be here for certain effects
       interfaces:
-        enum.StorageUiKey.Key:
-          type: StorageBoundUserInterface
-        enum.TransferAmountUiKey.Key:
-          type: TransferAmountBoundUserInterface
-        enum.InstrumentUiKey.Key:
-          type: InstrumentBoundUserInterface
-        enum.IntercomUiKey.Key:
-          type: IntercomBoundUserInterface
-    - type: Reactive
-      groups:
-        Acidic: [Touch]
+      - key: enum.StorageUiKey.Key
+        type: StorageBoundUserInterface
+      - key: enum.TransferAmountUiKey.Key
+        type: TransferAmountBoundUserInterface
+      - key: enum.InstrumentUiKey.Key
+        type: InstrumentBoundUserInterface
     - type: Fixtures
       fixtures:
         fix1:
@@ -42,23 +36,19 @@
           density: 75
           layer: # doesn't collide with artifact storage
           - Opaque
+          - BulletImpassable
           mask:
           - MachineMask
     - type: InteractionOutline
     - type: Artifact
     - type: RandomArtifactSprite
-      maxSprite: 36
-    - type: RandomSprite
-      available:
-      - enum.ArtifactsVisualLayers.Effect:
-          ano01_on: Rainbow
     - type: Appearance
+    - type: StaticPrice
+      price: 500
     - type: Actions
     - type: GuideHelp
       guides:
       - Xenoarchaeology
-    - type: StealTarget
-      stealGroup: XenoArtifact
 
 - type: entity
   parent: BaseXenoArtifact

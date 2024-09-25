@@ -2,7 +2,7 @@
   id: BulletMagnum
   name: bullet (.45 magnum)
   parent: BaseBullet
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Projectile
     damage:
@@ -10,10 +10,21 @@
         Piercing: 35
 
 - type: entity
+  id: BulletMagnumHighVelocity
+  name: bullet (.45 magnum high-velocity)
+  parent: BaseBulletHighVelocity
+  noSpawn: true
+  components:
+  - type: Projectile
+    damage:
+      types:
+        Piercing: 39
+
+- type: entity
   id: BulletMagnumPractice
   name: bullet (.45 magnum practice)
   parent: BaseBulletPractice
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   components:
   - type: Projectile
     damage:
@@ -21,37 +32,14 @@
         Blunt: 1
 
 - type: entity
-  id: BulletMagnumIncendiary
-  parent: BaseBulletIncendiary
-  name: bullet (.45 magnum incendiary)
-  categories: [ HideSpawnMenu ]
+  id: BulletMagnumRubber
+  name: bullet (.45 magnum rubber)
+  parent: BaseBulletRubber
+  noSpawn: true
   components:
   - type: Projectile
     damage:
       types:
         Blunt: 3
-        Heat: 32
-
-- type: entity
-  id: BulletMagnumAP
-  name: bullet (.45 magnum armor-piercing)
-  parent: BaseBulletAP
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Projectile
-    damage:
-      types:
-        Piercing: 26 # 20% decrease
-    ignoreResistances: true
-
-- type: entity
-  id: BulletMagnumUranium
-  name: bullet (.45 magnum uranium)
-  parent: BaseBulletUranium
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Projectile
-    damage:
-      types:
-        Radiation: 15
-        Piercing: 20
+  - type: StaminaDamageOnCollide
+    damage: 35 # 3 hits to stun cuz revolver

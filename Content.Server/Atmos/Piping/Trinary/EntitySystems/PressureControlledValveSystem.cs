@@ -2,21 +2,22 @@ using Content.Server.Atmos.EntitySystems;
 using Content.Server.Atmos.Piping.Components;
 using Content.Server.Atmos.Piping.Trinary.Components;
 using Content.Server.NodeContainer;
-using Content.Server.NodeContainer.EntitySystems;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.Atmos.Piping;
 using Content.Shared.Audio;
 using JetBrains.Annotations;
+using Robust.Server.GameObjects;
+using Robust.Shared.Timing;
 
 namespace Content.Server.Atmos.Piping.Trinary.EntitySystems
 {
     [UsedImplicitly]
     public sealed class PressureControlledValveSystem : EntitySystem
     {
+        [Dependency] private IGameTiming _gameTiming = default!;
         [Dependency] private readonly AtmosphereSystem _atmosphereSystem = default!;
         [Dependency] private readonly SharedAmbientSoundSystem _ambientSoundSystem = default!;
         [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
-        [Dependency] private readonly NodeContainerSystem _nodeContainer = default!;
 
         public override void Initialize()
         {
@@ -31,11 +32,15 @@ namespace Content.Server.Atmos.Piping.Trinary.EntitySystems
             UpdateAppearance(uid, comp);
         }
 
-        private void OnUpdate(EntityUid uid, PressureControlledValveComponent comp, ref AtmosDeviceUpdateEvent args)
+        private void OnUpdate(EntityUid uid, PressureControlledValveComponent comp, AtmosDeviceUpdateEvent args)
         {
-            if (!_nodeContainer.TryGetNodes(uid, comp.InletName, comp.ControlName, comp.OutletName, out PipeNode? inletNode, out PipeNode? controlNode, out PipeNode? outletNode))
+            if (!EntityManager.TryGetComponent(uid, out NodeContainerComponent? nodeContainer)
+                || !EntityManager.TryGetComponent(uid, out AtmosDeviceComponent? device)
+                || !nodeContainer.TryGetNode(comp.InletName, out PipeNode? inletNode)
+                || !nodeContainer.TryGetNode(comp.ControlName, out PipeNode? controlNode)
+                || !nodeContainer.TryGetNode(comp.OutletName, out PipeNode? outletNode))
             {
-                _ambientSoundSystem.SetAmbience(uid, false);
+                _ambientSoundSystem.SetAmbience(comp.Owner, false);
                 comp.Enabled = false;
                 return;
             }
@@ -58,28 +63,28 @@ namespace Content.Server.Atmos.Piping.Trinary.EntitySystems
             else
             {
                 comp.Enabled = true;
-                transferRate = Math.Min(control * comp.Gain, comp.MaxTransferRate * _atmosphereSystem.PumpSpeedup());
+                transferRate = Math.Min(control * comp.Gain, comp.MaxTransferRate);
             }
             UpdateAppearance(uid, comp);
 
             // We multiply the transfer rate in L/s by the seconds passed since the last process to get the liters.
-            var transferVolume = transferRate * args.dt;
+            var transferVolume = (float)(transferRate * (_gameTiming.CurTime - device.LastProcess).TotalSeconds);
             if (transferVolume <= 0)
             {
-                _ambientSoundSystem.SetAmbience(uid, false);
+                _ambientSoundSystem.SetAmbience(comp.Owner, false);
                 return;
             }
 
-            _ambientSoundSystem.SetAmbience(uid, true);
+            _ambientSoundSystem.SetAmbience(comp.Owner, true);
             var removed = inletNode.Air.RemoveVolume(transferVolume);
             _atmosphereSystem.Merge(outletNode.Air, removed);
         }
 
-        private void OnFilterLeaveAtmosphere(EntityUid uid, PressureControlledValveComponent comp, ref AtmosDeviceDisabledEvent args)
+        private void OnFilterLeaveAtmosphere(EntityUid uid, PressureControlledValveComponent comp, AtmosDeviceDisabledEvent args)
         {
             comp.Enabled = false;
             UpdateAppearance(uid, comp);
-            _ambientSoundSystem.SetAmbience(uid, false);
+            _ambientSoundSystem.SetAmbience(comp.Owner, false);
         }
 
         private void UpdateAppearance(EntityUid uid, PressureControlledValveComponent? comp = null, AppearanceComponent? appearance = null)

@@ -1,9 +1,6 @@
-﻿using Content.Shared.Chemistry.Components;
-using Content.Shared.DoAfter;
-using Content.Shared.Nutrition.Components;
-using Content.Shared.Nutrition.Prototypes;
-using Robust.Shared.Prototypes;
+﻿using Content.Shared.DoAfter;
 using Robust.Shared.Serialization;
+using Content.Shared.Chemistry.Components;
 
 namespace Content.Shared.Nutrition;
 
@@ -11,13 +8,13 @@ namespace Content.Shared.Nutrition;
 ///     Do after even for food and drink.
 /// </summary>
 [Serializable, NetSerializable]
-public sealed partial class ConsumeDoAfterEvent : DoAfterEvent
+public sealed class ConsumeDoAfterEvent : DoAfterEvent
 {
     [DataField("solution", required: true)]
-    public string Solution = default!;
+    public readonly string Solution = default!;
 
     [DataField("flavorMessage", required: true)]
-    public string FlavorMessage = default!;
+    public readonly string FlavorMessage = default!;
 
     private ConsumeDoAfterEvent()
     {
@@ -36,13 +33,13 @@ public sealed partial class ConsumeDoAfterEvent : DoAfterEvent
 ///     Do after event for vape.
 /// </summary>
 [Serializable, NetSerializable]
-public sealed partial class VapeDoAfterEvent : DoAfterEvent
+public sealed class VapeDoAfterEvent : DoAfterEvent
 {
     [DataField("solution", required: true)]
-    public Solution Solution = default!;
+    public readonly Solution Solution = default!;
 
     [DataField("forced", required: true)]
-    public bool Forced = default!;
+    public readonly bool Forced = default!;
 
     private VapeDoAfterEvent()
     {
@@ -50,28 +47,9 @@ public sealed partial class VapeDoAfterEvent : DoAfterEvent
 
     public VapeDoAfterEvent(Solution solution, bool forced)
     {
-        Solution = solution;
-        Forced = forced;
+            Solution = solution;
+            Forced = forced;
     }
 
     public override DoAfterEvent Clone() => this;
 }
-
-/// <summary>
-/// Raised before food is sliced
-/// </summary>
-[ByRefEvent]
-public record struct SliceFoodEvent();
-
-/// <summary>
-/// is called after a successful attempt at slicing food.
-/// </summary>
-[Serializable, NetSerializable]
-public sealed partial class SliceFoodDoAfterEvent : SimpleDoAfterEvent
-{
-}
-
-/// <summary>
-///    Raised on FoodSequence start element entity when new ingredient is added to FoodSequence
-/// </summary>
-public record struct FoodSequenceIngredientAddedEvent(EntityUid Start, EntityUid Element, ProtoId<FoodSequenceElementPrototype> Proto, EntityUid? User = null);

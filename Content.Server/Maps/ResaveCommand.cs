@@ -13,7 +13,7 @@ namespace Content.Server.Maps;
 /// <summary>
 /// Loads every map and resaves it into the data folder.
 /// </summary>
-[AdminCommand(AdminFlags.Host)]
+[AdminCommand(AdminFlags.Mapping)]
 public sealed class ResaveCommand : LocalizedCommands
 {
     [Dependency] private readonly IEntityManager _entManager = default!;
@@ -36,9 +36,6 @@ public sealed class ResaveCommand : LocalizedCommands
                 LoadMap = true,
             });
 
-            // Process deferred component removals.
-            _entManager.CullRemovedComponents();
-
             var mapUid = _mapManager.GetMapEntityId(mapId);
             var mapXform = _entManager.GetComponent<TransformComponent>(mapUid);
 
@@ -46,9 +43,10 @@ public sealed class ResaveCommand : LocalizedCommands
             {
                 loader.SaveMap(mapId, fn.ToString());
             }
-            else if (mapXform.ChildEnumerator.MoveNext(out var child))
+            else
             {
-                loader.Save(child, fn.ToString());
+
+                loader.Save(mapXform.ChildEntities.First(), fn.ToString());
             }
 
             _mapManager.DeleteMap(mapId);

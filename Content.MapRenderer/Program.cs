@@ -15,7 +15,7 @@ using SixLabors.ImageSharp.Formats.Webp;
 
 namespace Content.MapRenderer
 {
-    internal sealed class Program
+    internal class Program
     {
         private const string NoMapsChosenMessage = "No maps were chosen";
         private static readonly Func<string, string> ChosenMapIdNotIntMessage = id => $"The chosen id is not a valid integer: {id}";
@@ -29,13 +29,12 @@ namespace Content.MapRenderer
             if (!CommandLineArguments.TryParse(args, out var arguments))
                 return;
 
-            PoolManager.Startup();
             if (arguments.Maps.Count == 0)
             {
                 Console.WriteLine("Didn't specify any maps to paint! Loading the map list...");
 
-                await using var pair = await PoolManager.GetServerClient();
-                var mapIds = pair.Server
+                await using var server = await PoolManager.GetServerClient();
+                var mapIds = server.Pair.Server
                     .ResolveDependency<IPrototypeManager>()
                     .EnumeratePrototypes<GameMapPrototype>()
                     .Select(map => map.ID)
@@ -108,8 +107,8 @@ namespace Content.MapRenderer
                 Console.WriteLine("Retrieving map ids by map file names...");
 
                 Console.Write("Fetching map prototypes... ");
-                await using var pair = await PoolManager.GetServerClient();
-                var mapPrototypes = pair.Server
+                await using var server = await PoolManager.GetServerClient();
+                var mapPrototypes = server.Pair.Server
                     .ResolveDependency<IPrototypeManager>()
                     .EnumeratePrototypes<GameMapPrototype>()
                     .ToArray();
@@ -136,7 +135,6 @@ namespace Content.MapRenderer
             }
 
             await Run(arguments);
-            PoolManager.Shutdown();
         }
 
         private static async Task Run(CommandLineArguments arguments)
@@ -166,7 +164,7 @@ namespace Content.MapRenderer
                         Directory.CreateDirectory(directory);
 
                         var fileName = Path.GetFileNameWithoutExtension(map);
-                        var savePath = $"{directory}{Path.DirectorySeparatorChar}{fileName}-{i}.{arguments.Format}";
+                        var savePath = $"{directory}{Path.DirectorySeparatorChar}{fileName}-{i}.{arguments.Format.ToString()}";
 
                         Console.WriteLine($"Writing grid of size {grid.Width}x{grid.Height} to {savePath}");
 

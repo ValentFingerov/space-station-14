@@ -1,7 +1,8 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Content.IntegrationTests.Tests.Interaction;
-using Content.Shared.DoAfter;
 using Content.Shared.Stacks;
+using NUnit.Framework;
 using Robust.Shared.Containers;
 
 namespace Content.IntegrationTests.Tests.Construction.Interaction;
@@ -41,7 +42,7 @@ public sealed class CraftingTests : InteractionTest
     {
         // Spawn a full tack of rods in the user's hands.
         await PlaceInHands(Rod, 10);
-        await SpawnEntity((Cable, 10), SEntMan.GetCoordinates(PlayerCoords));
+        await SpawnEntity((Cable, 10), PlayerCoords);
 
         // Attempt (and fail) to craft without glass.
         await CraftItem(Spear, shouldSucceed: false);
@@ -56,35 +57,34 @@ public sealed class CraftingTests : InteractionTest
 
         // Player's hands should be full of the remaining rods, except those dropped during the failed crafting attempt.
         // Spear and left over stacks should be on the floor.
-        await AssertEntityLookup((Rod, 2), (Cable, 7), (ShardGlass, 2), (Spear, 1));
+        await AssertEntityLookup((Rod, 2), (Cable, 8), (ShardGlass, 2), (Spear, 1));
     }
 
+    // The following is wrapped in an if DEBUG. This is because of cursed state handling bugs. Tests don't (de)serialize
+    // net messages and just copy objects by reference. This means that the server will directly modify cached server
+    // states on the client's end. Crude fix at the moment is to used modified state handling while in debug mode
+    // Otherwise, this test cannot work.
+#if DEBUG
     /// <summary>
     /// Cancel crafting a complex recipe.
     /// </summary>
     [Test]
     public async Task CancelCraft()
     {
-        var serverTargetCoords = SEntMan.GetCoordinates(TargetCoords);
-        var rods = await SpawnEntity((Rod, 10), serverTargetCoords);
-        var wires = await SpawnEntity((Cable, 10), serverTargetCoords);
-        var shard = await SpawnEntity(ShardGlass, serverTargetCoords);
+        var rods = await SpawnEntity((Rod, 10), TargetCoords);
+        var wires = await SpawnEntity((Cable, 10), TargetCoords);
+        var shard = await SpawnEntity(ShardGlass, TargetCoords);
 
         var rodStack = SEntMan.GetComponent<StackComponent>(rods);
         var wireStack = SEntMan.GetComponent<StackComponent>(wires);
 
         await RunTicks(5);
         var sys = SEntMan.System<SharedContainerSystem>();
-        Assert.Multiple(() =>
-        {
-            Assert.That(sys.IsEntityInContainer(rods), Is.False);
-            Assert.That(sys.IsEntityInContainer(wires), Is.False);
-            Assert.That(sys.IsEntityInContainer(shard), Is.False);
-        });
+        Assert.That(sys.IsEntityInContainer(rods), Is.False);
+        Assert.That(sys.IsEntityInContainer(wires), Is.False);
+        Assert.That(sys.IsEntityInContainer(shard), Is.False);
 
-#pragma warning disable CS4014 // Legacy construction code uses DoAfterAwait. If we await it we will be waiting forever.
-        await Server.WaitPost(() => SConstruction.TryStartItemConstruction(Spear, SEntMan.GetEntity(Player)));
-#pragma warning restore CS4014
+        await Server.WaitPost(() => SConstruction.TryStartItemConstruction(Spear, Player));
         await RunTicks(1);
 
         // DoAfter is in progress. Entity not spawned, stacks have been split and someingredients are in a container.
@@ -92,9 +92,8 @@ public sealed class CraftingTests : InteractionTest
         Assert.That(sys.IsEntityInContainer(shard), Is.True);
         Assert.That(sys.IsEntityInContainer(rods), Is.False);
         Assert.That(sys.IsEntityInContainer(wires), Is.False);
-        Assert.That(rodStack, Has.Count.EqualTo(8));
-        Assert.That(wireStack, Has.Count.EqualTo(7));
-
+        Assert.That(rodStack.Count, Is.EqualTo(8));
+        Assert.That(wireStack.Count, Is.EqualTo(8));
         await FindEntity(Spear, shouldSucceed: false);
 
         // Cancel the DoAfter. Should drop ingredients to the floor.
@@ -106,9 +105,7 @@ public sealed class CraftingTests : InteractionTest
         await AssertEntityLookup((Rod, 10), (Cable, 10), (ShardGlass, 1));
 
         // Re-attempt the do-after
-#pragma warning disable CS4014 // Legacy construction code uses DoAfterAwait. See above.
-        await Server.WaitPost(() => SConstruction.TryStartItemConstruction(Spear, SEntMan.GetEntity(Player)));
-#pragma warning restore CS4014
+        await Server.WaitPost(() => SConstruction.TryStartItemConstruction(Spear, Player));
         await RunTicks(1);
 
         // DoAfter is in progress. Entity not spawned, ingredients are in a container.
@@ -125,4 +122,6 @@ public sealed class CraftingTests : InteractionTest
         Assert.That(sys.IsEntityInContainer(wires), Is.False);
         Assert.That(SEntMan.Deleted(shard));
     }
+#endif
 }
+

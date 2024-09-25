@@ -1,11 +1,13 @@
+
 using Content.Server.Database;
 using Content.Server.Preferences.Managers;
 using Content.Shared.Administration;
+using Robust.Server.Player;
 using Robust.Shared.Console;
 
 namespace Content.Server.Administration.Commands
 {
-    [AdminCommand(AdminFlags.NameColor)]
+    [AdminCommand(AdminFlags.Admin)]
     internal sealed class SetAdminOOC : IConsoleCommand
     {
         public string Command => "setadminooc";
@@ -14,9 +16,9 @@ namespace Content.Server.Administration.Commands
 
         public void Execute(IConsoleShell shell, string argStr, string[] args)
         {
-            if (shell.Player == null)
+            if (!(shell.Player is IPlayerSession))
             {
-                shell.WriteError(Loc.GetString("shell-cannot-run-command-from-server"));
+                shell.WriteError(Loc.GetString("shell-only-players-can-run-this-command"));
                 return;
             }
 

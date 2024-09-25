@@ -1,7 +1,5 @@
-using Content.Shared.Alert;
 using Robust.Shared.Containers;
 using Robust.Shared.GameStates;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.Ensnaring.Components;
@@ -9,7 +7,7 @@ namespace Content.Shared.Ensnaring.Components;
 /// Use this on an entity that you would like to be ensnared by anything that has the <see cref="EnsnaringComponent"/>
 /// </summary>
 [RegisterComponent, NetworkedComponent]
-public sealed partial class EnsnareableComponent : Component
+public sealed class EnsnareableComponent : Component
 {
     /// <summary>
     /// How much should this slow down the entities walk?
@@ -42,12 +40,7 @@ public sealed partial class EnsnareableComponent : Component
 
     [DataField("state")]
     public string? State;
-
-    [DataField]
-    public ProtoId<AlertPrototype> EnsnaredAlert = "Ensnared";
 }
-
-public sealed partial class RemoveEnsnareAlertEvent : BaseAlertEvent;
 
 [Serializable, NetSerializable]
 public sealed class EnsnareableComponentState : ComponentState

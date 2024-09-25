@@ -8,11 +8,6 @@
     sprite: Clothing/Neck/Ties/redtie.rsi
   - type: Clothing
     sprite: Clothing/Neck/Ties/redtie.rsi
-  - type: Tag
-    tags:
-    - HamsterWearable
-    - WhitelistChameleon
-    - ClothMade
 
 - type: entity
   parent: ClothingNeckBase
@@ -35,8 +30,3 @@
     sprite: Clothing/Neck/Ties/scitie.rsi
   - type: Clothing
     sprite: Clothing/Neck/Ties/scitie.rsi
-  - type: Tag
-    tags:
-    - ClothMade
-    - HamsterWearable
-    - WhitelistChameleon

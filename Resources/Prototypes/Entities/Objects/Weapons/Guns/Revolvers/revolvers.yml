@@ -6,22 +6,16 @@
   abstract: true
   components:
   - type: Sprite
+    netsync: false
     state: icon
   - type: Item
-    size: Small
-    shape:
-    - 0,0,1,0
-    - 0,1,0,1
-  - type: Tag
-    tags:
-    - Sidearm
+    size: 10
   - type: Clothing
     sprite: Objects/Weapons/Guns/Revolvers/deckard.rsi
     quickEquip: false
     slots:
     - suitStorage
     - Belt
-  - type: AmmoCounter
   - type: Gun
     selectedMode: SemiAuto
     fireRate: 1.5
@@ -29,8 +23,6 @@
     - SemiAuto
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/revolver.ogg
-  - type: UseDelay
-    delay: 0.66
   - type: ContainerContainer
     containers:
       revolver-ammo: !type:Container
@@ -40,9 +32,9 @@
         - CartridgeMagnum
         - SpeedLoaderMagnum
     proto: CartridgeMagnum
-    capacity: 6
-    chambers: [ True, True, True, True, True, True ]
-    ammoSlots: [ null, null, null, null, null, null ]
+    capacity: 7
+    chambers: [ True, True, True, True, True, True, True ]
+    ammoSlots: [ null, null, null, null, null, null, null ]
     soundEject:
       path: /Audio/Weapons/Guns/MagOut/revolver_magout.ogg
     soundInsert:
@@ -52,7 +44,7 @@
 
 - type: entity
   name: Deckard
-  parent: [BaseWeaponRevolver, BaseSecurityCommandContraband]
+  parent: BaseWeaponRevolver
   id: WeaponRevolverDeckard
   description: A rare, custom-built revolver. Use when there is no time for Voight-Kampff test. Uses .45 magnum ammo.
   components:
@@ -64,8 +56,6 @@
     - state: mag-unshaded-3
       map: ["enum.GunVisualLayers.MagUnshaded"]
       shader: unshaded
-  - type: Gun
-    fireRate: 2
   - type: RevolverAmmoProvider
     capacity: 5
     chambers: [ True, True, True, True, True ]
@@ -75,12 +65,10 @@
     steps: 4
     zeroVisible: true
   - type: Appearance
-  - type: StaticPrice
-    price: 1500
 
 - type: entity
   name: Inspector
-  parent: [BaseWeaponRevolver, BaseRestrictedContraband]
+  parent: BaseWeaponRevolver
   id: WeaponRevolverInspector
   description: A detective's best friend. Uses .45 magnum ammo.
   components:
@@ -95,7 +83,7 @@
 
 - type: entity
   name: Mateba
-  parent: [BaseWeaponRevolver, BaseMajorContraband]
+  parent: BaseWeaponRevolver
   id: WeaponRevolverMateba
   description: The iconic sidearm of the dreaded death squads. Uses .45 magnum ammo.
   components:
@@ -104,13 +92,12 @@
   - type: Clothing
     sprite: Objects/Weapons/Guns/Revolvers/mateba.rsi
   - type: Gun
-    fireRate: 3
     soundGunshot:
       path: /Audio/Weapons/Guns/Gunshots/mateba.ogg
 
 - type: entity
   name: Python
-  parent: [BaseWeaponRevolver, BaseSyndicateContraband]
+  parent: BaseWeaponRevolver
   id: WeaponRevolverPython
   description: A robust revolver favoured by Syndicate agents. Uses .45 magnum ammo.
   components:
@@ -118,32 +105,10 @@
     sprite: Objects/Weapons/Guns/Revolvers/python.rsi
   - type: Clothing
     sprite: Objects/Weapons/Guns/Revolvers/python.rsi
-  - type: Gun
-    selectedMode: SemiAuto
-    fireRate: 2
-    availableModes:
-    - SemiAuto
-    soundGunshot:
-      path: /Audio/Weapons/Guns/Gunshots/revolver.ogg
-      params:
-        volume: 2.25
-
-- type: entity
-  parent: WeaponRevolverPython
-  id: WeaponRevolverPythonAP # For the uplink.
-  suffix: armor-piercing
-  components:
-  - type: RevolverAmmoProvider
-    whitelist:
-      tags:
-        - CartridgeMagnum
-        - SpeedLoaderMagnum
-    proto: CartridgeMagnumAP
-
 
 - type: entity
   name: pirate revolver
-  parent: [BaseWeaponRevolver, BaseMinorContraband]
+  parent: BaseWeaponRevolver
   id: WeaponRevolverPirate
   description: An odd, old-looking revolver, favoured by pirate crews. Uses .45 magnum ammo.
   components:
@@ -160,3 +125,42 @@
     capacity: 5
     chambers: [ True, True, True, True, True ]
     ammoSlots: [ null, null, null, null, null ]
+
+- type: entity
+  id: WeaponPistolCHIMP
+  parent: BaseWeaponRevolver
+  name: C.H.I.M.P. handcannon
+  description: Just because it's a little C.H.I.M.P. doesn't mean it can't punch like an A.P.E.
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Revolvers/chimp.rsi
+    layers:
+    - state: base
+      map: ["enum.GunVisualLayers.Base"]
+    - state: mag-unshaded-1
+      visible: false
+      map: ["enum.GunVisualLayers.MagUnshaded"]
+      shader: unshaded
+  - type: Appearance
+  - type: MagazineVisuals
+    magState: mag
+    steps: 3
+    zeroVisible: false
+  - type: Clothing
+    sprite: Objects/Weapons/Guns/Revolvers/chimp.rsi
+  - type: RevolverAmmoProvider
+    whitelist:
+      tags:
+        - CartridgeCHIMP
+    proto: CartridgeAnomalousParticleDelta #when revolvers stop sucking cock, make this spawn empty
+    capacity: 10
+    chambers: [ True, True, True, True, True, True, True, True, True, True ]
+    ammoSlots: [ null, null, null, null, null, null, null, null, null, null ]
+    soundEject:
+      path: /Audio/Weapons/Guns/MagOut/revolver_magout.ogg
+    soundInsert:
+      path: /Audio/Weapons/Guns/MagIn/revolver_magin.ogg
+  - type: Gun
+    fireRate: 1.5
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/taser2.ogg

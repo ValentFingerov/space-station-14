@@ -23,7 +23,7 @@
       conditions:
       - !type:EntityAnchored {}
       steps:
-      - component: DoorElectronics
+      - tag: DoorElectronics
         store: board
         name: "door electronics circuit board"
         icon:
@@ -54,9 +54,7 @@
         doAfter: 2.5
     - to: assembly
       completed:
-      - !type:EmptyAllContainers
-        pickup: true
-        emptyAtUser: true
+      - !type:EmptyAllContainers {}
       steps:
       - tool: Prying
         doAfter: 1
@@ -155,7 +153,7 @@
       conditions:
       - !type:EntityAnchored {}
       - !type:DoorWelded {}
-      - !type:DoorBolted
+      - !type:AirlockBolted
         value: false
       - !type:WirePanel {}
       steps:
@@ -187,7 +185,7 @@
         conditions:
           - !type:EntityAnchored {}
           - !type:DoorWelded {}
-          - !type:DoorBolted
+          - !type:AirlockBolted
             value: false
           - !type:WirePanel {}
         steps:

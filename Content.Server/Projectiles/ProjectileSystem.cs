@@ -1,19 +1,23 @@
 using Content.Server.Administration.Logs;
-using Content.Server.Effects;
 using Content.Server.Weapons.Ranged.Systems;
 using Content.Shared.Camera;
 using Content.Shared.Damage;
 using Content.Shared.Database;
+using Content.Shared.FixedPoint;
 using Content.Shared.Projectiles;
-using Robust.Shared.Physics.Events;
+using Content.Shared.Weapons.Melee;
+using JetBrains.Annotations;
+using Robust.Server.GameObjects;
+using Robust.Shared.GameStates;
 using Robust.Shared.Player;
+using Robust.Shared.Physics.Events;
 
 namespace Content.Server.Projectiles;
 
+[UsedImplicitly]
 public sealed class ProjectileSystem : SharedProjectileSystem
 {
     [Dependency] private readonly IAdminLogManager _adminLogger = default!;
-    [Dependency] private readonly ColorFlashEffectSystem _color = default!;
     [Dependency] private readonly DamageableSystem _damageableSystem = default!;
     [Dependency] private readonly GunSystem _guns = default!;
     [Dependency] private readonly SharedCameraRecoilSystem _sharedCameraRecoil = default!;
@@ -22,59 +26,62 @@ public sealed class ProjectileSystem : SharedProjectileSystem
     {
         base.Initialize();
         SubscribeLocalEvent<ProjectileComponent, StartCollideEvent>(OnStartCollide);
+        SubscribeLocalEvent<ProjectileComponent, ComponentGetState>(OnGetState);
+    }
+
+    private void OnGetState(EntityUid uid, ProjectileComponent component, ref ComponentGetState args)
+    {
+        args.State = new ProjectileComponentState(component.Shooter, component.IgnoreShooter);
     }
 
     private void OnStartCollide(EntityUid uid, ProjectileComponent component, ref StartCollideEvent args)
     {
         // This is so entities that shouldn't get a collision are ignored.
-        if (args.OurFixtureId != ProjectileFixture || !args.OtherFixture.Hard
-            || component.DamagedEntity || component is { Weapon: null, OnlyCollideWhenShot: true })
+        if (args.OurFixture.ID != ProjectileFixture || !args.OtherFixture.Hard || component.DamagedEntity)
             return;
 
-        var target = args.OtherEntity;
+        var otherEntity = args.OtherEntity;
         // it's here so this check is only done once before possible hit
         var attemptEv = new ProjectileReflectAttemptEvent(uid, component, false);
-        RaiseLocalEvent(target, ref attemptEv);
+        RaiseLocalEvent(otherEntity, ref attemptEv);
         if (attemptEv.Cancelled)
         {
-            SetShooter(uid, component, target);
+            SetShooter(component, otherEntity);
             return;
         }
 
-        var ev = new ProjectileHitEvent(component.Damage, target, component.Shooter);
-        RaiseLocalEvent(uid, ref ev);
-
-        var otherName = ToPrettyString(target);
-        var direction = args.OurBody.LinearVelocity.Normalized();
-        var modifiedDamage = _damageableSystem.TryChangeDamage(target, ev.Damage, component.IgnoreResistances, origin: component.Shooter);
-        var deleted = Deleted(target);
+        var otherName = ToPrettyString(otherEntity);
+        var direction = args.OurBody.LinearVelocity.Normalized;
+        var modifiedDamage = _damageableSystem.TryChangeDamage(otherEntity, component.Damage, component.IgnoreResistances, origin: component.Shooter);
+        component.DamagedEntity = true;
+        var deleted = Deleted(otherEntity);
 
         if (modifiedDamage is not null && EntityManager.EntityExists(component.Shooter))
         {
-            if (modifiedDamage.AnyPositive() && !deleted)
+            if (modifiedDamage.Total > FixedPoint2.Zero && !deleted)
             {
-                _color.RaiseEffect(Color.Red, new List<EntityUid> { target }, Filter.Pvs(target, entityManager: EntityManager));
+                RaiseNetworkEvent(new DamageEffectEvent(Color.Red, new List<EntityUid> {otherEntity}), Filter.Pvs(otherEntity, entityManager: EntityManager));
             }
 
             _adminLogger.Add(LogType.BulletHit,
-                HasComp<ActorComponent>(target) ? LogImpact.Extreme : LogImpact.High,
-                $"Projectile {ToPrettyString(uid):projectile} shot by {ToPrettyString(component.Shooter!.Value):user} hit {otherName:target} and dealt {modifiedDamage.GetTotal():damage} damage");
+                HasComp<ActorComponent>(otherEntity) ? LogImpact.Extreme : LogImpact.High,
+                $"Projectile {ToPrettyString(uid):projectile} shot by {ToPrettyString(component.Shooter):user} hit {otherName:target} and dealt {modifiedDamage.Total:damage} damage");
         }
 
         if (!deleted)
         {
-            _guns.PlayImpactSound(target, modifiedDamage, component.SoundHit, component.ForceSound);
-            _sharedCameraRecoil.KickCamera(target, direction);
+            _guns.PlayImpactSound(otherEntity, modifiedDamage, component.SoundHit, component.ForceSound);
+            _sharedCameraRecoil.KickCamera(otherEntity, direction);
         }
 
-        component.DamagedEntity = true;
-
         if (component.DeleteOnCollide)
+        {
             QueueDel(uid);
 
-        if (component.ImpactEffect != null && TryComp(uid, out TransformComponent? xform))
-        {
-            RaiseNetworkEvent(new ImpactEffectEvent(component.ImpactEffect, GetNetCoordinates(xform.Coordinates)), Filter.Pvs(xform.Coordinates, entityMan: EntityManager));
+            if (component.ImpactEffect != null && TryComp<TransformComponent>(component.Owner, out var xform))
+            {
+                RaiseNetworkEvent(new ImpactEffectEvent(component.ImpactEffect, xform.Coordinates), Filter.Pvs(xform.Coordinates, entityMan: EntityManager));
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Content.Shared.FixedPoint;
+using NUnit.Framework;
 using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
@@ -9,10 +10,10 @@ namespace Content.IntegrationTests.Tests.Chemistry
 {
     public sealed class FixedPoint2SerializationTest : SerializationTest
     {
-        protected override Assembly[] Assemblies =>
-        [
+        protected override Assembly[] Assemblies => new[]
+        {
             typeof(FixedPoint2SerializationTest).Assembly
-        ];
+        };
 
         [Test]
         public void DeserializeNullTest()
@@ -34,10 +35,8 @@ namespace Content.IntegrationTests.Tests.Chemistry
         public void SerializeNullableValueTest()
         {
             var node = Serialization.WriteValue<FixedPoint2?>(FixedPoint2.New(2.5f));
-#pragma warning disable NUnit2045 // Interdependent assertions
             Assert.That(node is ValueDataNode);
-            Assert.That(((ValueDataNode) node).Value, Is.EqualTo("2.5"));
-#pragma warning restore NUnit2045
+            Assert.That(((ValueDataNode)node).Value, Is.EqualTo("2.5"));
         }
 
         [Test]
@@ -51,8 +50,8 @@ namespace Content.IntegrationTests.Tests.Chemistry
     }
 
     [DataDefinition]
-    public sealed partial class FixedPoint2TestDefinition
+    public sealed class FixedPoint2TestDefinition
     {
-        [DataField] public FixedPoint2? Unit { get; set; } = FixedPoint2.New(5);
+        [DataField("unit")] public FixedPoint2? Unit { get; set; } = FixedPoint2.New(5);
     }
 }

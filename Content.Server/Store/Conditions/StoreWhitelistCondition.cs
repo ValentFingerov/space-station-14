@@ -6,7 +6,7 @@ namespace Content.Server.Store.Conditions;
 /// <summary>
 /// Filters out an entry based on the components or tags on the store itself.
 /// </summary>
-public sealed partial class StoreWhitelistCondition : ListingCondition
+public sealed class StoreWhitelistCondition : ListingCondition
 {
     /// <summary>
     /// A whitelist of tags or components.
@@ -26,11 +26,18 @@ public sealed partial class StoreWhitelistCondition : ListingCondition
             return false;
 
         var ent = args.EntityManager;
-        var whitelistSystem = ent.System<EntityWhitelistSystem>();
 
-        if (whitelistSystem.IsWhitelistFail(Whitelist, args.StoreEntity.Value) ||
-            whitelistSystem.IsBlacklistPass(Blacklist, args.StoreEntity.Value))
-            return false;
+        if (Whitelist != null)
+        {
+            if (!Whitelist.IsValid(args.StoreEntity.Value, ent))
+                return false;
+        }
+
+        if (Blacklist != null)
+        {
+            if (Blacklist.IsValid(args.StoreEntity.Value, ent))
+                return false;
+        }
 
         return true;
     }

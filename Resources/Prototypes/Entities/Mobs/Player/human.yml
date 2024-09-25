@@ -3,103 +3,77 @@
   name: Urist McHands
   parent: BaseMobHuman
   id: MobHuman
+  components:
+  - type: CombatMode
+  - type: InteractionPopup
+    successChance: 1
+    interactSuccessString: hugging-success-generic
+    interactSuccessSound: /Audio/Effects/thudswoosh.ogg
+    messagePerceivedByOthers: hugging-success-generic-others
+  - type: Mind
+    showExamineInfo: true
+  - type: Input
+    context: "human"
+  - type: MobMover
+  - type: InputMover
+  - type: Respirator
+    damage:
+      types:
+        Asphyxiation: 1.0
+    damageRecovery:
+      types:
+        Asphyxiation: -1.0
+  - type: Alerts
+  - type: Actions
+  - type: Eye
+  - type: CameraRecoil
+  - type: Examiner
+  - type: CanHostGuardian
+  - type: Faction
+    factions:
+    - NanoTrasen
 
 #Syndie
 - type: entity
   parent: MobHuman
-  id: MobHumanSyndicateAgentBase
-  name: syndicate agent
-  suffix: Human, Base
-  components:
-  - type: RandomHumanoidAppearance
-    randomizeName: false
-    hair: HairBald
-  - type: Loadout
-    prototypes: [SyndicateOperativeGearExtremelyBasic]
-    roleLoadout: [ RoleSurvivalSyndicate ]
-  - type: RandomMetadata
-    nameSegments: [names_first_male, names_last_male] # Corvax-MRP
-  - type: NpcFactionMember
-    factions:
-    - Syndicate
-
-- type: entity
-  parent: MobHumanSyndicateAgentBase
   id: MobHumanSyndicateAgent
-  name: syndicate agent
-  suffix: Human, Traitor
+  name: Syndicate Agent
   components:
-  # make the player a traitor once its taken
-  - type: AutoTraitor
-    giveUplink: false
-    giveObjectives: false
-
-- type: entity
-  parent: MobHumanSyndicateAgent
-  id: MobHumanSyndicateAgentMedic
-  name: syndicate medic
-  components:
-  - type: Loadout
-    prototypes: [SyndicateReinforcementMedic]
-    roleLoadout: [ RoleSurvivalSyndicate ]
-
-- type: entity
-  parent: MobHumanSyndicateAgent
-  id: MobHumanSyndicateAgentSpy
-  name: syndicate spy
-  components:
-  - type: Loadout
-    prototypes: [SyndicateReinforcementSpy]
-    roleLoadout: [ RoleSurvivalSyndicate ]
-
-- type: entity
-  parent: MobHumanSyndicateAgent
-  id: MobHumanSyndicateAgentThief
-  name: syndicate thief
-  components:
-  - type: Loadout
-    prototypes: [SyndicateReinforcementThief]
-    roleLoadout: [ RoleSurvivalSyndicate ]
-
-- type: entity
-  parent: MobHumanSyndicateAgentBase
-  id: MobHumanSyndicateAgentNukeops # Reinforcement exclusive to nukeops uplink
-  suffix: Human, NukeOps
-  components:
-  - type: NukeOperative
-  - type: RandomMetadata
-    nameSegments:
-    - nukeops-role-operator
-    - SyndicateNamesNormal
-  - type: Loadout
-    prototypes: [SyndicateOperativeGearFullNoUplink]
+    - type: Loadout
+      prototype: SyndicateOperativeGearExtremelyBasic
+      prototypes: [SyndicateOperativeGearExtremelyBasic]
+    - type: RandomMetadata
+      nameSegments: [corvax_names_death_commando] # Corvax-Localization
+    - type: Faction
+      factions:
+      - Syndicate
 
 # Nuclear Operative
 - type: entity
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: Nuclear Operative
   parent: MobHuman
   id: MobHumanNukeOp
   components:
-  - type: NukeOperative
-  - type: RandomHumanoidAppearance
+    - type: NukeOperative
+    - type: RandomHumanoidAppearance
 
 - type: entity
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   parent: MobHuman
   id: MobHumanLoneNuclearOperative
   name: Lone Operative
   components:
-  - type: RandomHumanoidAppearance
-    randomizeName: false
-  - type: NukeOperative
-  - type: Loadout
-    prototypes: [SyndicateLoneOperativeGearFull]
-    roleLoadout: [ RoleSurvivalSyndicate ]
-  - type: RandomMetadata
-    nameSegments:
-    - SyndicateNamesPrefix
-    - SyndicateNamesNormal
-  - type: NpcFactionMember
-    factions:
-    - Syndicate
+    - type: RandomHumanoidAppearance
+      randomizeName: false
+    - type: NukeOperative
+    - type: Loadout
+      prototype: SyndicateOperativeGearFull
+      prototypes: [SyndicateOperativeGearFull]
+    - type: RandomMetadata
+      nameSegments:
+      - SyndicateNamesPrefix
+      - SyndicateNamesNormal
+    - type: Faction
+      factions:
+      - Syndicate

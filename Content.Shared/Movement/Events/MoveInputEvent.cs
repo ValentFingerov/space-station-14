@@ -1,22 +1,17 @@
-using Content.Shared.Movement.Components;
-using Content.Shared.Movement.Systems;
+using Robust.Shared.Players;
 
 namespace Content.Shared.Movement.Events;
 
 /// <summary>
-/// Raised on an entity whenever it has a movement input change.
+/// Raised on an entity whenever it has a movement input.
 /// </summary>
 [ByRefEvent]
 public readonly struct MoveInputEvent
 {
-    public readonly Entity<InputMoverComponent> Entity;
-    public readonly MoveButtons OldMovement;
+    public readonly EntityUid Entity;
 
-    public bool HasDirectionalMovement => (Entity.Comp.HeldMoveButtons & MoveButtons.AnyDirection) != MoveButtons.None;
-
-    public MoveInputEvent(Entity<InputMoverComponent> entity, MoveButtons oldMovement)
+    public MoveInputEvent(EntityUid entity)
     {
         Entity = entity;
-        OldMovement = oldMovement;
     }
 }

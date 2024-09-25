@@ -9,6 +9,7 @@
     - Disposal
   components:
   - type: Sprite
+    netsync: false
     visible: false
   - type: Appearance
   - type: SubFloorHide
@@ -29,7 +30,7 @@
     anchored: true
   - type: Anchorable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -43,9 +44,6 @@
         !type:DamageTrigger
         damage: 50
       behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalBreak
       - !type:DoActsBehavior
         acts: ["Breakage"]
       - !type:ChangeConstructionNodeBehavior
@@ -57,11 +55,11 @@
     containers:
       DisposalTube: !type:Container
   - type: StaticPrice
-    price: 30
+    price: 100
 
 - type: entity
   id: DisposalHolder
-  categories: [ HideSpawnMenu ]
+  noSpawn: true
   name: disposal holder
   components:
   - type: DisposalHolder
@@ -75,7 +73,7 @@
   id: DisposalPipeBroken
   parent: DisposalPipeBase
   name: broken disposal pipe
-  description: A BBP (big broken pipe).
+  description: A BBP (big broken pipe)
   components:
   - type: Sprite
     drawdepth: ThickPipe
@@ -143,8 +141,8 @@
     key: enum.DisposalTaggerUiKey.Key
   - type: UserInterface
     interfaces:
-      enum.DisposalTaggerUiKey.Key:
-        type: DisposalTaggerBoundUserInterface
+    - key: enum.DisposalTaggerUiKey.Key
+      type: DisposalTaggerBoundUserInterface
   - type: Construction
     graph: DisposalPipe
     node: tagger
@@ -219,8 +217,8 @@
     key: enum.DisposalRouterUiKey.Key
   - type: UserInterface
     interfaces:
-      enum.DisposalRouterUiKey.Key:
-        type: DisposalRouterBoundUserInterface
+    - key: enum.DisposalRouterUiKey.Key
+      type: DisposalRouterBoundUserInterface
   - type: Fixtures
     fixtures:
       fix1:
@@ -271,8 +269,6 @@
           bounds: "-0.25,-0.5,0.5,0.5"
         mask:
         - SubfloorMask
-  - type: Construction
-    node: routerflipped
 
 - type: entity
   id: DisposalJunction
@@ -355,8 +351,6 @@
           bounds: "-0.25,-0.5,0.5,0.5"
         mask:
         - SubfloorMask
-  - type: Construction
-    node: junctionflipped
 
 - type: entity
   id: DisposalYJunction
@@ -433,65 +427,3 @@
   - type: Construction
     graph: DisposalPipe
     node: bend
-
-- type: entity
-  parent: DisposalJunction
-  id: DisposalSignalRouter
-  name: disposal signal router
-  description: A signal-controlled three-way router.
-  components:
-  - type: Sprite
-    drawdepth: ThickPipe
-    layers:
-    - map: [ "pipe" ]
-      state: signal-router-free
-  - type: DisposalTube
-    containerId: DisposalSignalRouter
-  - type: DisposalSignalRouter
-  - type: DeviceLinkSink
-    ports:
-    - On
-    - Off
-    - Toggle
-  - type: DeviceNetwork
-    deviceNetId: Wireless
-    receiveFrequencyId: BasicDevice
-  - type: WirelessNetworkConnection
-    range: 200
-  - type: ContainerContainer
-    containers:
-      DisposalSignalRouter: !type:Container
-  - type: GenericVisualizer
-    visuals:
-      enum.DisposalTubeVisuals.VisualState:
-        pipe:
-          Free: { state: signal-router-free }
-          Anchored: { state: signal-router }
-  - type: Flippable
-    mirrorEntity: DisposalSignalRouterFlipped
-  - type: Construction
-    graph: DisposalPipe
-    node: signal_router
-
-- type: entity
-  parent: DisposalSignalRouter
-  id: DisposalSignalRouterFlipped
-  suffix: flipped
-  components:
-  - type: Sprite
-    layers:
-    - map: [ "pipe" ]
-      state: signal-router-flipped-free
-  - type: DisposalJunction
-    degrees:
-    - 0
-    - 90
-    - 180
-  - type: GenericVisualizer
-    visuals:
-      enum.DisposalTubeVisuals.VisualState:
-        pipe:
-          Free: { state: signal-router-flipped-free }
-          Anchored: { state: signal-router-flipped }
-  - type: Construction
-    node: signal_router_flipped

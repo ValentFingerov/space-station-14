@@ -1,7 +1,8 @@
-﻿using Content.Server.GameTicking;
+﻿using System.Linq;
+using Content.Server.GameTicking;
+using Content.Server.Shuttles.Components;
 using Content.Server.Spawners.Components;
 using Content.Server.Station.Systems;
-using Robust.Shared.Map;
 using Robust.Shared.Random;
 
 namespace Content.Server.Spawners.EntitySystems;
@@ -15,59 +16,60 @@ public sealed class SpawnPointSystem : EntitySystem
 
     public override void Initialize()
     {
-        SubscribeLocalEvent<PlayerSpawningEvent>(OnPlayerSpawning);
+        SubscribeLocalEvent<PlayerSpawningEvent>(OnSpawnPlayer);
     }
 
-    private void OnPlayerSpawning(PlayerSpawningEvent args)
+    private void OnSpawnPlayer(PlayerSpawningEvent args)
     {
         if (args.SpawnResult != null)
             return;
 
         // TODO: Cache all this if it ends up important.
-        var points = EntityQueryEnumerator<SpawnPointComponent, TransformComponent>();
-        var possiblePositions = new List<EntityCoordinates>();
-
-        while ( points.MoveNext(out var uid, out var spawnPoint, out var xform))
+        var points = EntityQuery<SpawnPointComponent>().ToList();
+        _random.Shuffle(points);
+        foreach (var spawnPoint in points)
         {
-            if (args.Station != null && _stationSystem.GetOwningStation(uid, xform) != args.Station)
+            var xform = Transform(spawnPoint.Owner);
+            if (args.Station != null && _stationSystem.GetOwningStation(spawnPoint.Owner, xform) != args.Station)
                 continue;
 
             if (_gameTicker.RunLevel == GameRunLevel.InRound && spawnPoint.SpawnType == SpawnPointType.LateJoin)
             {
-                possiblePositions.Add(xform.Coordinates);
+                args.SpawnResult = _stationSpawning.SpawnPlayerMob(
+                    xform.Coordinates,
+                    args.Job,
+                    args.HumanoidCharacterProfile,
+                    args.Station);
+
+                return;
             }
 
-            if (_gameTicker.RunLevel != GameRunLevel.InRound &&
-                spawnPoint.SpawnType == SpawnPointType.Job &&
-                (args.Job == null || spawnPoint.Job == args.Job.Prototype))
+            if (_gameTicker.RunLevel != GameRunLevel.InRound && spawnPoint.SpawnType == SpawnPointType.Job && (args.Job == null || spawnPoint.Job?.ID == args.Job.Prototype.ID))
             {
-                possiblePositions.Add(xform.Coordinates);
-            }
-        }
+                args.SpawnResult = _stationSpawning.SpawnPlayerMob(
+                    xform.Coordinates,
+                    args.Job,
+                    args.HumanoidCharacterProfile,
+                    args.Station);
 
-        if (possiblePositions.Count == 0)
-        {
-            // Ok we've still not returned, but we need to put them /somewhere/.
-            // TODO: Refactor gameticker spawning code so we don't have to do this!
-            var points2 = EntityQueryEnumerator<SpawnPointComponent, TransformComponent>();
-
-            if (points2.MoveNext(out var spawnPoint, out var xform))
-            {
-                possiblePositions.Add(xform.Coordinates);
-            }
-            else
-            {
-                Log.Error("No spawn points were available!");
                 return;
             }
         }
 
-        var spawnLoc = _random.Pick(possiblePositions);
+        // Ok we've still not returned, but we need to put them /somewhere/.
+        // TODO: Refactor gameticker spawning code so we don't have to do this!
+        foreach (var spawnPoint in points)
+        {
+            var xform = Transform(spawnPoint.Owner);
+            args.SpawnResult = _stationSpawning.SpawnPlayerMob(
+                xform.Coordinates,
+                args.Job,
+                args.HumanoidCharacterProfile,
+                args.Station);
 
-        args.SpawnResult = _stationSpawning.SpawnPlayerMob(
-            spawnLoc,
-            args.Job,
-            args.HumanoidCharacterProfile,
-            args.Station);
+            return;
+        }
+
+        Logger.ErrorS("spawning", "No spawn points were available!");
     }
 }

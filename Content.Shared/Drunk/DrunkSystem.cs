@@ -6,7 +6,6 @@ namespace Content.Shared.Drunk;
 
 public abstract class SharedDrunkSystem : EntitySystem
 {
-    [ValidatePrototypeId<StatusEffectPrototype>]
     public const string DrunkKey = "Drunk";
 
     [Dependency] private readonly StatusEffectsSystem _statusEffectsSystem = default!;

@@ -1,7 +1,7 @@
 - type: entity
   id: DecoratedFirTree
   parent: BaseStructure
-  name: decorated fir tree
+  name: Decorated Fir Tree
   description: A very festive tree for a very festive holiday.
   components:
   - type: Sprite
@@ -19,7 +19,7 @@
     autoRot: true
     offset: "0, 0.6"
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Wood
   - type: Destructible
     thresholds:

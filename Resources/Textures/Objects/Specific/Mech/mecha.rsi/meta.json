@@ -1,5 +1,5 @@
 {
-  "copyright" : "Taken from https://github.com/tgstation/tgstation at at https://github.com/tgstation/tgstation/commit/40d89d11ea4a5cb81d61dc1018b46f4e7d32c62a, hamtr made by brainfood1183 (github)",
+  "copyright" : "Taken from https://github.com/tgstation/tgstation at at https://github.com/tgstation/tgstation/commit/40d89d11ea4a5cb81d61dc1018b46f4e7d32c62a",
   "license" : "CC-BY-SA-3.0",
   "version": 1,
   "size": {
@@ -250,16 +250,6 @@
       "name": "odysseus-broken"
     },
     {
-      "name": "hamtr",
-      "directions": 4
-    },
-    {
-      "name": "hamtr-open"
-    },
-    {
-      "name": "hamtr-broken"
-    },
-    {
       "name": "firefighter",
       "directions": 4
     },
@@ -474,18 +464,6 @@
     },
     {
       "name": "hauler-broken"
-    },
-    {
-      "name": "vim",
-      "directions": 4
-    },
-    {
-      "name": "vim-open",
-      "directions": 4
-    },
-    {
-      "name": "vim-broken",
-      "directions": 4
     }
   ]
 }

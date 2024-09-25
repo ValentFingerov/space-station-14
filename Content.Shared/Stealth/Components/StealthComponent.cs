@@ -11,19 +11,13 @@ namespace Content.Shared.Stealth.Components;
 /// </summary>
 [RegisterComponent, NetworkedComponent]
 [Access(typeof(SharedStealthSystem))]
-public sealed partial class StealthComponent : Component
+public sealed class StealthComponent : Component
 {
     /// <summary>
     /// Whether or not the stealth effect should currently be applied.
     /// </summary>
     [DataField("enabled")]
     public bool Enabled = true;
-
-    /// <summary>
-    /// The creature will continue invisible at death.
-    /// </summary>
-    [DataField("enabledOnDeath")]
-    public bool EnabledOnDeath = true;
 
     /// <summary>
     /// Whether or not the entity previously had an interaction outline prior to cloaking.
@@ -35,7 +29,7 @@ public sealed partial class StealthComponent : Component
     /// Minimum visibility before the entity becomes unexaminable (and thus no longer appears on context menus).
     /// </summary>
     [DataField("examineThreshold")]
-    public float ExamineThreshold = 0.5f;
+    public readonly float ExamineThreshold = 0.5f;
 
     /// <summary>
     /// Last set level of visibility. The visual effect ranges from 1 (fully visible) and -1 (fully hidden). Values
@@ -59,13 +53,13 @@ public sealed partial class StealthComponent : Component
     /// Minimum visibility. Note that the visual effect caps out at -1, but this value is allowed to be larger or smaller.
     /// </summary>
     [DataField("minVisibility")]
-    public float MinVisibility = -1f;
+    public readonly float MinVisibility = -1f;
 
     /// <summary>
     /// Maximum visibility. Note that the visual effect caps out at +1, but this value is allowed to be larger or smaller.
     /// </summary>
     [DataField("maxVisibility")]
-    public float MaxVisibility = 1.5f;
+    public readonly float MaxVisibility = 1.5f;
 
     /// <summary>
     ///     Localization string for how you'd like to describe this effect.

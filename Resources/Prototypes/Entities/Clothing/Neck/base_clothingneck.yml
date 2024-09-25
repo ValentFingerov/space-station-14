@@ -4,7 +4,7 @@
   id: ClothingNeckBase
   components:
   - type: Item
-    size: Small
+    size: 10
   - type: Clothing
     quickEquip: true
     slots:
@@ -16,27 +16,3 @@
     spawned:
     - id: MaterialCloth1
       amount: 2
-  - type: Food
-    requiresSpecialDigestion: true
-  - type: SolutionContainerManager
-    solutions:
-      food:
-        maxVol: 10
-        reagents:
-        - ReagentId: Fiber
-          Quantity: 10
-  - type: Tag
-    tags:
-    - ClothMade
-    - WhitelistChameleon
-
-- type: entity
-  abstract: true
-  parent: ClothingNeckBase
-  id: ClothingScarfBase
-  components:
-  - type: Tag
-    tags:
-    - Scarf
-    - ClothMade
-    - WhitelistChameleon

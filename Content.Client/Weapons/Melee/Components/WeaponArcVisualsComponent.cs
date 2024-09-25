@@ -4,10 +4,8 @@ namespace Content.Client.Weapons.Melee.Components;
 /// Used for melee attack animations. Typically just has a fadeout.
 /// </summary>
 [RegisterComponent]
-public sealed partial class WeaponArcVisualsComponent : Component
+public sealed class WeaponArcVisualsComponent : Component
 {
-    public EntityUid? User;
-
     [DataField("animation")]
     public WeaponArcAnimation Animation = WeaponArcAnimation.None;
 

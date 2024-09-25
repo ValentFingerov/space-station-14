@@ -1,10 +1,9 @@
 using Content.Shared.Projectiles;
-using Robust.Shared.Spawners;
+using Content.Shared.Spawners.Components;
 using Content.Shared.Weapons.Ranged.Systems;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
 using Robust.Shared.GameStates;
-using TimedDespawnComponent = Robust.Shared.Spawners.TimedDespawnComponent;
 
 namespace Content.Client.Projectiles;
 
@@ -15,17 +14,16 @@ public sealed class ProjectileSystem : SharedProjectileSystem
     public override void Initialize()
     {
         base.Initialize();
+        SubscribeLocalEvent<ProjectileComponent, ComponentHandleState>(OnHandleState);
         SubscribeNetworkEvent<ImpactEffectEvent>(OnProjectileImpact);
     }
 
     private void OnProjectileImpact(ImpactEffectEvent ev)
     {
-        var coords = GetCoordinates(ev.Coordinates);
-
-        if (Deleted(coords.EntityId))
+        if (Deleted(ev.Coordinates.EntityId))
             return;
 
-        var ent = Spawn(ev.Prototype, coords);
+        var ent = Spawn(ev.Prototype, ev.Coordinates);
 
         if (TryComp<SpriteComponent>(ent, out var sprite))
         {
@@ -55,5 +53,12 @@ public sealed class ProjectileSystem : SharedProjectileSystem
 
             _player.Play(ent, anim, "impact-effect");
         }
+    }
+
+    private void OnHandleState(EntityUid uid, ProjectileComponent component, ref ComponentHandleState args)
+    {
+        if (args.Current is not ProjectileComponentState state) return;
+        component.Shooter = state.Shooter;
+        component.IgnoreShooter = state.IgnoreShooter;
     }
 }

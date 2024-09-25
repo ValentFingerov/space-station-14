@@ -33,7 +33,6 @@
         damage:
           types:
             Heat: 2
-            Poison: 1
 
 - type: reagent
   id: Napalm
@@ -58,9 +57,7 @@
       - !type:HealthChange
         damage:
           types:
-            Heat: 2
-            Poison: 1
-            Caustic: 0.5 # based off napalm being an irritant
+            Heat: 1
       - !type:FlammableReaction
         multiplier: 0.4
 
@@ -79,12 +76,10 @@
         damage:
           types:
             Heat: 3
-            Poison: 1
       - !type:FlammableReaction
         multiplier: 0.1
       - !type:AdjustTemperature
         amount: 6000
-      - !type:Ignite
   reactiveEffects:
     Flammable:
       methods: [ Touch ]
@@ -109,9 +104,7 @@
       - !type:HealthChange
         damage:
           types:
-            Heat: 2
-            Poison: 1
-            Caustic: 0.5 # CLF3 is corrosive
+            Heat: 1
       - !type:FlammableReaction
         multiplier: 0.2
       - !type:AdjustTemperature
@@ -151,9 +144,7 @@
   physicalDesc: reagent-physical-desc-oily
   slippery: true
   flavor: bitter
-  flavorMinimum: 0.01
   color: "#a76b1c"
-  recognizable: true
   boilingPoint: -84.7 # Acetylene. Close enough.
   meltingPoint: -80.7
   tileReactions:

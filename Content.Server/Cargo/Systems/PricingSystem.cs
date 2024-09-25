@@ -1,10 +1,10 @@
-﻿using Content.Server.Administration;
+﻿using System.Linq;
+using Content.Server.Administration;
 using Content.Server.Body.Systems;
 using Content.Server.Cargo.Components;
-using Content.Shared.Chemistry.EntitySystems;
+using Content.Server.Chemistry.Components.SolutionManager;
 using Content.Shared.Administration;
 using Content.Shared.Body.Components;
-using Content.Shared.Chemistry.Components.SolutionManager;
 using Content.Shared.Chemistry.Reagent;
 using Content.Shared.Materials;
 using Content.Shared.Mobs.Components;
@@ -12,11 +12,9 @@ using Content.Shared.Mobs.Systems;
 using Content.Shared.Stacks;
 using Robust.Shared.Console;
 using Robust.Shared.Containers;
-using Robust.Shared.Map.Components;
+using Robust.Shared.Map;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
-using System.Linq;
-using Content.Shared.Research.Prototypes;
 
 namespace Content.Server.Cargo.Systems;
 
@@ -27,10 +25,10 @@ public sealed class PricingSystem : EntitySystem
 {
     [Dependency] private readonly IComponentFactory _factory = default!;
     [Dependency] private readonly IConsoleHost _consoleHost = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
     [Dependency] private readonly BodySystem _bodySystem = default!;
     [Dependency] private readonly MobStateSystem _mobStateSystem = default!;
-    [Dependency] private readonly SharedSolutionContainerSystem _solutionContainerSystem = default!;
 
     /// <inheritdoc/>
     public override void Initialize()
@@ -53,13 +51,13 @@ public sealed class PricingSystem : EntitySystem
 
         foreach (var gid in args)
         {
-            if (!EntityManager.TryParseNetEntity(gid, out var gridId) || !gridId.Value.IsValid())
+            if (!EntityUid.TryParse(gid, out var gridId) || !gridId.IsValid())
             {
                 shell.WriteError($"Invalid grid ID \"{gid}\".");
                 continue;
             }
 
-            if (!TryComp(gridId, out MapGridComponent? mapGrid))
+            if (!_mapManager.TryGetGrid(gridId, out var mapGrid))
             {
                 shell.WriteError($"Grid \"{gridId}\" doesn't exist.");
                 continue;
@@ -67,7 +65,7 @@ public sealed class PricingSystem : EntitySystem
 
             List<(double, EntityUid)> mostValuable = new();
 
-            var value = AppraiseGrid(gridId.Value, null, (uid, price) =>
+            var value = AppraiseGrid(mapGrid.Owner, null, (uid, price) =>
             {
                 mostValuable.Add((price, uid));
                 mostValuable.Sort((i1, i2) => i2.Item1.CompareTo(i1.Item1));
@@ -75,11 +73,11 @@ public sealed class PricingSystem : EntitySystem
                     mostValuable.Pop();
             });
 
-            shell.WriteLine($"Grid {gid} appraised to {value} spesos.");
+            shell.WriteLine($"Grid {gid} appraised to {value} spacebucks.");
             shell.WriteLine($"The top most valuable items were:");
             foreach (var (price, ent) in mostValuable)
             {
-                shell.WriteLine($"- {ToPrettyString(ent)} @ {price} spesos");
+                shell.WriteLine($"- {ToPrettyString(ent)} @ {price} spacebucks");
             }
         }
     }
@@ -92,13 +90,12 @@ public sealed class PricingSystem : EntitySystem
 
         if (!TryComp<BodyComponent>(uid, out var body) || !TryComp<MobStateComponent>(uid, out var state))
         {
-            Log.Error($"Tried to get the mob price of {ToPrettyString(uid)}, which has no {nameof(BodyComponent)} and no {nameof(MobStateComponent)}.");
+            Logger.ErrorS("pricing", $"Tried to get the mob price of {ToPrettyString(uid)}, which has no {nameof(BodyComponent)} and no {nameof(MobStateComponent)}.");
             return;
         }
 
-        // TODO: Better handling of missing.
-        var partList = _bodySystem.GetBodyChildren(uid, body).ToList();
-        var totalPartsPresent = partList.Sum(_ => 1);
+        var partList = _bodySystem.GetBodyAllSlots(uid, body).ToList();
+        var totalPartsPresent = partList.Sum(x => x.Child != null ? 1 : 0);
         var totalParts = partList.Count;
 
         var partRatio = totalPartsPresent / (double) totalParts;
@@ -107,42 +104,17 @@ public sealed class PricingSystem : EntitySystem
         args.Price += (component.Price - partPenalty) * (_mobStateSystem.IsAlive(uid, state) ? 1.0 : component.DeathPenalty);
     }
 
-    private double GetSolutionPrice(Entity<SolutionContainerManagerComponent> entity)
-    {
-        if (Comp<MetaDataComponent>(entity).EntityLifeStage < EntityLifeStage.MapInitialized)
-            return GetSolutionPrice(entity.Comp);
-
-        var price = 0.0;
-
-        foreach (var (_, soln) in _solutionContainerSystem.EnumerateSolutions((entity.Owner, entity.Comp)))
-        {
-            var solution = soln.Comp.Solution;
-            foreach (var (reagent, quantity) in solution.Contents)
-            {
-                if (!_prototypeManager.TryIndex<ReagentPrototype>(reagent.Prototype, out var reagentProto))
-                    continue;
-
-                // TODO check ReagentData for price information?
-                price += (float) quantity * reagentProto.PricePerUnit;
-            }
-        }
-
-        return price;
-    }
-
     private double GetSolutionPrice(SolutionContainerManagerComponent component)
     {
         var price = 0.0;
 
-        foreach (var (_, prototype) in _solutionContainerSystem.EnumerateSolutions(component))
+        foreach (var solution in component.Solutions.Values)
         {
-            foreach (var (reagent, quantity) in prototype.Contents)
+            foreach (var reagent in solution.Contents)
             {
-                if (!_prototypeManager.TryIndex<ReagentPrototype>(reagent.Prototype, out var reagentProto))
+                if (!_prototypeManager.TryIndex<ReagentPrototype>(reagent.ReagentId, out var reagentProto))
                     continue;
-
-                // TODO check ReagentData for price information?
-                price += (float) quantity * reagentProto.PricePerUnit;
+                price += (float) reagent.Quantity * reagentProto.PricePerUnit;
             }
         }
 
@@ -156,26 +128,6 @@ public sealed class PricingSystem : EntitySystem
         {
             price += _prototypeManager.Index<MaterialPrototype>(id).Price * quantity;
         }
-        return price;
-    }
-
-    public double GetLatheRecipePrice(LatheRecipePrototype recipe)
-    {
-        var price = 0.0;
-
-        if (recipe.Result is { } result)
-        {
-            price += GetEstimatedPrice(_prototypeManager.Index(result));
-        }
-
-        if (recipe.ResultReagents is { } resultReagents)
-        {
-            foreach (var (reagent, amount) in resultReagents)
-            {
-                price += (_prototypeManager.Index(reagent).PricePerUnit * amount).Double();
-            }
-        }
-
         return price;
     }
 
@@ -220,7 +172,7 @@ public sealed class PricingSystem : EntitySystem
     /// This fires off an event to calculate the price.
     /// Calculating the price of an entity that somehow contains itself will likely hang.
     /// </remarks>
-    public double GetPrice(EntityUid uid, bool includeContents = true)
+    public double GetPrice(EntityUid uid)
     {
         var ev = new PriceCalculationEvent();
         RaiseLocalEvent(uid, ref ev);
@@ -243,7 +195,7 @@ public sealed class PricingSystem : EntitySystem
             price += GetStaticPrice(uid);
         }
 
-        if (includeContents && TryComp<ContainerManagerComponent>(uid, out var containers))
+        if (TryComp<ContainerManagerComponent>(uid, out var containers))
         {
             foreach (var container in containers.Containers.Values)
             {
@@ -301,7 +253,7 @@ public sealed class PricingSystem : EntitySystem
 
         if (TryComp<SolutionContainerManagerComponent>(uid, out var solComp))
         {
-            price += GetSolutionPrice((uid, solComp));
+            price += GetSolutionPrice(solComp);
         }
 
         return price;
@@ -386,8 +338,8 @@ public sealed class PricingSystem : EntitySystem
     {
         var xform = Transform(grid);
         var price = 0.0;
-        var enumerator = xform.ChildEnumerator;
-        while (enumerator.MoveNext(out var child))
+
+        foreach (var child in xform.ChildEntities)
         {
             if (predicate is null || predicate(child))
             {

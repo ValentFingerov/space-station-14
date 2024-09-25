@@ -13,18 +13,16 @@
     - Wirecutter
   - type: Sprite
     sprite: Objects/Tools/wirecutters.rsi
+    netsync: false
     layers:
     - state: cutters
       map: [ "enum.DamageStateVisualLayers.Base" ]
     - state: cutters-cutty-thingy
+  - type: ItemCooldown
   - type: MeleeWeapon
-    wideAnimationRotation: -90
     damage:
       types:
-        Piercing: 2
-    attackRate: 2 #open and close that shit on their arm like hell! because you sure aren't doing any damage with this
-    soundHit:
-      path: "/Audio/Items/wirecutter.ogg"
+        Blunt: 10
   - type: Tool
     qualities:
       - Cutting
@@ -36,13 +34,12 @@
           cutters: Rainbow
   - type: Item
     sprite: Objects/Tools/wirecutters.rsi
-    storedRotation: -90
-  - type: ToolTileCompatible
+  - type: LatticeCutting
   - type: PhysicalComposition
     materialComposition:
       Steel: 100
   - type: StaticPrice
-    price: 30
+    price: 40
 
 - type: entity
   name: screwdriver
@@ -58,21 +55,19 @@
     - Screwdriver
   - type: Sprite
     sprite: Objects/Tools/screwdriver.rsi
+    netsync: false
     layers:
       - state: screwdriver
         map: [ "enum.DamageStateVisualLayers.Base" ]
       - state: screwdriver-screwybits
   - type: Item
     sprite: Objects/Tools/screwdriver.rsi
-    storedRotation: -90
+  - type: ItemCooldown
   - type: MeleeWeapon
-    wideAnimationRotation: -90
-    attackRate: 1
+    attackRate: 1.5
     damage:
       types:
-        Piercing: 6
-    soundHit:
-      path: "/Audio/Weapons/bladeslice.ogg"
+        Piercing: 7
   - type: Tool
     qualities:
       - Screwing
@@ -86,13 +81,13 @@
     materialComposition:
       Steel: 100
   - type: StaticPrice
-    price: 30
+    price: 40
 
 - type: entity
   name: wrench
   parent: BaseItem
   id: Wrench
-  description: 'A common tool for assembly and disassembly. Remember: lefty latchy, righty removey.'
+  description: 'A common tool for assembly and disassembly. Remember: righty tighty, lefty loosey.'
   components:
   - type: EmitSoundOnLand
     sound:
@@ -103,19 +98,15 @@
   - type: Sprite
     sprite: Objects/Tools/wrench.rsi
     state: icon
+    netsync: false
   - type: Item
     sprite: Objects/Tools/wrench.rsi
-    storedSprite:
-      sprite: Objects/Tools/wrench.rsi
-      state: storage
+  - type: ItemCooldown
   - type: MeleeWeapon
-    wideAnimationRotation: 135
     attackRate: 1.5
     damage:
       types:
-        Blunt: 4.5
-    soundHit:
-      collection: MetalThud
+        Blunt: 6.5
   - type: Tool
     qualities:
       - Anchoring
@@ -125,13 +116,66 @@
     materialComposition:
       Steel: 100
   - type: StaticPrice
-    price: 22
+    price: 40
+
+- type: entity
+  name: crowbar
+  parent: BaseItem
+  id: Crowbar
+  description: A multipurpose tool to pry open doors and fight interdimensional invaders.
+  components:
+  - type: EmitSoundOnLand
+    sound:
+      path: /Audio/Items/crowbar_drop.ogg
+  - type: Tag
+    tags:
+    - Crowbar
+  - type: Sprite
+    sprite: Objects/Tools/crowbar.rsi
+    state: icon
+    netsync: false
+  - type: Item
+    sprite: Objects/Tools/crowbar.rsi
+    size: 10
+  - type: ItemCooldown
+  - type: MeleeWeapon
+    damage:
+      types:
+        Blunt: 10
+  - type: Tool
+    qualities:
+      - Prying
+    useSound:
+      path: /Audio/Items/crowbar.ogg
+  - type: TilePrying
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 100
+  - type: StaticPrice
+    price: 40
+
+- type: entity
+  name: emergency crowbar
+  parent: Crowbar
+  id: CrowbarRed
+  components:
+  - type: Tag
+    tags:
+    - Crowbar
+    - CrowbarRed
+  - type: Sprite
+    sprite: Objects/Tools/crowbar.rsi
+    state: red-icon
+  - type: Item
+    sprite: Objects/Tools/crowbar.rsi
+    size: 10
+    heldPrefix: red
 
 - type: entity
   name: multitool
   parent: BaseItem
   id: Multitool
-  description: An advanced tool to copy, store, and send electrical pulses and signals through wires and machines.
+  description: An advanced tool to copy, store, and send electrical pulses and signals through wires and machines
   components:
   - type: EmitSoundOnLand
     sound:
@@ -143,7 +187,7 @@
     - state: green-unlit
       shader: unshaded
   - type: Item
-    size: Small
+    size: 5
   - type: Clothing
     sprite: Objects/Tools/multitool.rsi
     quickEquip: false
@@ -152,28 +196,16 @@
   - type: Tool
     qualities:
       - Pulsing
-  - type: NetworkConfigurator
-  - type: ActivatableUI
-    key: enum.NetworkConfiguratorUiKey.List
-    inHandsOnly: true
-  - type: UserInterface
-    interfaces:
-      enum.NetworkConfiguratorUiKey.List:
-        type: NetworkConfiguratorBoundUserInterface
-      enum.NetworkConfiguratorUiKey.Configure:
-        type: NetworkConfiguratorBoundUserInterface
-      enum.NetworkConfiguratorUiKey.Link:
-        type: NetworkConfiguratorBoundUserInterface
   - type: Tag
     tags:
       - Multitool
-      - DoorElectronicsConfigurator
+      - DroneUsable
   - type: PhysicalComposition
     materialComposition:
       Steel: 100
       Plastic: 100
   - type: StaticPrice
-    price: 56
+    price: 60
 
 - type: entity
   name: network configurator
@@ -188,11 +220,11 @@
       sprite: Objects/Tools/network_configurator.rsi
       layers:
         - state: icon
-        - state: mode-link
+        - state: mode-list
           map: ["enum.NetworkConfiguratorLayers.ModeLight"]
           shader: unshaded
     - type: Item
-      size: Small
+      size: 5
     - type: Clothing
       sprite: Objects/Tools/network_configurator.rsi
       quickEquip: false
@@ -209,25 +241,23 @@
     - type: ActivatableUI
       key: enum.NetworkConfiguratorUiKey.List
       inHandsOnly: true
-    - type: Tag
-      tags:
-        - DoorElectronicsConfigurator
     - type: UserInterface
       interfaces:
-        enum.NetworkConfiguratorUiKey.List:
+        - key: enum.NetworkConfiguratorUiKey.List
           type: NetworkConfiguratorBoundUserInterface
-        enum.NetworkConfiguratorUiKey.Configure:
+        - key: enum.NetworkConfiguratorUiKey.Configure
           type: NetworkConfiguratorBoundUserInterface
-        enum.NetworkConfiguratorUiKey.Link:
+        - key: enum.NetworkConfiguratorUiKey.Link
           type: NetworkConfiguratorBoundUserInterface
+    - type: Tag
+      tags:
+        - DroneUsable
     - type: StaticPrice
-      price: 56
+      price: 60
     - type: GuideHelp
       guides:
-      - NetworkConfigurator
+        - NetworkConfigurator
 
-#Power tools
-#Later on these should switch probably switch damage when changing the tool behavior.
 - type: entity
   name: power drill
   parent: BaseItem
@@ -242,11 +272,11 @@
     state: drill_screw
   - type: Item
     sprite: Objects/Tools/drill.rsi
-    size: Small
+    size: 10
   - type: Tool
     qualities:
       - Screwing
-    speedModifier: 1.5
+    speed: 1.5
     useSound: /Audio/Items/drill_use.ogg
   - type: MultipleTool
     statusShowBehavior: true
@@ -273,51 +303,24 @@
       Plastic: 100
   - type: StaticPrice
     price: 100
-  - type: MeleeWeapon
-    wideAnimationRotation: -90
-    attackRate: 1.5
-    damage:
-      types:
-        Piercing: 10
-    soundHit:
-      path: "/Audio/Items/drill_hit.ogg"
 
 - type: entity
-  id: RCD
-  parent: [ BaseItem, BaseEngineeringContraband ]
   name: RCD
-  description: The rapid construction device can be used to quickly place and remove various station structures and fixtures. Requires compressed matter to function.
+  parent: BaseItem
+  id: RCD
+  description: An advanced construction device which can place/remove walls, floors, and airlocks quickly.
   components:
   - type: RCD
-    availablePrototypes:
-    - WallSolid
-    - FloorSteel
-    - Plating
-    - Catwalk
-    - Grille
-    - Window
-    - WindowDirectional
-    - WindowReinforcedDirectional
-    - ReinforcedWindow
-    - Airlock
-    - AirlockGlass
-    - Firelock
-    - TubeLight
-    - BulbLight
-    - LVCable
-    - MVCable
-    - HVCable
-    - CableTerminal
-    - Deconstruct
   - type: LimitedCharges
-    maxCharges: 30
-    charges: 30
+    maxCharges: 5
+    charges: 5
   - type: UseDelay
+    delay: 1.0
   - type: Sprite
     sprite: Objects/Tools/rcd.rsi
     state: icon
   - type: Item
-    size: Normal
+    size: 20
   - type: Clothing
     sprite: Objects/Tools/rcd.rsi
     quickEquip: false
@@ -328,14 +331,7 @@
       Steel: 600
       Plastic: 100
   - type: StaticPrice
-    price: 110
-  - type: UserInterface
-    interfaces:
-      enum.RcdUiKey.Key:
-        type: RCDMenuBoundUserInterface
-  - type: ActivatableUI
-    inHandsOnly: true
-    key: enum.RcdUiKey.Key
+    price: 100
 
 - type: entity
   id: RCDEmpty
@@ -343,36 +339,24 @@
   suffix: Empty
   components:
   - type: LimitedCharges
+    maxCharges: 5
     charges: 0
-
-- type: entity
-  id: RCDRecharging
-  parent: RCD
-  name: experimental RCD
-  description: A bluespace-enhanced rapid construction device that passively generates its own compressed matter.
-  suffix: AutoRecharge
-  components:
-  - type: LimitedCharges
-    maxCharges: 20
-    charges: 20
-  - type: AutoRecharge
-    rechargeDuration: 10
 
 - type: entity
   id: RCDExperimental
   parent: RCD
   suffix: Admeme
-  name: experimental RCD
-  description: A bluespace-enhanced rapid construction device that passively generates its own compressed matter.
+  name: experimental rcd
+  description: A bluespace-enhanced RCD that regenerates charges passively.
   components:
   - type: AutoRecharge
-    rechargeDuration: 1
+    rechargeDuration: 5
 
 - type: entity
-  name: compressed matter
+  name: RCD Ammo
   parent: BaseItem
   id: RCDAmmo
-  description: A cartridge of raw matter compacted by bluespace technology. Used in rapid construction devices.
+  description: Ammo cartridge for an RCD.
   components:
   - type: RCDAmmo
   - type: Sprite
@@ -389,6 +373,32 @@
     price: 60
 
 - type: entity
+  name: shovel
+  parent: BaseItem
+  id: Shovel
+  description: A large tool for digging and moving dirt.
+  components:
+  - type: Tag
+    tags:
+    - Shovel
+  - type: Sprite
+    sprite: Objects/Tools/shovel.rsi
+    state: icon
+  - type: ItemCooldown
+  - type: MeleeWeapon
+    damage:
+      types:
+        Blunt: 10
+  - type: Item
+    sprite: Objects/Tools/shovel.rsi
+  - type: PhysicalComposition
+    materialComposition:
+      Steel: 100
+      Wood: 50
+  - type: StaticPrice
+    price: 25
+
+- type: entity
   name: omnitool
   parent: BaseItem
   id: Omnitool
@@ -399,18 +409,17 @@
     state: omnitool-screwing
   - type: Item
     sprite: Objects/Tools/omnitool.rsi
-    size: Normal
+    size: 20
   - type: Tag
     tags:
     - Multitool
-  - type: Prying
-    enabled: false
+  - type: TilePrying
   - type: Tool
     qualities:
       - Screwing
-    speedModifier: 1.2 # Kept for future adjustments. Currently 1.2x for balance
+    speed: 1.2 # Kept for future adjustments. Currently 1.2x for balance
     useSound: /Audio/Items/drill_use.ogg
-  - type: ToolTileCompatible
+  - type: LatticeCutting
   - type: MultipleTool
     statusShowBehavior: true
     entries:
@@ -452,65 +461,3 @@
           state: omnitool-pulsing
         changeSound:
           path: /Audio/Items/change_drill.ogg
-
-#Other
-- type: entity
-  name: shovel
-  parent: BaseItem
-  id: Shovel
-  description: A large tool for digging and moving dirt.
-  components:
-  - type: Sprite
-    sprite: Objects/Tools/shovel.rsi
-    state: icon
-  - type: MeleeWeapon
-    wideAnimationRotation: 45
-    damage:
-      types:
-        Blunt: 14
-    soundHit:
-      collection: MetalThud
-  - type: Item
-    size: Normal
-    sprite: Objects/Tools/shovel.rsi
-  - type: PhysicalComposition
-    materialComposition:
-      Steel: 100
-      Wood: 50
-  - type: StaticPrice
-    price: 25
-  - type: Shovel
-
-- type: entity
-  parent: BaseItem
-  id: RollingPin
-  name: rolling pin
-  description: A tool used to shape and flatten dough.
-  components:
-  - type: Sprite
-    sprite: Objects/Tools/rolling_pin.rsi
-    state: icon
-  - type: Item
-    sprite: Objects/Tools/rolling_pin.rsi
-    size: Small
-  - type: Clothing
-    sprite: Objects/Tools/rolling_pin.rsi
-    quickEquip: false
-    slots:
-    - Belt
-  - type: MeleeWeapon
-    wideAnimationRotation: -135
-    damage:
-      types:
-        Blunt: 7
-    soundHit:
-      collection: MetalThud
-  - type: Tool
-    qualities:
-    - Rolling
-  - type: PhysicalComposition
-    materialComposition:
-      Wood: 100
-  - type: Tag
-    tags:
-    - RollingPin

@@ -1,2 +1,2 @@
-ent-MobVox = Uristititi McVox
+ent-MobVox = Vox
     .desc = { ent-BaseMobVox.desc }

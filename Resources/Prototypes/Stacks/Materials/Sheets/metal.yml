@@ -11,10 +11,3 @@
   icon: { sprite: /Textures/Objects/Materials/Sheets/metal.rsi, state: plasteel }
   spawn: SheetPlasteel1
   maxCount: 30
-
-- type: stack
-  id: Brass
-  name: brass
-  icon: { sprite: /Textures/Objects/Materials/Sheets/metal.rsi, state: brass }
-  spawn: SheetBrass1
-  maxCount: 30

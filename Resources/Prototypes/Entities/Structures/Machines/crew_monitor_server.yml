@@ -22,7 +22,6 @@
         machine_board: !type:Container
         machine_parts: !type:Container
     - type: CrewMonitoringServer
-    - type: SingletonDeviceNetServer
     - type: DeviceNetwork
       deviceNetId: Wireless
       transmitFrequencyId: CrewMonitor
@@ -33,6 +32,7 @@
     - type: StationLimitedNetwork
     - type: ApcPowerReceiver
       powerLoad: 200
+      priority: Low
     - type: ExtensionCableReceiver
     - type: Destructible
       thresholds:
@@ -50,13 +50,12 @@
               acts: ["Destruction"]
             - !type:PlaySoundBehavior
               sound:
-                collection: MetalGlassBreak
+                path: /Audio/Effects/metalbreak.ogg
             - !type:SpawnEntitiesBehavior
               spawn:
                 SheetSteel1:
                   min: 1
                   max: 2
-    - type: AmbientOnPowered
     - type: AmbientSound
       volume: -9
       range: 5

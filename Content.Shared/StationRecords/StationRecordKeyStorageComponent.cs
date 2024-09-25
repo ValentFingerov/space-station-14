@@ -4,7 +4,7 @@ using Robust.Shared.Serialization;
 namespace Content.Shared.StationRecords;
 
 [RegisterComponent, NetworkedComponent]
-public sealed partial class StationRecordKeyStorageComponent : Component
+public sealed class StationRecordKeyStorageComponent : Component
 {
     /// <summary>
     ///     The key stored in this component.
@@ -16,9 +16,9 @@ public sealed partial class StationRecordKeyStorageComponent : Component
 [Serializable, NetSerializable]
 public sealed class StationRecordKeyStorageComponentState : ComponentState
 {
-    public (NetEntity, uint)? Key;
+    public StationRecordKey? Key;
 
-    public StationRecordKeyStorageComponentState((NetEntity, uint)? key)
+    public StationRecordKeyStorageComponentState(StationRecordKey? key)
     {
         Key = key;
     }

@@ -1,5 +1,5 @@
 - type: entity
-  id: ChemMaster
+  id: chem_master
   parent: [ BaseMachinePowered, ConstructibleMachine ]
   name: ChemMaster 4000
   description: An industrial grade chemical manipulator with pill and bottle production included.
@@ -8,6 +8,7 @@
   components:
   - type: Sprite
     sprite: Structures/Machines/mixer.rsi
+    netsync: false
     snapCardinals: true
     layers:
     - state: mixer_empty
@@ -38,9 +39,6 @@
         !type:DamageTrigger
         damage: 50
       behaviors:
-      - !type:PlaySoundBehavior
-        sound:
-          collection: MetalGlassBreak
       - !type:ChangeConstructionNodeBehavior
         node: machineFrame
       - !type:DoActsBehavior
@@ -50,8 +48,8 @@
   - type: ActivatableUIRequiresPower
   - type: UserInterface
     interfaces:
-      enum.ChemMasterUiKey.Key:
-        type: ChemMasterBoundUserInterface
+    - key: enum.ChemMasterUiKey.Key
+      type: ChemMasterBoundUserInterface
   - type: ApcPowerReceiver
     powerLoad: 250
   - type: Appearance
@@ -62,7 +60,9 @@
           True: { visible: true }
           False: { visible: false }
   # Machine / Construction stuff
-  - type: WiresPanel
+  - type: Wires
+    BoardName: "chem_master"
+    LayoutId: chem_master
   - type: Machine
     board: ChemMasterMachineCircuitboard
   - type: ContainerContainer
@@ -86,10 +86,3 @@
   - type: SolutionContainerManager
     solutions:
       buffer: {}
-  - type: DumpableSolution
-    solution: buffer
-    unlimited: true
-  - type: GuideHelp
-    guides:
-    - Chemicals
-    - Chemist

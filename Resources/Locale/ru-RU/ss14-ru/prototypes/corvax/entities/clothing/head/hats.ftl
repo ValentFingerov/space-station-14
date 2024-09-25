@@ -14,3 +14,5 @@ ent-ClothingHeadHatBeretSecurityMedic = берет бригмедика
     .desc = Прочный берет с эмблемой медицинской службы.
 ent-ClothingHeadCaptainHat = капитанская шляпа
     .desc = Особая шляпа, сделанная на заказ для капитана.
+ent-ClothingHeadCaptainCap = фуражка капитана
+    .desc = Фуражка подчеркивающая бюрократичность и статус капитана на станции.

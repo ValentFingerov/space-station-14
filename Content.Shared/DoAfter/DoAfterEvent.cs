@@ -7,7 +7,7 @@ namespace Content.Shared.DoAfter;
 /// </summary>
 [Serializable, NetSerializable]
 [ImplicitDataDefinitionForInheritors]
-public abstract partial class DoAfterEvent : HandledEntityEventArgs
+public abstract class DoAfterEvent : HandledEntityEventArgs
 {
     /// <summary>
     ///     The do after that triggered this event. This will be set by the do after system before the event is raised.
@@ -34,14 +34,6 @@ public abstract partial class DoAfterEvent : HandledEntityEventArgs
     public EntityUid? Used => DoAfter.Args.Used;
     public DoAfterArgs Args => DoAfter.Args;
     #endregion
-
-    /// <summary>
-    /// Check whether this event is "the same" as another event for duplicate checking.
-    /// </summary>
-    public virtual bool IsDuplicate(DoAfterEvent other)
-    {
-        return GetType() == other.GetType();
-    }
 }
 
 /// <summary>
@@ -52,7 +44,7 @@ public abstract partial class DoAfterEvent : HandledEntityEventArgs
 ///     If an event actually contains data, it should actually override Clone().
 /// </remarks>
 [Serializable, NetSerializable]
-public abstract partial class SimpleDoAfterEvent : DoAfterEvent
+public abstract class SimpleDoAfterEvent : DoAfterEvent
 {
     // TODO: Find some way to enforce that inheritors don't store data?
     // Alternatively, I just need to allow generics to be networked.
@@ -65,7 +57,7 @@ public abstract partial class SimpleDoAfterEvent : DoAfterEvent
 // Placeholder for obsolete async do afters
 [Serializable, NetSerializable]
 [Obsolete("Dont use async DoAfters")]
-public sealed partial class AwaitedDoAfterEvent : SimpleDoAfterEvent
+public sealed class AwaitedDoAfterEvent : SimpleDoAfterEvent
 {
 }
 
@@ -73,7 +65,7 @@ public sealed partial class AwaitedDoAfterEvent : SimpleDoAfterEvent
 ///     This event will optionally get raised every tick while a do-after is in progress to check whether the do-after
 ///     should be canceled.
 /// </summary>
-public sealed partial class DoAfterAttemptEvent<TEvent> : CancellableEntityEventArgs where TEvent : DoAfterEvent
+public sealed class DoAfterAttemptEvent<TEvent> : CancellableEntityEventArgs where TEvent : DoAfterEvent
 {
     /// <summary>
     ///     The do after that triggered this event.
@@ -81,7 +73,7 @@ public sealed partial class DoAfterAttemptEvent<TEvent> : CancellableEntityEvent
     public readonly DoAfter DoAfter;
 
     /// <summary>
-    ///     The event that the DoAfter will raise after successfully finishing. Given that this event has the data
+    ///     The event that the DoAfter will raise after sucesfully finishing. Given that this event has the data
     ///     required to perform the interaction, it should also contain the data required to validate/attempt the
     ///     interaction.
     /// </summary>

@@ -8,15 +8,18 @@ namespace Content.Shared.Weapons.Ranged.Events;
 [Serializable, NetSerializable]
 public sealed class MuzzleFlashEvent : EntityEventArgs
 {
-    public NetEntity Uid;
+    public EntityUid Uid;
     public string Prototype;
 
-    public Angle Angle;
+    /// <summary>
+    /// Should the effect match the rotation of the entity.
+    /// </summary>
+    public bool MatchRotation;
 
-    public MuzzleFlashEvent(NetEntity uid, string prototype, Angle angle)
+    public MuzzleFlashEvent(EntityUid uid, string prototype, bool matchRotation = false)
     {
         Uid = uid;
         Prototype = prototype;
-        Angle = angle;
+        MatchRotation = matchRotation;
     }
 }

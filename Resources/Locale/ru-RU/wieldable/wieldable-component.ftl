@@ -8,12 +8,9 @@ wieldable-component-successful-wield-other = { $user } берёт { $item } в �
 wieldable-component-failed-wield-other = { $user } берёт { $item } в одну руку.
 wieldable-component-no-hands = Вам не хватает рук!
 wieldable-component-not-enough-free-hands =
-    Чтобы использовать { $item } вам понадобится ещё { $number } { $number ->
+    Чтобы использовать { $item } вам понадобится { $number } { $number ->
         [one] свободная рука
         [few] свободные руки
        *[other] свободных рук
     }.
 wieldable-component-not-in-hands = { CAPITALIZE($item) } не в ваших руках!
-wieldable-component-requires = { CAPITALIZE($item) } должно быть в двух руках!
-gunwieldbonus-component-examine = Это оружие обладает повышенной точностью, когда его держат в двух руках.
-gunrequireswield-component-examine = Из этого оружия можно стрелять только держа его в двух руках.

@@ -1,7 +1,11 @@
+using System.Threading.Tasks;
 using Content.Server.Gravity;
 using Content.Shared.Alert;
-using Content.Shared.Gravity;
+using Content.Shared.Coordinates;
+using NUnit.Framework;
 using Robust.Shared.GameObjects;
+using Robust.Shared.IoC;
+using Robust.Shared.Map;
 
 namespace Content.IntegrationTests.Tests.Gravity
 {
@@ -10,24 +14,20 @@ namespace Content.IntegrationTests.Tests.Gravity
     [TestOf(typeof(GravityGeneratorComponent))]
     public sealed class WeightlessStatusTests
     {
-        [TestPrototypes]
         private const string Prototypes = @"
 - type: entity
-  name: HumanWeightlessDummy
-  id: HumanWeightlessDummy
+  name: HumanDummy
+  id: HumanDummy
   components:
   - type: Alerts
   - type: Physics
     bodyType: Dynamic
 
 - type: entity
-  name: WeightlessGravityGeneratorDummy
-  id: WeightlessGravityGeneratorDummy
+  name: GravityGeneratorDummy
+  id: GravityGeneratorDummy
   components:
   - type: GravityGenerator
-  - type: PowerCharge
-    windowTitle: gravity-generator-window-title
-    idlePower: 50
     chargeRate: 1000000000 # Set this really high so it discharges in a single tick.
     activePower: 500
   - type: ApcPowerReceiver
@@ -37,56 +37,55 @@ namespace Content.IntegrationTests.Tests.Gravity
         [Test]
         public async Task WeightlessStatusTest()
         {
-            await using var pair = await PoolManager.GetServerClient();
-            var server = pair.Server;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{NoClient = true, ExtraPrototypes = Prototypes});
+            var server = pairTracker.Pair.Server;
 
             var entityManager = server.ResolveDependency<IEntityManager>();
             var alertsSystem = server.ResolveDependency<IEntitySystemManager>().GetEntitySystem<AlertsSystem>();
-            var weightlessAlert = SharedGravitySystem.WeightlessAlert;
 
             EntityUid human = default;
 
-            var testMap = await pair.CreateTestMap();
+            var testMap = await PoolManager.CreateTestMap(pairTracker);
 
             await server.WaitAssertion(() =>
             {
-                human = entityManager.SpawnEntity("HumanWeightlessDummy", testMap.GridCoords);
+                human = entityManager.SpawnEntity("HumanDummy", testMap.GridCoords);
 
-                Assert.That(entityManager.TryGetComponent(human, out AlertsComponent alerts));
+                Assert.True(entityManager.TryGetComponent(human, out AlertsComponent alerts));
             });
 
             // Let WeightlessSystem and GravitySystem tick
-            await pair.RunTicksSync(10);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 10);
             var generatorUid = EntityUid.Invalid;
             await server.WaitAssertion(() =>
             {
                 // No gravity without a gravity generator
-                Assert.That(alertsSystem.IsShowingAlert(human, weightlessAlert));
+                Assert.True(alertsSystem.IsShowingAlert(human, AlertType.Weightless));
 
-                generatorUid = entityManager.SpawnEntity("WeightlessGravityGeneratorDummy", entityManager.GetComponent<TransformComponent>(human).Coordinates);
+                generatorUid = entityManager.SpawnEntity("GravityGeneratorDummy", entityManager.GetComponent<TransformComponent>(human).Coordinates);
             });
 
             // Let WeightlessSystem and GravitySystem tick
-            await pair.RunTicksSync(10);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 10);
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(alertsSystem.IsShowingAlert(human, weightlessAlert), Is.False);
+                Assert.False(alertsSystem.IsShowingAlert(human, AlertType.Weightless));
 
                 // This should kill gravity
                 entityManager.DeleteEntity(generatorUid);
             });
 
-            await pair.RunTicksSync(10);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 10);
 
             await server.WaitAssertion(() =>
             {
-                Assert.That(alertsSystem.IsShowingAlert(human, weightlessAlert));
+                Assert.True(alertsSystem.IsShowingAlert(human, AlertType.Weightless));
             });
 
-            await pair.RunTicksSync(10);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 10);
 
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

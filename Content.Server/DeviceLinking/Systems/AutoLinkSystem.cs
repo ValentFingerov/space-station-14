@@ -1,4 +1,5 @@
 using Content.Server.DeviceLinking.Components;
+using Content.Server.MachineLinking.System;
 
 namespace Content.Server.DeviceLinking.Systems;
 
@@ -19,18 +20,17 @@ public sealed class AutoLinkSystem : EntitySystem
     {
         var xform = Transform(uid);
 
-        var query = EntityQueryEnumerator<AutoLinkReceiverComponent>();
-        while (query.MoveNext(out var receiverUid, out var receiver))
+        foreach (var receiver in EntityQuery<AutoLinkReceiverComponent>())
         {
             if (receiver.AutoLinkChannel != component.AutoLinkChannel)
                 continue; // Not ours.
 
-            var rxXform = Transform(receiverUid);
+            var rxXform = Transform(receiver.Owner);
 
             if (rxXform.GridUid != xform.GridUid)
                 continue;
 
-            _deviceLinkSystem.LinkDefaults(null, uid, receiverUid);
+            _deviceLinkSystem.LinkDefaults(null, uid, receiver.Owner);
         }
     }
 }

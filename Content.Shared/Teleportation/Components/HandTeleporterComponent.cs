@@ -1,4 +1,4 @@
-using Content.Shared.DoAfter;
+﻿using Content.Shared.DoAfter;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
@@ -12,19 +12,13 @@ namespace Content.Shared.Teleportation.Components;
 ///     Using it with both portals active deactivates both.
 /// </summary>
 [RegisterComponent, NetworkedComponent]
-public sealed partial class HandTeleporterComponent : Component
+public sealed class HandTeleporterComponent : Component
 {
     [ViewVariables, DataField("firstPortal")]
     public EntityUid? FirstPortal = null;
 
     [ViewVariables, DataField("secondPortal")]
     public EntityUid? SecondPortal = null;
-
-    /// <summary>
-    ///     Portals can't be placed on different grids?
-    /// </summary>
-    [DataField]
-    public bool AllowPortalsOnDifferentGrids;
 
     [DataField("firstPortalPrototype", customTypeSerializer: typeof(PrototypeIdSerializer<EntityPrototype>))]
     public string FirstPortalPrototype = "PortalRed";
@@ -44,11 +38,10 @@ public sealed partial class HandTeleporterComponent : Component
     /// <summary>
     ///     Delay for creating the portals in seconds.
     /// </summary>
-    [DataField("portalCreationDelay")]
-    public float PortalCreationDelay = 1.0f;
+    [DataField("portalCreationDelay")] public float PortalCreationDelay = 2.5f;
 }
 
 [Serializable, NetSerializable]
-public sealed partial class TeleporterDoAfterEvent : SimpleDoAfterEvent
+public sealed class TeleporterDoAfterEvent : SimpleDoAfterEvent
 {
 }

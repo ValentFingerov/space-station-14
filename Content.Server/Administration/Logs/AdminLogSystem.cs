@@ -26,7 +26,6 @@ public sealed class AdminLogSystem : EntitySystem
 
     public override void Shutdown()
     {
-        base.Shutdown();
         _adminLogs.Shutdown();
     }
 }

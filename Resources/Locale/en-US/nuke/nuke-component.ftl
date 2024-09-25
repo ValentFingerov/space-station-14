@@ -1,7 +1,6 @@
-nuke-component-cant-anchor-floor = The anchoring bolts fail to lock into the floor!
-nuke-component-cant-anchor-toggle = The nuclear authentication disk is required to toggle the floor bolts!
+nuke-component-cant-anchor = The bolts seems to be blocked without disk!
 nuke-component-announcement-sender = Nuclear Fission Explosive
-nuke-component-announcement-armed = Attention! The station's self-destruct mechanism has been engaged {$location}. {$time} seconds until detonation. If this was made in error, the mechanism may still be disarmed.
+nuke-component-announcement-armed = Attention! The station's self-destruct mechanism has been engaged at global coordinates {$position}. {$time} seconds until detonation. If this was made in error, the mechanism may still be disarmed.
 nuke-component-announcement-unarmed = The station's self-destruct was deactivated! Have a nice day!
 nuke-component-announcement-send-codes = Attention! Self-destruction codes have been sent to designated fax machines.
 nuke-component-doafter-warning = You start fiddling with wires and knobs in order to disarm the nuke.. This may take a while.
@@ -9,7 +8,6 @@ nuke-component-doafter-warning = You start fiddling with wires and knobs in orde
 # Nuke UI
 nuke-user-interface-title = Nuclear Fission Explosive
 nuke-user-interface-arm-button = ARM
-nuke-user-interface-disarm-button = DISARM
 nuke-user-interface-anchor-button = ANCHOR
 nuke-user-interface-eject-button = EJECT
 
@@ -39,10 +37,3 @@ nuke-label-syndicate = SYN-{$serial}
 nuke-codes-message = [color=red]TOP SECRET![/color]
 nuke-codes-list = {$name} code: {$code}
 nuke-codes-fax-paper-name = nuclear authentication codes
-
-# Nuke disk slot
-nuke-slot-component-slot-name-disk = Disk
-
-## Examine
-nuke-examine-armed = Hey uh, why's that [color=red]red light[/color] blinking?
-nuke-examine-exploding = Yeah... I think it's too late buddy.

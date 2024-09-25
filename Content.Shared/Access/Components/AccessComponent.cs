@@ -1,59 +1,37 @@
 using Content.Shared.Access.Systems;
 using Robust.Shared.GameStates;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom.Prototype.Set;
 
-namespace Content.Shared.Access.Components;
-
-/// <summary>
-///     Simple mutable access provider found on ID cards and such.
-/// </summary>
-[RegisterComponent, NetworkedComponent]
-[Access(typeof(SharedAccessSystem))]
-[AutoGenerateComponentState]
-public sealed partial class AccessComponent : Component
+namespace Content.Shared.Access.Components
 {
     /// <summary>
-    /// True if the access provider is enabled and can grant access.
+    ///     Simple mutable access provider found on ID cards and such.
     /// </summary>
-    [DataField, ViewVariables(VVAccess.ReadWrite)]
-    [AutoNetworkedField]
-    public bool Enabled = true;
-
-    [DataField]
-    [Access(typeof(SharedAccessSystem), Other = AccessPermissions.ReadExecute)] // FIXME Friends
-    [AutoNetworkedField]
-    public HashSet<ProtoId<AccessLevelPrototype>> Tags = new();
-
-    /// <summary>
-    /// Access Groups. These are added to the tags during map init. After map init this will have no effect.
-    /// </summary>
-    [DataField(readOnly: true)]
-    [AutoNetworkedField]
-    public HashSet<ProtoId<AccessGroupPrototype>> Groups = new();
-}
-
-/// <summary>
-/// Event raised on an entity to find additional entities which provide access.
-/// </summary>
-[ByRefEvent]
-public struct GetAdditionalAccessEvent
-{
-    public HashSet<EntityUid> Entities = new();
-
-    public GetAdditionalAccessEvent()
+    [RegisterComponent, NetworkedComponent]
+    [Access(typeof(SharedAccessSystem))]
+    public sealed class AccessComponent : Component
     {
+        [DataField("tags", customTypeSerializer: typeof(PrototypeIdHashSetSerializer<AccessLevelPrototype>))]
+        [Access(typeof(SharedAccessSystem), Other = AccessPermissions.ReadExecute)] // FIXME Friends
+        public HashSet<string> Tags = new();
+
+        /// <summary>
+        ///     Access Groups. These are added to the tags during map init. After map init this will have no effect.
+        /// </summary>
+        [DataField("groups", readOnly: true, customTypeSerializer: typeof(PrototypeIdHashSetSerializer<AccessGroupPrototype>))]
+        public readonly HashSet<string> Groups = new();
     }
-}
 
-[ByRefEvent]
-public record struct GetAccessTagsEvent(HashSet<ProtoId<AccessLevelPrototype>> Tags, IPrototypeManager PrototypeManager)
-{
-    public void AddGroup(ProtoId<AccessGroupPrototype> group)
+    /// <summary>
+    /// Event raised on an entity to find additional entities which provide access.
+    /// </summary>
+    [ByRefEvent]
+    public struct GetAdditionalAccessEvent
     {
-        if (!PrototypeManager.TryIndex<AccessGroupPrototype>(group, out var groupPrototype))
-            return;
+        public HashSet<EntityUid> Entities = new();
 
-        Tags.UnionWith(groupPrototype.Tags);
+        public GetAdditionalAccessEvent()
+        {
+        }
     }
 }

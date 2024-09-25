@@ -10,7 +10,6 @@
       - Debug
   - type: Sprite
     sprite: Objects/Weapons/Guns/Pistols/debug.rsi
-    state: icon
   - type: Clothing
     sprite: Objects/Weapons/Guns/Pistols/debug.rsi
   - type: Gun
@@ -21,7 +20,6 @@
       - FullAuto
   - type: AmmoCounter
   - type: ChamberMagazineAmmoProvider
-    boltClosed: null
   - type: ItemSlots
     slots:
       gun_magazine:
@@ -60,7 +58,7 @@
   id: BulletDebug
   name: bang, ded bullet
   parent: BaseBullet
-  categories: [ Debug, HideSpawnMenu ]
+  noSpawn: true
   suffix: DEBUG
   components:
   - type: Tag
@@ -101,7 +99,7 @@
       types:
         Blunt: 20000
   - type: Item
-    size: Tiny
+    size: 1
     sprite: Objects/Weapons/Melee/debug.rsi
 
 - type: entity

@@ -2,12 +2,12 @@
   name: BaseWeaponHeavyMachineGun
   parent: BaseItem
   id: BaseWeaponHeavyMachineGun
-  description: Spray and pray.
+  description: Spray and pray
   abstract: true
   components:
   - type: Sprite
+    netsync: false
   - type: Item
-    size: Ginormous
   - type: Gun
     fireRate: 20
     selectedMode: FullAuto
@@ -24,7 +24,7 @@
 - type: entity
   name: minigun
   id: WeaponMinigun
-  parent: [ BaseWeaponHeavyMachineGun, BaseMajorContraband ]
+  parent: BaseWeaponHeavyMachineGun
   description: Vzzzzzt! Rahrahrahrah! Vrrrrr! Uses .10 rifle ammo.
   components:
   - type: Sprite

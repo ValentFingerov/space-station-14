@@ -1,6 +1,5 @@
-using Content.Shared.Ghost;
-using Content.Shared.Verbs;
 using Robust.Shared.Utility;
+using Content.Shared.Verbs;
 
 namespace Content.Shared.Examine
 {
@@ -15,8 +14,6 @@ namespace Content.Shared.Examine
             base.Initialize();
 
             SubscribeLocalEvent<GroupExamineComponent, GetVerbsEvent<ExamineVerb>>(OnGroupExamineVerb);
-
-            _ghostQuery = GetEntityQuery<GhostComponent>();
         }
 
         /// <summary>
@@ -26,7 +23,7 @@ namespace Content.Shared.Examine
         /// </summary>
         private void OnGroupExamineVerb(EntityUid uid, GroupExamineComponent component, GetVerbsEvent<ExamineVerb> args)
         {
-            foreach (var group in component.Group)
+            foreach (var group in component.ExamineGroups)
             {
                 if (!EntityHasComponent(uid, group.Components))
                     continue;
@@ -75,7 +72,7 @@ namespace Content.Shared.Examine
 
             if (group.Title != null)
             {
-                message.AddMarkupOrThrow(Loc.GetString(group.Title));
+                message.AddMarkup(Loc.GetString(group.Title));
                 message.PushNewline();
             }
             message.AddMessage(GetFormattedMessageFromExamineEntries(group.Entries));
@@ -119,7 +116,7 @@ namespace Content.Shared.Examine
                 // Make sure we have the component name as a string
                 var componentName = _componentFactory.GetComponentName(component.GetType());
 
-                foreach (var examineGroup in groupExamine.Group)
+                foreach (var examineGroup in groupExamine.ExamineGroups)
                 {
                     // If any of the examine groups list of components contain this componentname
                     if (examineGroup.Components.Contains(componentName))
@@ -127,7 +124,7 @@ namespace Content.Shared.Examine
                         foreach (var entry in examineGroup.Entries)
                         {
                             // If any of the entries already are from your component, dont do anything else - no doubles!
-                            if (entry.Component == componentName)
+                            if (entry.ComponentName == componentName)
                                 return;
                         }
 

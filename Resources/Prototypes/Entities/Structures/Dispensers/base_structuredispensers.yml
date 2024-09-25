@@ -1,7 +1,7 @@
-- type: entity
+﻿- type: entity
   abstract: true
   id: ReagentDispenserBase
-  parent: SmallConstructibleMachine
+  parent: ConstructibleMachine
   placement:
     mode: SnapgridCenter
   components:
@@ -30,12 +30,12 @@
   - type: ActivatableUIRequiresPower
   - type: UserInterface
     interfaces:
-      enum.ReagentDispenserUiKey.Key:
-        type: ReagentDispenserBoundUserInterface
+    - key: enum.ReagentDispenserUiKey.Key
+      type: ReagentDispenserBoundUserInterface
   - type: Anchorable
   - type: Pullable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -53,17 +53,15 @@
         acts: ["Destruction"]
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
   - type: ReagentDispenser
-    storageWhitelist:
-      tags:
-      - Bottle
-    beakerSlot:
-      whitelistFailPopup: reagent-dispenser-component-cannot-put-entity-message
-      whitelist:
-        components:
-        - FitsInDispenser
   - type: ItemSlots
+    slots:
+      beakerSlot:
+        whitelistFailPopup: reagent-dispenser-component-cannot-put-entity-message
+        whitelist:
+          components:
+          - FitsInDispenser
   - type: ContainerContainer
     containers:
       machine_board: !type:Container
@@ -71,4 +69,3 @@
       beakerSlot: !type:ContainerSlot
   - type: StaticPrice
     price: 1000
-  - type: WiresPanel

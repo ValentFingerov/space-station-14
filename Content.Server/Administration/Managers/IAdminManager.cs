@@ -1,7 +1,7 @@
 using Content.Shared.Administration;
 using Content.Shared.Administration.Managers;
-using Robust.Shared.Player;
-using Robust.Shared.Toolshed;
+using Robust.Server.Player;
+
 
 namespace Content.Server.Administration.Managers
 {
@@ -21,12 +21,42 @@ namespace Content.Server.Administration.Managers
         /// <remarks>
         ///     This does not include admins that are de-adminned.
         /// </remarks>
-        IEnumerable<ICommonSession> ActiveAdmins { get; }
+        IEnumerable<IPlayerSession> ActiveAdmins { get; }
 
         /// <summary>
         /// Gets all admins currently on the server, even de-adminned ones.
         /// </summary>
-        IEnumerable<ICommonSession> AllAdmins { get; }
+        IEnumerable<IPlayerSession> AllAdmins { get; }
+
+        /// <summary>
+        ///     Checks if a player is an admin.
+        /// </summary>
+        /// <param name="session">The player to check.</param>
+        /// <param name="includeDeAdmin">
+        ///     Whether to return admin data for admins that are current de-adminned.
+        /// </param>
+        /// <returns>true if the player is an admin, false otherwise.</returns>
+        bool IsAdmin(IPlayerSession session, bool includeDeAdmin = false);
+
+        /// <summary>
+        ///     Gets the admin data for a player, if they are an admin.
+        /// </summary>
+        /// <param name="session">The player to get admin data for.</param>
+        /// <param name="includeDeAdmin">
+        ///     Whether to return admin data for admins that are current de-adminned.
+        /// </param>
+        /// <returns><see langword="null" /> if the player is not an admin.</returns>
+        AdminData? GetAdminData(IPlayerSession session, bool includeDeAdmin = false);
+
+        /// <summary>
+        ///     See if a player has an admin flag.
+        /// </summary>
+        /// <returns>True if the player is and admin and has the specified flags.</returns>
+        bool HasAdminFlag(IPlayerSession player, AdminFlags flag)
+        {
+            var data = GetAdminData(player);
+            return data != null && data.HasFlag(flag);
+        }
 
         /// <summary>
         ///     De-admins an admin temporarily so they are effectively a normal player.
@@ -34,28 +64,18 @@ namespace Content.Server.Administration.Managers
         /// <remarks>
         ///     De-adminned admins are able to re-admin at any time if they so desire.
         /// </remarks>
-        void DeAdmin(ICommonSession session);
+        void DeAdmin(IPlayerSession session);
 
         /// <summary>
         ///     Re-admins a de-adminned admin.
         /// </summary>
-        void ReAdmin(ICommonSession session);
-
-        /// <summary>
-        ///     Make admin hidden from adminwho.
-        /// </summary>
-        void Stealth(ICommonSession session);
-
-        /// <summary>
-        ///     Unhide admin from adminwho.
-        /// </summary>
-        void UnStealth(ICommonSession session);
+        void ReAdmin(IPlayerSession session);
 
         /// <summary>
         ///     Re-loads the permissions of an player in case their admin data changed DB-side.
         /// </summary>
         /// <seealso cref="ReloadAdminsWithRank"/>
-        void ReloadAdmin(ICommonSession player);
+        void ReloadAdmin(IPlayerSession player);
 
         /// <summary>
         ///     Reloads admin permissions for all admins with a certain rank.
@@ -66,8 +86,6 @@ namespace Content.Server.Administration.Managers
 
         void Initialize();
 
-        void PromoteHost(ICommonSession player);
-
-        bool TryGetCommandFlags(CommandSpec command, out AdminFlags[]? flags);
+        void PromoteHost(IPlayerSession player);
     }
 }

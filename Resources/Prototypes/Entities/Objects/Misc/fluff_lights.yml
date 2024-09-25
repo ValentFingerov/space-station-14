@@ -12,10 +12,13 @@
     behaviours:
       - !type:FadeBehaviour
         id: radiating
+        interpolate: Linear
         maxDuration: 2.0
         startValue: 3.0
         endValue: 2.0
         isLooped: true
+        property: Radius
+        enabled: false
         reverseWhenFinished: true
       - !type:PulseBehaviour
         id: blinking
@@ -24,6 +27,8 @@
         minValue: 0.1
         maxValue: 2.0
         isLooped: true
+        property: Radius
+        enabled: false
   - type: PowerCellSlot
     cellSlotId: cell_slot
   - type: ItemSlots
@@ -36,21 +41,20 @@
       cell_slot: !type:ContainerSlot
   - type: Sprite
     sprite: Objects/Misc/Lights/lights.rsi
+    netsync: false
   - type: Item
     sprite: Objects/Misc/Lights/lights.rsi
-    size: Normal
+    size: 20
     heldPrefix: off
   - type: PointLight
+    netsync: false
     enabled: false
     radius: 3
     energy: 2
-    netsync: false
   - type: ToggleableLightVisuals
   - type: Appearance
   - type: Physics
     canCollide: false
-  - type: StealTarget
-    stealGroup: LAMP
 
 - type: entity
   name: lamp
@@ -62,25 +66,13 @@
     sprite: Objects/Misc/Lights/lamp.rsi
     layers:
       - state: lamp
-        map: [ "base" ]
       - state: lamp-on
         shader: unshaded
         visible: false
         map: [ "light" ]
   - type: Item
     sprite: Objects/Misc/Lights/lamp.rsi
-  - type: HolidayVisuals
-    holidays:
-      festive:
-      - FestiveSeason
-  - type: GenericVisualizer
-    visuals:
-      enum.HolidayVisuals.Holiday:
-        base:
-          festive: { state: christmaslamp }
-        light:
-          festive: { state: christmaslamp-on }
-  - type: Rotatable # Corvax-Resprite
+  - type: Rotatable
 
 - type: entity
   name: banana lamp
@@ -107,83 +99,13 @@
     sprite: Objects/Misc/Lights/lampgreen.rsi
     layers:
       - state: lampgreen
-        map: [ "base" ]
       - state: lampgreen-on
         shader: unshaded
         visible: false
         map: [ "light" ]
   - type: Item
     sprite: Objects/Misc/Lights/lampgreen.rsi
-  - type: HolidayVisuals
-    holidays:
-      festive:
-      - FestiveSeason
-  - type: GenericVisualizer
-    visuals:
-      enum.HolidayVisuals.Holiday:
-        base:
-          festive:
-            sprite: Objects/Misc/Lights/lamp.rsi
-            state: christmaslamp
-        light:
-          festive:
-            sprite: Objects/Misc/Lights/lamp.rsi
-            state: christmaslamp-on
-  - type: Rotatable # Corvax-Resprite
-
-- type: entity
-  name: interrogator lamp
-  id: LampInterrogator
-  parent: BaseLamp
-  description: Ultra-bright lamp for the bad cop.
-  components:
-  - type: Sprite
-    sprite: Objects/Misc/Lights/lampint.rsi
-    layers:
-      - state: lamp-int
-        map: [ "enum.FlashVisuals.BaseLayer" ]
-      - state: lamp-int-on
-        shader: unshaded
-        visible: false
-        map: [ "light" ]
-      - state: flashing
-        map: [ "enum.FlashVisuals.LightLayer" ]
-        visible: false
-  - type: Item
-    sprite: Objects/Misc/Lights/lampint.rsi
-  - type: StaticPrice
-    price: 2500
-  - type: PointLight
-    netsync: false
-    enabled: false
-    radius: 2
-    energy: 0.5
-    color: "#FFFFEE"
-  - type: Flash
-  - type: LimitedCharges
-    maxCharges: 3
-    charges: 3
-  - type: AutoRecharge
-    rechargeDuration: 30
-  - type: MeleeWeapon
-    wideAnimationRotation: 180
-    damage:
-      types:
-        Blunt: 0 # melee weapon to allow flashing individual targets
-  - type: ItemSlots
-    slots:
-      cell_slot:
-        name: power-cell-slot-component-slot-name-default
-        startingItem: PowerCellHigh
-  - type: GenericVisualizer
-    visuals:
-      enum.FlashVisuals.Burnt:
-        enum.FlashVisuals.BaseLayer:
-          True: {state: burnt}
-      enum.FlashVisuals.Flashing:
-        enum.FlashVisuals.LightLayer:
-          True: {visible: true}
-          False: {visible: false}
+  - type: Rotatable
 
 - type: entity
   name: floodlight
@@ -192,7 +114,7 @@
   description: A pole with powerful mounted lights on it.
   components:
   - type: Item
-    size: Normal
+    size: 50
   - type: Sprite
     layers:
       - state: floodlight
@@ -210,19 +132,16 @@
           bounds: "-0.2, -0.5, 0.2, 0.5"
         density: 50
         mask:
-        - HighImpassable
+        - MachineMask
+        layer:
+        - MachineLayer
   - type: PointLight
     enabled: false
     radius: 8
     energy: 5
-  - type: ItemSlots
-    slots:
-      cell_slot:
-        name: power-cell-slot-component-slot-name-default
-        startingItem: PowerCellMedium
   - type: Anchorable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -232,7 +151,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: GlassBreak
+          path: /Audio/Effects/glass_break1.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           FloodlightBroken:
@@ -252,7 +171,7 @@
     state: floodlight_broken
   - type: Anchorable
   - type: Damageable
-    damageContainer: StructuralInorganic
+    damageContainer: Inorganic
     damageModifierSet: Metallic
   - type: Destructible
     thresholds:
@@ -268,7 +187,7 @@
       behaviors:
       - !type:PlaySoundBehavior
         sound:
-          collection: MetalGlassBreak
+          path: /Audio/Effects/metalbreak.ogg
       - !type:SpawnEntitiesBehavior
         spawn:
           SheetSteel1:
@@ -285,4 +204,6 @@
           bounds: "-0.2, -0.5, 0.2, 0.5"
         density: 50
         mask:
-        - HighImpassable
+        - MachineMask
+        layer:
+        - MachineLayer

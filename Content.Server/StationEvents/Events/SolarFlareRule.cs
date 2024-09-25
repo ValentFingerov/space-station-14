@@ -7,7 +7,6 @@ using Content.Server.StationEvents.Components;
 using Content.Shared.Radio.Components;
 using Content.Shared.Doors.Components;
 using Content.Shared.Doors.Systems;
-using Content.Shared.GameTicking.Components;
 
 namespace Content.Server.StationEvents.Events;
 
@@ -21,18 +20,7 @@ public sealed class SolarFlareRule : StationEventSystem<SolarFlareRuleComponent>
     public override void Initialize()
     {
         base.Initialize();
-        SubscribeLocalEvent<RadioReceiveAttemptEvent>(OnRadioReceiveAttempt);
-    }
-
-    protected override void Started(EntityUid uid, SolarFlareRuleComponent comp, GameRuleComponent gameRule, GameRuleStartedEvent args)
-    {
-        base.Started(uid, comp, gameRule, args);
-
-        for (var i = 0; i < comp.ExtraCount; i++)
-        {
-            var channel = RobustRandom.Pick(comp.ExtraChannels);
-            comp.AffectedChannels.Add(channel);
-        }
+        SubscribeLocalEvent<RadioReceiveAttemptEvent>(OnRadioSendAttempt);
     }
 
     protected override void ActiveTick(EntityUid uid, SolarFlareRuleComponent component, GameRuleComponent gameRule, float frameTime)
@@ -58,7 +46,7 @@ public sealed class SolarFlareRule : StationEventSystem<SolarFlareRuleComponent>
         }
     }
 
-    private void OnRadioReceiveAttempt(ref RadioReceiveAttemptEvent args)
+    private void OnRadioSendAttempt(ref RadioReceiveAttemptEvent args)
     {
         var query = EntityQueryEnumerator<SolarFlareRuleComponent, GameRuleComponent>();
         while (query.MoveNext(out var uid, out var flare, out var gameRule))

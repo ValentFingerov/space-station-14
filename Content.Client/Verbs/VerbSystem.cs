@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Numerics;
 using Content.Client.Examine;
 using Content.Client.Gameplay;
 using Content.Client.Popups;
@@ -8,7 +7,6 @@ using Content.Shared.Examine;
 using Content.Shared.Tag;
 using Content.Shared.Verbs;
 using JetBrains.Annotations;
-using Robust.Client.ComponentTrees;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
@@ -22,11 +20,10 @@ namespace Content.Client.Verbs
     public sealed class VerbSystem : SharedVerbSystem
     {
         [Dependency] private readonly PopupSystem _popupSystem = default!;
-        [Dependency] private readonly ExamineSystem _examine = default!;
-        [Dependency] private readonly SpriteTreeSystem _tree = default!;
+        [Dependency] private readonly ExamineSystem _examineSystem = default!;
         [Dependency] private readonly TagSystem _tagSystem = default!;
         [Dependency] private readonly IStateManager _stateManager = default!;
-        [Dependency] private readonly IEyeManager _eyeManager = default!;
+        [Dependency] private readonly EntityLookupSystem _entityLookup = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
 
         /// <summary>
@@ -34,14 +31,14 @@ namespace Content.Client.Verbs
         /// </summary>
         public const float EntityMenuLookupSize = 0.25f;
 
+        [Dependency] private readonly IEyeManager _eyeManager = default!;
+
         /// <summary>
         ///     These flags determine what entities the user can see on the context menu.
         /// </summary>
         public MenuVisibility Visibility;
 
         public Action<VerbsResponseEvent>? OnVerbsResponse;
-
-        private List<EntityUid> _entities = new();
 
         public override void Initialize()
         {
@@ -60,7 +57,7 @@ namespace Content.Client.Verbs
             if (_stateManager.CurrentState is not GameplayStateBase gameScreenBase)
                 return false;
 
-            var player = _playerManager.LocalEntity;
+            var player = _playerManager.LocalPlayer?.ControlledEntity;
             if (player == null)
                 return false;
 
@@ -69,60 +66,55 @@ namespace Content.Client.Verbs
                 ? Visibility
                 : Visibility | MenuVisibility.NoFov;
 
-            var ev = new MenuVisibilityEvent()
-            {
-                TargetPos = targetPos,
-                Visibility = visibility,
-            };
-
-            RaiseLocalEvent(player.Value, ref ev);
-            visibility = ev.Visibility;
 
             // Get entities
-            _entities.Clear();
-            var entitiesUnderMouse = _tree.QueryAabb(targetPos.MapId, Box2.CenteredAround(targetPos.Position, new Vector2(EntityMenuLookupSize, EntityMenuLookupSize)));
+            List<EntityUid> entities;
 
             // Do we have to do FoV checks?
             if ((visibility & MenuVisibility.NoFov) == 0)
             {
-                bool Predicate(EntityUid e) => e == player;
+                var entitiesUnderMouse = gameScreenBase.GetClickableEntities(targetPos).ToHashSet();
+                bool Predicate(EntityUid e) => e == player || entitiesUnderMouse.Contains(e);
+
+                // first check the general location.
+                if (!_examineSystem.CanExamine(player.Value, targetPos, Predicate))
+                    return false;
 
                 TryComp(player.Value, out ExaminerComponent? examiner);
 
-                foreach (var ent in entitiesUnderMouse)
+                // Then check every entity
+                entities = new();
+                foreach (var ent in _entityLookup.GetEntitiesInRange(targetPos, EntityMenuLookupSize))
                 {
-                    if (_examine.CanExamine(player.Value, targetPos, Predicate, ent.Uid, examiner))
-                        _entities.Add(ent.Uid);
+                    if (_examineSystem.CanExamine(player.Value, targetPos, Predicate, ent, examiner))
+                        entities.Add(ent);
                 }
             }
             else
             {
-                foreach (var ent in entitiesUnderMouse)
-                {
-                    _entities.Add(ent.Uid);
-                }
+                entities = _entityLookup.GetEntitiesInRange(targetPos, EntityMenuLookupSize).ToList();
             }
 
-            if (_entities.Count == 0)
+            if (entities.Count == 0)
                 return false;
 
             if (visibility == MenuVisibility.All)
             {
-                result = new (_entities);
+                result = entities;
                 return true;
             }
 
             // remove any entities in containers
             if ((visibility & MenuVisibility.InContainer) == 0)
             {
-                for (var i = _entities.Count - 1; i >= 0; i--)
+                for (var i = entities.Count - 1; i >= 0; i--)
                 {
-                    var entity = _entities[i];
+                    var entity = entities[i];
 
                     if (ContainerSystem.IsInSameOrTransparentContainer(player.Value, entity))
                         continue;
 
-                    _entities.RemoveSwap(i);
+                    entities.RemoveSwap(i);
                 }
             }
 
@@ -130,46 +122,75 @@ namespace Content.Client.Verbs
             if ((visibility & MenuVisibility.Invisible) == 0)
             {
                 var spriteQuery = GetEntityQuery<SpriteComponent>();
+                var tagQuery = GetEntityQuery<TagComponent>();
 
-                for (var i = _entities.Count - 1; i >= 0; i--)
+                for (var i = entities.Count - 1; i >= 0; i--)
                 {
-                    var entity = _entities[i];
+                    var entity = entities[i];
 
                     if (!spriteQuery.TryGetComponent(entity, out var spriteComponent) ||
                         !spriteComponent.Visible ||
-                        _tagSystem.HasTag(entity, "HideContextMenu"))
+                        _tagSystem.HasTag(entity, "HideContextMenu", tagQuery))
                     {
-                        _entities.RemoveSwap(i);
+                        entities.RemoveSwap(i);
                     }
                 }
             }
 
-            if (_entities.Count == 0)
+            // Remove any entities that do not have LOS
+            if ((visibility & MenuVisibility.NoFov) == 0)
+            {
+                var xformQuery = GetEntityQuery<TransformComponent>();
+                var playerPos = xformQuery.GetComponent(player.Value).MapPosition;
+
+                for (var i = entities.Count - 1; i >= 0; i--)
+                {
+                    var entity = entities[i];
+
+                    if (!ExamineSystemShared.InRangeUnOccluded(
+                        playerPos,
+                        xformQuery.GetComponent(entity).MapPosition,
+                        ExamineSystemShared.ExamineRange,
+                        null))
+                    {
+                        entities.RemoveSwap(i);
+                    }
+                }
+            }
+
+            if (entities.Count == 0)
                 return false;
 
-            result = new(_entities);
+            result = entities;
             return true;
+        }
+
+        /// <summary>
+        ///     Asks the server to send back a list of server-side verbs, for the given verb type.
+        /// </summary>
+        public SortedSet<Verb> GetVerbs(EntityUid target, EntityUid user, Type type, bool force = false)
+        {
+            return GetVerbs(target, user, new List<Type>() { type }, force);
         }
 
         /// <summary>
         ///     Ask the server to send back a list of server-side verbs, and for now return an incomplete list of verbs
         ///     (only those defined locally).
         /// </summary>
-        public SortedSet<Verb> GetVerbs(NetEntity target, EntityUid user, List<Type> verbTypes, out List<VerbCategory> extraCategories, bool force = false)
+        public SortedSet<Verb> GetVerbs(EntityUid target, EntityUid user, List<Type> verbTypes,
+            bool force = false)
         {
             if (!target.IsClientSide())
-                RaiseNetworkEvent(new RequestServerVerbsEvent(target, verbTypes, adminRequest: force));
-
-            // Some admin menu interactions will try get verbs for entities that have not yet been sent to the player.
-            if (!TryGetEntity(target, out var local))
             {
-                extraCategories = new();
-                return new();
+                RaiseNetworkEvent(new RequestServerVerbsEvent(target, verbTypes, adminRequest: force));
             }
 
-            return GetLocalVerbs(local.Value, user, verbTypes, out extraCategories, force);
-        }
+            // Some admin menu interactions will try get verbs for entities that have not yet been sent to the player.
+            if (!Exists(target))
+                return new();
 
+            return GetLocalVerbs(target, user, verbTypes, force);
+        }
 
         /// <summary>
         ///     Execute actions associated with the given verb.
@@ -179,18 +200,8 @@ namespace Content.Client.Verbs
         /// </remarks>
         public void ExecuteVerb(EntityUid target, Verb verb)
         {
-            ExecuteVerb(GetNetEntity(target), verb);
-        }
-
-        /// <summary>
-        ///     Execute actions associated with the given verb.
-        /// </summary>
-        /// <remarks>
-        ///     Unless this is a client-exclusive verb, this will also tell the server to run the same verb.
-        /// </remarks>
-        public void ExecuteVerb(NetEntity target, Verb verb)
-        {
-            if ( _playerManager.LocalEntity is not {} user)
+            var user = _playerManager.LocalPlayer?.ControlledEntity;
+            if (user == null)
                 return;
 
             // is this verb actually valid?
@@ -198,14 +209,14 @@ namespace Content.Client.Verbs
             {
                 // maybe send an informative pop-up message.
                 if (!string.IsNullOrWhiteSpace(verb.Message))
-                    _popupSystem.PopupEntity(verb.Message, user);
+                    _popupSystem.PopupEntity(verb.Message, user.Value);
 
                 return;
             }
 
-            if (verb.ClientExclusive || target.IsClientSide())
+            if (verb.ClientExclusive)
                 // is this a client exclusive (gui) verb?
-                ExecuteVerb(verb, user, GetEntity(target));
+                ExecuteVerb(verb, user.Value, target);
             else
                 EntityManager.RaisePredictiveEvent(new ExecuteVerbEvent(target, verb));
         }
@@ -214,5 +225,16 @@ namespace Content.Client.Verbs
         {
             OnVerbsResponse?.Invoke(msg);
         }
+    }
+
+    [Flags]
+    public enum MenuVisibility
+    {
+        // What entities can a user see on the entity menu?
+        Default = 0,          // They can only see entities in FoV.
+        NoFov = 1 << 0,         // They ignore FoV restrictions
+        InContainer = 1 << 1,   // They can see through containers.
+        Invisible = 1 << 2,   // They can see entities without sprites and the "HideContextMenu" tag is ignored.
+        All = NoFov | InContainer | Invisible
     }
 }

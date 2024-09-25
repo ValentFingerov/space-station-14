@@ -1,19 +1,17 @@
 ﻿using Content.Server.Administration;
-using Content.Server.Roles.Jobs;
+using Content.Server.Players;
 using Content.Shared.Administration;
-using Content.Shared.Players;
 using Content.Shared.Roles;
 using Robust.Server.Player;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
+using System.Linq;
 
 namespace Content.Server.Roles
 {
     [AdminCommand(AdminFlags.Admin)]
     public sealed class AddRoleCommand : IConsoleCommand
     {
-        [Dependency] private readonly EntityManager _entityManager = default!;
-
         public string Command => "addrole";
 
         public string Description => "Adds a role to a player's mind.";
@@ -49,14 +47,14 @@ namespace Content.Server.Roles
                 return;
             }
 
-            var jobs = _entityManager.System<JobSystem>();
-            if (jobs.MindHasJobWithId(mind, jobPrototype.Name))
+            if (mind.AllRoles.Any(r => r.Name == jobPrototype.Name))
             {
                 shell.WriteLine("Mind already has that role");
                 return;
             }
 
-            jobs.MindAddJob(mind.Value, args[1]);
+            var role = new Job(mind, jobPrototype);
+            mind.AddRole(role);
         }
     }
 }

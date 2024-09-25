@@ -1,9 +1,11 @@
+﻿using System.Linq;
+using Content.Server.GameTicking.Rules.Components;
 using Content.Server.Power.Components;
 using Content.Server.Power.EntitySystems;
+using Content.Server.Station.Components;
 using Content.Server.StationEvents.Components;
-using Content.Shared.GameTicking.Components;
-using Content.Shared.Station.Components;
 using JetBrains.Annotations;
+using Robust.Shared.Random;
 
 namespace Content.Server.StationEvents.Events;
 
@@ -14,30 +16,26 @@ public sealed class BreakerFlipRule : StationEventSystem<BreakerFlipRuleComponen
 
     protected override void Added(EntityUid uid, BreakerFlipRuleComponent component, GameRuleComponent gameRule, GameRuleAddedEvent args)
     {
-        if (!TryComp<StationEventComponent>(uid, out var stationEvent))
-            return;
-
-        var str = Loc.GetString("station-event-breaker-flip-announcement", ("data", Loc.GetString(Loc.GetString($"random-sentience-event-data-{RobustRandom.Next(1, 6)}"))));
-        stationEvent.StartAnnouncement = str;
-
         base.Added(uid, component, gameRule, args);
 
+        var str = Loc.GetString("station-event-breaker-flip-announcement", ("data", Loc.GetString(Loc.GetString($"random-sentience-event-data-{RobustRandom.Next(1, 6)}"))));
+        ChatSystem.DispatchGlobalAnnouncement(str, playSound: false, colorOverride: Color.Gold);
     }
 
     protected override void Started(EntityUid uid, BreakerFlipRuleComponent component, GameRuleComponent gameRule, GameRuleStartedEvent args)
     {
         base.Started(uid, component, gameRule, args);
 
-        if (!TryGetRandomStation(out var chosenStation))
+        if (StationSystem.Stations.Count == 0)
             return;
+        var chosenStation = RobustRandom.Pick(StationSystem.Stations.ToList());
 
-        var stationApcs = new List<Entity<ApcComponent>>();
-        var query = EntityQueryEnumerator<ApcComponent, TransformComponent>();
-        while (query.MoveNext(out var apcUid, out var apc, out var xform))
+        var stationApcs = new List<ApcComponent>();
+        foreach (var (apc, transform) in EntityQuery<ApcComponent, TransformComponent>())
         {
-            if (apc.MainBreakerEnabled && CompOrNull<StationMemberComponent>(xform.GridUid)?.Station == chosenStation)
+            if (apc.MainBreakerEnabled && CompOrNull<StationMemberComponent>(transform.GridUid)?.Station == chosenStation)
             {
-                stationApcs.Add((apcUid, apc));
+                stationApcs.Add(apc);
             }
         }
 
@@ -49,7 +47,7 @@ public sealed class BreakerFlipRule : StationEventSystem<BreakerFlipRuleComponen
 
         for (var i = 0; i < toDisable; i++)
         {
-            _apcSystem.ApcToggleBreaker(stationApcs[i], stationApcs[i]);
+            _apcSystem.ApcToggleBreaker(stationApcs[i].Owner, stationApcs[i]);
         }
     }
 }

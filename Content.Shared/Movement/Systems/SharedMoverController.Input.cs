@@ -1,4 +1,3 @@
-using System.Numerics;
 using Content.Shared.CCVar;
 using Content.Shared.Follower.Components;
 using Content.Shared.Input;
@@ -7,7 +6,7 @@ using Content.Shared.Movement.Events;
 using Robust.Shared.GameStates;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
-using Robust.Shared.Player;
+using Robust.Shared.Players;
 using Robust.Shared.Serialization;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
@@ -49,131 +48,97 @@ namespace Content.Shared.Movement.Systems
                 .Register<SharedMoverController>();
 
             SubscribeLocalEvent<InputMoverComponent, ComponentInit>(OnInputInit);
-            SubscribeLocalEvent<InputMoverComponent, ComponentGetState>(OnMoverGetState);
-            SubscribeLocalEvent<InputMoverComponent, ComponentHandleState>(OnMoverHandleState);
+            SubscribeLocalEvent<InputMoverComponent, ComponentGetState>(OnInputGetState);
+            SubscribeLocalEvent<InputMoverComponent, ComponentHandleState>(OnInputHandleState);
             SubscribeLocalEvent<InputMoverComponent, EntParentChangedMessage>(OnInputParentChange);
-
-            SubscribeLocalEvent<AutoOrientComponent, EntParentChangedMessage>(OnAutoParentChange);
 
             SubscribeLocalEvent<FollowedComponent, EntParentChangedMessage>(OnFollowedParentChange);
 
-            Subs.CVar(_configManager, CCVars.CameraRotationLocked, obj => CameraRotationLocked = obj, true);
-            Subs.CVar(_configManager, CCVars.GameDiagonalMovement, value => DiagonalMovementEnabled = value, true);
+            _configManager.OnValueChanged(CCVars.CameraRotationLocked, SetCameraRotationLocked, true);
+            _configManager.OnValueChanged(CCVars.GameDiagonalMovement, SetDiagonalMovement, true);
         }
 
-        /// <summary>
-        /// Gets the buttons held with opposites cancelled out.
-        /// </summary>
-        public static MoveButtons GetNormalizedMovement(MoveButtons buttons)
+        private void SetCameraRotationLocked(bool obj)
         {
-            var oldMovement = buttons;
-
-            if ((oldMovement & (MoveButtons.Left | MoveButtons.Right)) == (MoveButtons.Left | MoveButtons.Right))
-            {
-                oldMovement &= ~MoveButtons.Left;
-                oldMovement &= ~MoveButtons.Right;
-            }
-
-            if ((oldMovement & (MoveButtons.Up | MoveButtons.Down)) == (MoveButtons.Up | MoveButtons.Down))
-            {
-                oldMovement &= ~MoveButtons.Up;
-                oldMovement &= ~MoveButtons.Down;
-            }
-
-            return oldMovement;
+            CameraRotationLocked = obj;
         }
 
-        protected void SetMoveInput(Entity<InputMoverComponent> entity, MoveButtons buttons)
+        protected void SetMoveInput(InputMoverComponent component, MoveButtons buttons)
         {
-            if (entity.Comp.HeldMoveButtons == buttons)
-                return;
-
-            // Relay the fact we had any movement event.
-            // TODO: Ideally we'd do these in a tick instead of out of sim.
-            var moveEvent = new MoveInputEvent(entity, entity.Comp.HeldMoveButtons);
-            entity.Comp.HeldMoveButtons = buttons;
-            RaiseLocalEvent(entity, ref moveEvent);
-            Dirty(entity, entity.Comp);
+            if (component.HeldMoveButtons == buttons) return;
+            component.HeldMoveButtons = buttons;
+            Dirty(component);
         }
 
-        private void OnMoverHandleState(Entity<InputMoverComponent> entity, ref ComponentHandleState args)
+        private void OnInputHandleState(EntityUid uid, InputMoverComponent component, ref ComponentHandleState args)
         {
             if (args.Current is not InputMoverComponentState state)
                 return;
 
-            // Handle state
-            entity.Comp.LerpTarget = state.LerpTarget;
-            entity.Comp.RelativeRotation = state.RelativeRotation;
-            entity.Comp.TargetRelativeRotation = state.TargetRelativeRotation;
-            entity.Comp.CanMove = state.CanMove;
-            entity.Comp.RelativeEntity = EnsureEntity<InputMoverComponent>(state.RelativeEntity, entity.Owner);
+            component.HeldMoveButtons = state.Buttons;
+            component.LastInputTick = GameTick.Zero;
+            component.LastInputSubTick = 0;
+            component.CanMove = state.CanMove;
 
-            // Reset
-            entity.Comp.LastInputTick = GameTick.Zero;
-            entity.Comp.LastInputSubTick = 0;
-
-            if (entity.Comp.HeldMoveButtons != state.HeldMoveButtons)
-            {
-                var moveEvent = new MoveInputEvent(entity, entity.Comp.HeldMoveButtons);
-                entity.Comp.HeldMoveButtons = state.HeldMoveButtons;
-                RaiseLocalEvent(entity.Owner, ref moveEvent);
-            }
+            component.RelativeRotation = state.RelativeRotation;
+            component.TargetRelativeRotation = state.TargetRelativeRotation;
+            component.RelativeEntity = state.RelativeEntity;
+            component.LerpTarget = state.LerpAccumulator;
         }
 
-        private void OnMoverGetState(Entity<InputMoverComponent> entity, ref ComponentGetState args)
+        private void OnInputGetState(EntityUid uid, InputMoverComponent component, ref ComponentGetState args)
         {
-            args.State = new InputMoverComponentState()
-            {
-                CanMove = entity.Comp.CanMove,
-                RelativeEntity = GetNetEntity(entity.Comp.RelativeEntity),
-                LerpTarget = entity.Comp.LerpTarget,
-                HeldMoveButtons = entity.Comp.HeldMoveButtons,
-                RelativeRotation = entity.Comp.RelativeRotation,
-                TargetRelativeRotation = entity.Comp.TargetRelativeRotation,
-            };
+            args.State = new InputMoverComponentState(
+                component.HeldMoveButtons,
+                component.CanMove,
+                component.RelativeRotation,
+                component.TargetRelativeRotation,
+                component.RelativeEntity,
+                component.LerpTarget);
         }
 
         private void ShutdownInput()
         {
             CommandBinds.Unregister<SharedMoverController>();
+            _configManager.UnsubValueChanged(CCVars.CameraRotationLocked, SetCameraRotationLocked);
+            _configManager.UnsubValueChanged(CCVars.GameDiagonalMovement, SetDiagonalMovement);
         }
 
         public bool DiagonalMovementEnabled { get; private set; }
 
-        protected virtual void HandleShuttleInput(EntityUid uid, ShuttleButtons button, ushort subTick, bool state) {}
+        private void SetDiagonalMovement(bool value) => DiagonalMovementEnabled = value;
 
-        private void OnAutoParentChange(Entity<AutoOrientComponent> entity, ref EntParentChangedMessage args)
-        {
-            ResetCamera(entity.Owner);
-        }
+        protected virtual void HandleShuttleInput(EntityUid uid, ShuttleButtons button, ushort subTick, bool state) {}
 
         public void RotateCamera(EntityUid uid, Angle angle)
         {
-            if (CameraRotationLocked || !MoverQuery.TryGetComponent(uid, out var mover))
+            if (CameraRotationLocked || !TryComp<InputMoverComponent>(uid, out var mover))
                 return;
 
             mover.TargetRelativeRotation += angle;
-            Dirty(uid, mover);
+            Dirty(mover);
         }
 
         public void ResetCamera(EntityUid uid)
         {
             if (CameraRotationLocked ||
-                !MoverQuery.TryGetComponent(uid, out var mover))
+                !TryComp<InputMoverComponent>(uid, out var mover))
             {
                 return;
             }
 
             // If we updated parent then cancel the accumulator and force it now.
-            if (!TryUpdateRelative(mover, XformQuery.GetComponent(uid)) && mover.TargetRelativeRotation.Equals(Angle.Zero))
+            var xformQuery = GetEntityQuery<TransformComponent>();
+
+            if (!TryUpdateRelative(mover, xformQuery.GetComponent(uid), xformQuery) && mover.TargetRelativeRotation.Equals(Angle.Zero))
                 return;
 
             mover.LerpTarget = TimeSpan.Zero;
             mover.TargetRelativeRotation = Angle.Zero;
-            Dirty(uid, mover);
+            Dirty(mover);
         }
 
-        private bool TryUpdateRelative(InputMoverComponent mover, TransformComponent xform)
+        private bool TryUpdateRelative(InputMoverComponent mover, TransformComponent xform, EntityQuery<TransformComponent> xformQuery)
         {
             var relative = xform.GridUid;
             relative ??= xform.MapUid;
@@ -192,15 +157,15 @@ namespace Content.Shared.Movement.Systems
             var targetRotation = Angle.Zero;
 
             // Get our current relative rotation
-            if (XformQuery.TryGetComponent(mover.RelativeEntity, out var oldRelativeXform))
+            if (xformQuery.TryGetComponent(mover.RelativeEntity, out var oldRelativeXform))
             {
-                currentRotation = _transform.GetWorldRotation(oldRelativeXform, XformQuery) + mover.RelativeRotation;
+                currentRotation = _transform.GetWorldRotation(oldRelativeXform, xformQuery) + mover.RelativeRotation;
             }
 
-            if (XformQuery.TryGetComponent(relative, out var relativeXform))
+            if (xformQuery.TryGetComponent(relative, out var relativeXform))
             {
                 // This is our current rotation relative to our new parent.
-                mover.RelativeRotation = (currentRotation - _transform.GetWorldRotation(relativeXform)).FlipPositive();
+                mover.RelativeRotation = (currentRotation - _transform.GetWorldRotation(relativeXform, xformQuery)).FlipPositive();
             }
 
             // If we went from grid -> map we'll preserve our worldrotation
@@ -223,69 +188,77 @@ namespace Content.Shared.Movement.Systems
             return true;
         }
 
-        public Angle GetParentGridAngle(InputMoverComponent mover)
+        public Angle GetParentGridAngle(InputMoverComponent mover, EntityQuery<TransformComponent> xformQuery)
         {
             var rotation = mover.RelativeRotation;
 
-            if (XformQuery.TryGetComponent(mover.RelativeEntity, out var relativeXform))
-                return _transform.GetWorldRotation(relativeXform) + rotation;
+            if (xformQuery.TryGetComponent(mover.RelativeEntity, out var relativeXform))
+                return (_transform.GetWorldRotation(relativeXform, xformQuery) + rotation);
 
             return rotation;
         }
 
-        private void OnFollowedParentChange(Entity<FollowedComponent> entity, ref EntParentChangedMessage args)
+        public Angle GetParentGridAngle(InputMoverComponent mover)
         {
-            foreach (var foll in entity.Comp.Following)
+            return GetParentGridAngle(mover, GetEntityQuery<TransformComponent>());
+        }
+
+        private void OnFollowedParentChange(EntityUid uid, FollowedComponent component, ref EntParentChangedMessage args)
+        {
+            var moverQuery = GetEntityQuery<InputMoverComponent>();
+            var xformQuery = GetEntityQuery<TransformComponent>();
+
+            foreach (var foll in component.Following)
             {
-                if (!MoverQuery.TryGetComponent(foll, out var mover))
+                if (!moverQuery.TryGetComponent(foll, out var mover))
                     continue;
 
-                var ev = new EntParentChangedMessage(foll, null, args.OldMapId, XformQuery.GetComponent(foll));
-                OnInputParentChange((foll, mover), ref ev);
+                var ev = new EntParentChangedMessage(foll, null, args.OldMapId, xformQuery.GetComponent(foll));
+                OnInputParentChange(foll, mover, ref ev);
             }
         }
 
-        private void OnInputParentChange(Entity<InputMoverComponent> entity, ref EntParentChangedMessage args)
+        private void OnInputParentChange(EntityUid uid, InputMoverComponent component, ref EntParentChangedMessage args)
         {
             // If we change our grid / map then delay updating our LastGridAngle.
             var relative = args.Transform.GridUid;
             relative ??= args.Transform.MapUid;
 
-            if (entity.Comp.LifeStage < ComponentLifeStage.Running)
+            if (component.LifeStage < ComponentLifeStage.Running)
             {
-                entity.Comp.RelativeEntity = relative;
-                Dirty(entity.Owner, entity.Comp);
+                component.RelativeEntity = relative;
+                Dirty(component);
                 return;
             }
 
             var oldMapId = args.OldMapId;
-            var mapId = args.Transform.MapUid;
+            var mapId = args.Transform.MapID;
 
             // If we change maps then reset eye rotation entirely.
             if (oldMapId != mapId)
             {
-                entity.Comp.RelativeEntity = relative;
-                entity.Comp.TargetRelativeRotation = Angle.Zero;
-                entity.Comp.RelativeRotation = Angle.Zero;
-                entity.Comp.LerpTarget = TimeSpan.Zero;
-                Dirty(entity.Owner, entity.Comp);
+                component.RelativeEntity = relative;
+                component.TargetRelativeRotation = Angle.Zero;
+                component.RelativeRotation = Angle.Zero;
+                component.LerpTarget = TimeSpan.Zero;
+                Dirty(component);
                 return;
             }
 
             // If we go on a grid and back off then just reset the accumulator.
-            if (relative == entity.Comp.RelativeEntity)
+            if (relative == component.RelativeEntity)
             {
-                if (entity.Comp.LerpTarget >= Timing.CurTime)
+                if (component.LerpTarget >= Timing.CurTime)
                 {
-                    entity.Comp.LerpTarget = TimeSpan.Zero;
-                    Dirty(entity.Owner, entity.Comp);
+                    component.LerpTarget = TimeSpan.Zero;
+                    Dirty(component);
                 }
 
                 return;
             }
 
-            entity.Comp.LerpTarget = TimeSpan.FromSeconds(InputMoverComponent.LerpTime) + Timing.CurTime;
-            Dirty(entity.Owner, entity.Comp);
+            component.LerpTarget = TimeSpan.FromSeconds(InputMoverComponent.LerpTime) + Timing.CurTime;
+            Dirty(component);
         }
 
         private void HandleDirChange(EntityUid entity, Direction dir, ushort subTick, bool state)
@@ -298,8 +271,8 @@ namespace Content.Shared.Movement.Systems
                 DebugTools.Assert(relayMover.RelayEntity != entity);
                 DebugTools.AssertNotNull(relayMover.RelayEntity);
 
-                if (MoverQuery.TryGetComponent(entity, out var mover))
-                    SetMoveInput((entity, mover), MoveButtons.None);
+                if (TryComp<InputMoverComponent>(entity, out var mover))
+                    SetMoveInput(mover, MoveButtons.None);
 
                 if (!_mobState.IsIncapacitated(entity))
                     HandleDirChange(relayMover.RelayEntity, dir, subTick, state);
@@ -307,13 +280,18 @@ namespace Content.Shared.Movement.Systems
                 return;
             }
 
-            if (!MoverQuery.TryGetComponent(entity, out var moverComp))
+            if (!TryComp<InputMoverComponent>(entity, out var moverComp))
                 return;
+
+            // Relay the fact we had any movement event.
+            // TODO: Ideally we'd do these in a tick instead of out of sim.
+            var moveEvent = new MoveInputEvent(entity);
+            RaiseLocalEvent(entity, ref moveEvent);
 
             // For stuff like "Moving out of locker" or the likes
             // We'll relay a movement input to the parent.
             if (_container.IsEntityInContainer(entity) &&
-                TryComp(entity, out TransformComponent? xform) &&
+                TryComp<TransformComponent>(entity, out var xform) &&
                 xform.ParentUid.IsValid() &&
                 _mobState.IsAlive(entity))
             {
@@ -321,30 +299,30 @@ namespace Content.Shared.Movement.Systems
                 RaiseLocalEvent(xform.ParentUid, ref relayMoveEvent);
             }
 
-            SetVelocityDirection((entity, moverComp), dir, subTick, state);
+            SetVelocityDirection(moverComp, dir, subTick, state);
         }
 
-        private void OnInputInit(Entity<InputMoverComponent> entity, ref ComponentInit args)
+        private void OnInputInit(EntityUid uid, InputMoverComponent component, ComponentInit args)
         {
-            var xform = Transform(entity.Owner);
+            var xform = Transform(uid);
 
             if (!xform.ParentUid.IsValid())
                 return;
 
-            entity.Comp.RelativeEntity = xform.GridUid ?? xform.MapUid;
-            entity.Comp.TargetRelativeRotation = Angle.Zero;
+            component.RelativeEntity = xform.GridUid ?? xform.MapUid;
+            component.TargetRelativeRotation = Angle.Zero;
         }
 
         private void HandleRunChange(EntityUid uid, ushort subTick, bool walking)
         {
-            MoverQuery.TryGetComponent(uid, out var moverComp);
+            TryComp<InputMoverComponent>(uid, out var moverComp);
 
             if (TryComp<RelayInputMoverComponent>(uid, out var relayMover))
             {
                 // if we swap to relay then stop our existing input if we ever change back.
                 if (moverComp != null)
                 {
-                    SetMoveInput((uid, moverComp), MoveButtons.None);
+                    SetMoveInput(moverComp, MoveButtons.None);
                 }
 
                 HandleRunChange(relayMover.RelayEntity, subTick, walking);
@@ -353,7 +331,7 @@ namespace Content.Shared.Movement.Systems
 
             if (moverComp == null) return;
 
-            SetSprinting((uid, moverComp), subTick, walking);
+            SetSprinting(moverComp, subTick, walking);
         }
 
         public (Vector2 Walking, Vector2 Sprinting) GetVelocityInput(InputMoverComponent mover)
@@ -404,7 +382,7 @@ namespace Content.Shared.Movement.Systems
         ///     composed into a single direction vector, <see cref="VelocityDir"/>. Enabling
         ///     opposite directions will cancel each other out, resulting in no direction.
         /// </summary>
-        public void SetVelocityDirection(Entity<InputMoverComponent> entity, Direction direction, ushort subTick, bool enabled)
+        public void SetVelocityDirection(InputMoverComponent component, Direction direction, ushort subTick, bool enabled)
         {
             // Logger.Info($"[{_gameTiming.CurTick}/{subTick}] {direction}: {enabled}");
 
@@ -417,26 +395,26 @@ namespace Content.Shared.Movement.Systems
                 _ => throw new ArgumentException(nameof(direction))
             };
 
-            SetMoveInput(entity, subTick, enabled, bit);
+            SetMoveInput(component, subTick, enabled, bit);
         }
 
-        private void SetMoveInput(Entity<InputMoverComponent> entity, ushort subTick, bool enabled, MoveButtons bit)
+        private void SetMoveInput(InputMoverComponent component, ushort subTick, bool enabled, MoveButtons bit)
         {
             // Modifies held state of a movement button at a certain sub tick and updates current tick movement vectors.
-            ResetSubtick(entity.Comp);
+            ResetSubtick(component);
 
-            if (subTick >= entity.Comp.LastInputSubTick)
+            if (subTick >= component.LastInputSubTick)
             {
-                var fraction = (subTick - entity.Comp.LastInputSubTick) / (float) ushort.MaxValue;
+                var fraction = (subTick - component.LastInputSubTick) / (float) ushort.MaxValue;
 
-                ref var lastMoveAmount = ref entity.Comp.Sprinting ? ref entity.Comp.CurTickSprintMovement : ref entity.Comp.CurTickWalkMovement;
+                ref var lastMoveAmount = ref component.Sprinting ? ref component.CurTickSprintMovement : ref component.CurTickWalkMovement;
 
-                lastMoveAmount += DirVecForButtons(entity.Comp.HeldMoveButtons) * fraction;
+                lastMoveAmount += DirVecForButtons(component.HeldMoveButtons) * fraction;
 
-                entity.Comp.LastInputSubTick = subTick;
+                component.LastInputSubTick = subTick;
             }
 
-            var buttons = entity.Comp.HeldMoveButtons;
+            var buttons = component.HeldMoveButtons;
 
             if (enabled)
             {
@@ -447,7 +425,7 @@ namespace Content.Shared.Movement.Systems
                 buttons &= ~bit;
             }
 
-            SetMoveInput(entity, buttons);
+            SetMoveInput(component, buttons);
         }
 
         private void ResetSubtick(InputMoverComponent component)
@@ -460,11 +438,11 @@ namespace Content.Shared.Movement.Systems
             component.LastInputSubTick = 0;
         }
 
-        public void SetSprinting(Entity<InputMoverComponent> entity, ushort subTick, bool walking)
+        public void SetSprinting(InputMoverComponent component, ushort subTick, bool walking)
         {
             // Logger.Info($"[{_gameTiming.CurTick}/{subTick}] Sprint: {enabled}");
 
-            SetMoveInput(entity, subTick, walking, MoveButtons.Walk);
+            SetMoveInput(component, subTick, walking, MoveButtons.Walk);
         }
 
         /// <summary>
@@ -490,10 +468,10 @@ namespace Content.Shared.Movement.Systems
             var vec = new Vector2(x, y);
 
             // can't normalize zero length vector
-            if (vec.LengthSquared() > 1.0e-6)
+            if (vec.LengthSquared > 1.0e-6)
             {
                 // Normalize so that diagonals aren't faster or something.
-                vec = vec.Normalized();
+                vec = vec.Normalized;
             }
 
             return vec;
@@ -515,11 +493,11 @@ namespace Content.Shared.Movement.Systems
                 _angle = direction.ToAngle();
             }
 
-            public override bool HandleCmdMessage(IEntityManager entManager, ICommonSession? session, IFullInputCmdMessage message)
+            public override bool HandleCmdMessage(ICommonSession? session, InputCmdMessage message)
             {
-                if (session?.AttachedEntity == null) return false;
+                if (message is not FullInputCmdMessage full || session?.AttachedEntity == null) return false;
 
-                if (message.State != BoundKeyState.Up)
+                if (full.State != BoundKeyState.Up)
                     return false;
 
                 _controller.RotateCamera(session.AttachedEntity.Value, _angle);
@@ -536,11 +514,11 @@ namespace Content.Shared.Movement.Systems
                 _controller = controller;
             }
 
-            public override bool HandleCmdMessage(IEntityManager entManager, ICommonSession? session, IFullInputCmdMessage message)
+            public override bool HandleCmdMessage(ICommonSession? session, InputCmdMessage message)
             {
-                if (session?.AttachedEntity == null) return false;
+                if (message is not FullInputCmdMessage full || session?.AttachedEntity == null) return false;
 
-                if (message.State != BoundKeyState.Up)
+                if (full.State != BoundKeyState.Up)
                     return false;
 
                 _controller.ResetCamera(session.AttachedEntity.Value);
@@ -559,11 +537,11 @@ namespace Content.Shared.Movement.Systems
                 _dir = dir;
             }
 
-            public override bool HandleCmdMessage(IEntityManager entManager, ICommonSession? session, IFullInputCmdMessage message)
+            public override bool HandleCmdMessage(ICommonSession? session, InputCmdMessage message)
             {
-                if (session?.AttachedEntity == null) return false;
+                if (message is not FullInputCmdMessage full || session?.AttachedEntity == null) return false;
 
-                _controller.HandleDirChange(session.AttachedEntity.Value, _dir, message.SubTick, message.State == BoundKeyState.Down);
+                _controller.HandleDirChange(session.AttachedEntity.Value, _dir, message.SubTick, full.State == BoundKeyState.Down);
                 return false;
             }
         }
@@ -577,12 +555,41 @@ namespace Content.Shared.Movement.Systems
                 _controller = controller;
             }
 
-            public override bool HandleCmdMessage(IEntityManager entManager, ICommonSession? session, IFullInputCmdMessage message)
+            public override bool HandleCmdMessage(ICommonSession? session, InputCmdMessage message)
             {
-                if (session?.AttachedEntity == null) return false;
+                if (message is not FullInputCmdMessage full || session?.AttachedEntity == null) return false;
 
-                _controller.HandleRunChange(session.AttachedEntity.Value, message.SubTick, message.State == BoundKeyState.Down);
+                _controller.HandleRunChange(session.AttachedEntity.Value, full.SubTick, full.State == BoundKeyState.Down);
                 return false;
+            }
+        }
+
+        [Serializable, NetSerializable]
+        private sealed class InputMoverComponentState : ComponentState
+        {
+            public MoveButtons Buttons { get; }
+            public readonly bool CanMove;
+
+            /// <summary>
+            /// Our current rotation for movement purposes. This is lerping towards <see cref="TargetRelativeRotation"/>
+            /// </summary>
+            public Angle RelativeRotation;
+
+            /// <summary>
+            /// Target rotation relative to the <see cref="RelativeEntity"/>. Typically 0
+            /// </summary>
+            public Angle TargetRelativeRotation;
+            public EntityUid? RelativeEntity;
+            public TimeSpan LerpAccumulator;
+
+            public InputMoverComponentState(MoveButtons buttons, bool canMove, Angle relativeRotation, Angle targetRelativeRotation, EntityUid? relativeEntity, TimeSpan lerpTarget)
+            {
+                Buttons = buttons;
+                CanMove = canMove;
+                RelativeRotation = relativeRotation;
+                TargetRelativeRotation = targetRelativeRotation;
+                RelativeEntity = relativeEntity;
+                LerpAccumulator = lerpTarget;
             }
         }
 
@@ -597,18 +604,17 @@ namespace Content.Shared.Movement.Systems
                 _button = button;
             }
 
-            public override bool HandleCmdMessage(IEntityManager entManager, ICommonSession? session, IFullInputCmdMessage message)
+            public override bool HandleCmdMessage(ICommonSession? session, InputCmdMessage message)
             {
-                if (session?.AttachedEntity == null) return false;
+                if (message is not FullInputCmdMessage full || session?.AttachedEntity == null) return false;
 
-                _controller.HandleShuttleInput(session.AttachedEntity.Value, _button, message.SubTick, message.State == BoundKeyState.Down);
+                _controller.HandleShuttleInput(session.AttachedEntity.Value, _button, full.SubTick, full.State == BoundKeyState.Down);
                 return false;
             }
         }
     }
 
     [Flags]
-    [Serializable, NetSerializable]
     public enum MoveButtons : byte
     {
         None = 0,
@@ -617,7 +623,6 @@ namespace Content.Shared.Movement.Systems
         Left = 4,
         Right = 8,
         Walk = 16,
-        AnyDirection = Up | Down | Left | Right,
     }
 
     [Flags]

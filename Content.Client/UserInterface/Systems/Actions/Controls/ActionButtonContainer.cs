@@ -1,19 +1,12 @@
-using System.Linq;
-using Content.Client.Actions;
-using Content.Shared.Input;
-using Robust.Client.Input;
+using Content.Shared.Actions.ActionTypes;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.Utility;
 
 namespace Content.Client.UserInterface.Systems.Actions.Controls;
 
 [Virtual]
 public class ActionButtonContainer : GridContainer
 {
-    [Dependency] private readonly IEntityManager _entity = default!;
-    [Dependency] private readonly IInputManager _input = default!;
-
     public event Action<GUIBoundKeyEventArgs, ActionButton>? ActionPressed;
     public event Action<GUIBoundKeyEventArgs, ActionButton>? ActionUnpressed;
     public event Action<ActionButton>? ActionFocusExited;
@@ -21,51 +14,33 @@ public class ActionButtonContainer : GridContainer
     public ActionButtonContainer()
     {
         IoCManager.InjectDependencies(this);
+        UserInterfaceManager.GetUIController<ActionUIController>().RegisterActionContainer(this);
     }
 
     public ActionButton this[int index]
     {
         get => (ActionButton) GetChild(index);
-    }
-
-    private void BuildActionButtons(int count)
-    {
-        var keys = ContentKeyFunctions.GetHotbarBoundKeys();
-
-        Children.Clear();
-        for (var index = 0; index < count; index++)
+        set
         {
-            Children.Add(MakeButton(index));
-        }
-
-        ActionButton MakeButton(int index)
-        {
-            var button = new ActionButton(_entity);
-
-            if (!keys.TryGetValue(index, out var boundKey))
-                return button;
-
-            button.KeyBind = boundKey;
-            if (_input.TryGetKeyBinding(boundKey, out var binding))
-            {
-                button.Label.Text = binding.GetKeyString();
-            }
-
-            return button;
+            AddChild(value);
+            value.SetPositionInParent(index);
+            value.ActionPressed += ActionPressed;
+            value.ActionUnpressed += ActionUnpressed;
+            value.ActionFocusExited += ActionFocusExited;
         }
     }
 
-    public void SetActionData(ActionsSystem system, params EntityUid?[] actionTypes)
+    public void SetActionData(params ActionType?[] actionTypes)
     {
-        var uniqueCount = Math.Min(system.GetClientActions().Count(), actionTypes.Length + 1);
-        if (ChildCount != uniqueCount)
-            BuildActionButtons(uniqueCount);
+        ClearActionData();
 
-        for (var i = 0; i < uniqueCount; i++)
+        for (var i = 0; i < actionTypes.Length; i++)
         {
-            if (!actionTypes.TryGetValue(i, out var action))
-                action = null;
-            ((ActionButton) GetChild(i)).UpdateData(action, system);
+            var action = actionTypes[i];
+            if (action == null)
+                continue;
+
+            ((ActionButton) GetChild(i)).UpdateData(action);
         }
     }
 
@@ -89,16 +64,6 @@ public class ActionButtonContainer : GridContainer
         button.ActionFocusExited += ActionFocusExited;
     }
 
-    protected override void ChildRemoved(Control newChild)
-    {
-        if (newChild is not ActionButton button)
-            return;
-
-        button.ActionPressed -= ActionPressed;
-        button.ActionUnpressed -= ActionUnpressed;
-        button.ActionFocusExited -= ActionFocusExited;
-    }
-
     public bool TryGetButtonIndex(ActionButton button, out int position)
     {
         if (button.Parent != this)
@@ -118,5 +83,10 @@ public class ActionButtonContainer : GridContainer
             if (control is ActionButton button)
                 yield return button;
         }
+    }
+
+    ~ActionButtonContainer()
+    {
+        UserInterfaceManager.GetUIController<ActionUIController>().RemoveActionContainer();
     }
 }

@@ -1,31 +1,26 @@
-- type: entity
+﻿- type: entity
   id: CrateArtifactContainer
   parent: BaseStructureDynamic
-  name: artifact container
-  description: Used to safely contain and move artifacts.
   components:
     - type: Transform
       noRot: true
     - type: AccessReader
-      access: [["Research"], ["Cargo"]]
+      access: [["Research"], ["Salvage"]]
     - type: Lock
-    - type: ResistLocker
     - type: Sprite
       drawdepth: Objects
+      netsync: false
       sprite: Structures/Storage/Crates/artifact.rsi
       layers:
-      - state: artifact_container
-        map: ["enum.StorageVisualLayers.Base"]
-      - state: artifact_container_door
-        map: ["enum.StorageVisualLayers.Door"]
-      - state: welded
-        visible: false
-        map: ["enum.WeldableLayers.BaseWelded"]
-      - state: locked
-        map: ["enum.LockVisualLayers.Lock"]
-        shader: unshaded
-      - state: paper
-        map: ["enum.PaperLabelVisuals.Layer"]
+        - state: artifact_container
+        - state: artifact_container_door
+          map: ["enum.StorageVisualLayers.Door"]
+        - state: welded
+          visible: false
+          map: ["enum.WeldableLayers.BaseWelded"]
+        - state: locked
+          map: ["enum.StorageVisualLayers.Lock"]
+          shader: unshaded
     - type: InteractionOutline
     - type: Physics
     - type: Fixtures
@@ -34,9 +29,9 @@
           shape:
             !type:PhysShapeCircle
             radius: 0.45
-          density: 50
+          density: 75
           mask:
-          - CrateMask #this is so they can go under plastic flaps
+          - MachineMask
           layer:
           - MachineLayer
     - type: Icon
@@ -49,13 +44,11 @@
         - Artifact
     - type: Weldable
     - type: SuppressArtifactContainer
-    - type: RadiationBlockingContainer
-      resistance: 5
     - type: PlaceableSurface
       isPlaceable: false
     - type: Damageable
-      damageContainer: StructuralInorganic
-      damageModifierSet: StructuralMetallicStrong
+      damageContainer: Inorganic
+      damageModifierSet: Metallic
     - type: Destructible
       thresholds:
         - trigger:
@@ -71,31 +64,11 @@
         whitelist:
           components:
             - Paper
-        blacklist:
-          tags:
-          - Book
     - type: Appearance
-    - type: EntityStorageVisuals
-      stateDoorOpen: artifact_container_open
-      stateDoorClosed: artifact_container_door
-    - type: GenericVisualizer
       visuals:
-        enum.PaperLabelVisuals.HasLabel:
-          enum.PaperLabelVisuals.Layer:
-            True: { visible: true }
-            False: { visible: false }
-        enum.PaperLabelVisuals.LabelType:
-          enum.PaperLabelVisuals.Layer:
-            Paper: { state: paper }
-            Bounty: { state: bounty }
-            CaptainsPaper: { state: captains_paper }
-            Invoice: { state: invoice }
-        enum.StorageVisuals.Open:
-          enum.PaperLabelVisuals.Layer:
-            True: { offset: "0.0,0.3125" }
-            False: { offset: "0.0,0.0" }
-
-    - type: LockVisuals
+        - type: StorageVisualizer
+          state_open: artifact_container_open
+          state_closed: artifact_container_door
     - type: ItemSlots
     - type: ContainerContainer
       containers:

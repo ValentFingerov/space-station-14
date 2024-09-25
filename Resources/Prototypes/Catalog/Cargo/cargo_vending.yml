@@ -13,18 +13,7 @@
     state: base
   product: CrateVendingMachineRestockBoozeFilled
   cost: 3500
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: CrateVendingMachineRestockChefvend
-  name: ChefVend restock crate
-  icon:
-    sprite: Objects/Specific/Service/vending_machine_restock.rsi
-    state: base
-  product: CrateVendingMachineRestockChefvendFilled
-  cost: 680
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -33,18 +22,8 @@
     sprite: Objects/Specific/Service/vending_machine_restock.rsi
     state: base
   product: CrateVendingMachineRestockClothesFilled
-  cost: 2400
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: CrateVendingMachineRestockAutoDrobe
-  icon:
-    sprite: Objects/Specific/Service/vending_machine_restock.rsi
-    state: base
-  product: CrateVendingMachineRestockAutoDrobeFilled
-  cost: 2500
-  category: cargoproduct-category-name-service
+  cost: 4350
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -54,18 +33,7 @@
     state: base
   product: CrateVendingMachineRestockDinnerwareFilled
   cost: 2000
-  category: cargoproduct-category-name-service
-  group: market
-
-- type: cargoProduct
-  id: CrateVendingMachineRestockCondimentStation
-  name: condiment station restock crate
-  icon:
-    sprite: Objects/Specific/Service/vending_machine_restock.rsi
-    state: base
-  product: CrateVendingMachineRestockCondimentStationFilled
-  cost: 300
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -75,7 +43,7 @@
     state: base
   product: CrateVendingMachineRestockEngineeringFilled
   cost: 3200
-  category: cargoproduct-category-name-engineering
+  category: Engineering
   group: market
 
 - type: cargoProduct
@@ -85,7 +53,7 @@
     state: base
   product: CrateVendingMachineRestockGamesFilled
   cost: 750
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -95,7 +63,7 @@
     state: base
   product: CrateVendingMachineRestockHotDrinksFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -105,7 +73,7 @@
     state: base
   product: CrateVendingMachineRestockMedicalFilled
   cost: 1750
-  category: cargoproduct-category-name-medical
+  category: Medical
   group: market
 
 - type: cargoProduct
@@ -114,8 +82,8 @@
     sprite: Objects/Specific/Service/vending_machine_restock.rsi
     state: base
   product: CrateVendingMachineRestockChemVendFilled
-  cost: 3820
-  category: cargoproduct-category-name-medical
+  cost: 3500
+  category: Medical
   group: market
 
 - type: cargoProduct
@@ -125,7 +93,7 @@
     state: base
   product: CrateVendingMachineRestockNutriMaxFilled
   cost: 2400
-  category: cargoproduct-category-name-hydroponics
+  category: Hydroponics
   group: market
 
 - type: cargoProduct
@@ -135,7 +103,7 @@
     state: base
   product: CrateVendingMachineRestockPTechFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -145,7 +113,7 @@
     state: base
   product: CrateVendingMachineRestockRobustSoftdrinksFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -155,7 +123,7 @@
     state: base
   product: CrateVendingMachineRestockSalvageEquipmentFilled
   cost: 1000
-  category: cargoproduct-category-name-engineering
+  category: Engineering
   group: market
 
 - type: cargoProduct
@@ -165,7 +133,7 @@
     state: base
   product: CrateVendingMachineRestockSecTechFilled
   cost: 2200
-  category: cargoproduct-category-name-security
+  category: Security
   group: market
 
 - type: cargoProduct
@@ -174,8 +142,8 @@
     sprite: Objects/Specific/Service/vending_machine_restock.rsi
     state: base
   product: CrateVendingMachineRestockSeedsFilled
-  cost: 3600
-  category: cargoproduct-category-name-hydroponics
+  cost: 3000
+  category: Hydroponics
   group: market
 
 - type: cargoProduct
@@ -185,7 +153,7 @@
     state: base
   product: CrateVendingMachineRestockSmokesFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -195,7 +163,7 @@
     state: base
   product: CrateVendingMachineRestockVendomatFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -205,7 +173,7 @@
     state: base
   product: CrateVendingMachineRestockRoboticsFilled
   cost: 1600
-  category: cargoproduct-category-name-science
+  category: Science
   group: market
 
 - type: cargoProduct
@@ -215,7 +183,7 @@
     state: base
   product: CrateVendingMachineRestockTankDispenserFilled
   cost: 1000
-  category: cargoproduct-category-name-atmospherics
+  category: Atmospherics
   group: market
 
 - type: cargoProduct
@@ -225,7 +193,7 @@
     state: base
   product: CrateVendingMachineRestockHappyHonkFilled
   cost: 2100
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -235,7 +203,7 @@
     state: base
   product: CrateVendingMachineRestockGetmoreChocolateCorpFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -245,7 +213,7 @@
     state: base
   product: CrateVendingMachineRestockChangFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -255,7 +223,7 @@
     state: base
   product: CrateVendingMachineRestockDiscountDansFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market
 
 - type: cargoProduct
@@ -265,5 +233,5 @@
     state: base
   product: CrateVendingMachineRestockDonutFilled
   cost: 1200
-  category: cargoproduct-category-name-service
+  category: Service
   group: market

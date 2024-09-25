@@ -4,24 +4,25 @@ using Content.Server.Atmos.Piping.EntitySystems;
 using Content.Server.NodeContainer;
 using Content.Server.NodeContainer.NodeGroups;
 using Content.Shared.Administration;
+using Robust.Server.Player;
 using Robust.Shared.Console;
 
 namespace Content.Server.Sandbox.Commands
 {
     [AnyCommand]
-    public sealed class ColorNetworkCommand : LocalizedCommands
+    public sealed class ColorNetworkCommand : IConsoleCommand
     {
-        [Dependency] private readonly IEntityManager _entManager = default!;
+        public string Command => "colornetwork";
+        public string Description => Loc.GetString("color-network-command-description");
+        public string Help => Loc.GetString("color-network-command-help-text", ("command",Command));
 
-        public override string Command => "colornetwork";
-
-        public override void Execute(IConsoleShell shell, string argStr, string[] args)
+        public void Execute(IConsoleShell shell, string argStr, string[] args)
         {
-            var sandboxManager = _entManager.System<SandboxSystem>();
+            var sandboxManager = EntitySystem.Get<SandboxSystem>();
             var adminManager = IoCManager.Resolve<IAdminManager>();
-            if (shell.IsClient && (!sandboxManager.IsSandboxEnabled && !adminManager.HasAdminFlag(shell.Player!, AdminFlags.Mapping)))
+            if (shell.IsClient && (!sandboxManager.IsSandboxEnabled && !adminManager.HasAdminFlag((IPlayerSession)shell.Player!, AdminFlags.Mapping)))
             {
-                shell.WriteError(Loc.GetString("cmd-colornetwork-no-access"));
+                shell.WriteError("You are not currently able to use mapping commands.");
             }
 
             if (args.Length != 3)
@@ -30,21 +31,25 @@ namespace Content.Server.Sandbox.Commands
                 return;
             }
 
+
+
+            var entityManager = IoCManager.Resolve<IEntityManager>();
+
             if (!int.TryParse(args[0], out var targetId))
             {
                 shell.WriteLine(Loc.GetString("shell-argument-must-be-number"));
                 return;
             }
 
-            var nent = new NetEntity(targetId);
+            var eUid = new EntityUid(targetId);
 
-            if (!_entManager.TryGetEntity(nent, out var eUid))
+            if (!eUid.IsValid() || !entityManager.EntityExists(eUid))
             {
                 shell.WriteLine(Loc.GetString("shell-invalid-entity-id"));
                 return;
             }
 
-            if (!_entManager.TryGetComponent(eUid, out NodeContainerComponent? nodeContainerComponent))
+            if (!entityManager.TryGetComponent(eUid, out NodeContainerComponent? nodeContainerComponent))
             {
                 shell.WriteLine(Loc.GetString("shell-entity-is-not-node-container"));
                 return;
@@ -70,15 +75,13 @@ namespace Content.Server.Sandbox.Commands
         {
             var group = nodeContainerComponent.Nodes[nodeGroupId.ToString().ToLower()].NodeGroup;
 
-            if (group == null)
-                return;
+            if (group == null) return;
 
             foreach (var x in group.Nodes)
             {
-                if (!_entManager.TryGetComponent(x.Owner, out AtmosPipeColorComponent? atmosPipeColorComponent))
-                    continue;
+                if (!IoCManager.Resolve<IEntityManager>().TryGetComponent<AtmosPipeColorComponent?>(x.Owner, out var atmosPipeColorComponent)) continue;
 
-                _entManager.System<AtmosPipeColorSystem>().SetColor(x.Owner, atmosPipeColorComponent, color);
+                EntitySystem.Get<AtmosPipeColorSystem>().SetColor(x.Owner, atmosPipeColorComponent, color);
             }
         }
     }

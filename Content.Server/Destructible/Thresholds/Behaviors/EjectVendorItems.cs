@@ -8,7 +8,7 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
     /// </summary>
     [Serializable]
     [DataDefinition]
-    public sealed partial class EjectVendorItems : IThresholdBehavior
+    public sealed class EjectVendorItems : IThresholdBehavior
     {
         /// <summary>
         ///     The percent amount of the total inventory that will be ejected.
@@ -29,7 +29,7 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
                 !system.EntityManager.TryGetComponent<TransformComponent>(owner, out var xform))
                 return;
 
-            var vendingMachineSystem = system.EntityManager.System<VendingMachineSystem>();
+            var vendingMachineSystem = EntitySystem.Get<VendingMachineSystem>();
             var inventory = vendingMachineSystem.GetAvailableInventory(owner, vendingcomp);
             if (inventory.Count <= 0)
                 return;

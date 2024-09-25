@@ -2,37 +2,12 @@
 using Content.Server.Power.Components;
 using Content.Shared.Examine;
 using Robust.Shared.Utility;
-using Content.Server.Chat.Systems;
-using Content.Server.Station.Systems;
-using Robust.Shared.Timing;
-using Robust.Shared.Audio;
-using Robust.Shared.Audio.Systems;
-using Content.Server.Power.EntitySystems;
 
 namespace Content.Server.PowerSink
 {
     public sealed class PowerSinkSystem : EntitySystem
     {
-        /// <summary>
-        /// Percentage of battery full to trigger the announcement warning at.
-        /// </summary>
-        private const float WarningMessageThreshold = 0.70f;
-
-        private readonly float[] _warningSoundThresholds = new[] { .80f, .90f, .95f, .98f };
-
-        /// <summary>
-        /// Length of time to delay explosion from battery full state -- this is used to play
-        /// a brief SFX winding up the explosion.
-        /// </summary>
-        /// <returns></returns>
-        private readonly TimeSpan _explosionDelayTime = TimeSpan.FromSeconds(1.465);
-
-        [Dependency] private readonly IGameTiming _gameTiming = default!;
-        [Dependency] private readonly ChatSystem _chat = default!;
         [Dependency] private readonly ExplosionSystem _explosionSystem = default!;
-        [Dependency] private readonly SharedAudioSystem _audio = default!;
-        [Dependency] private readonly StationSystem _station = default!;
-        [Dependency] private readonly BatterySystem _battery = default!;
 
         public override void Initialize()
         {
@@ -57,81 +32,24 @@ namespace Content.Server.PowerSink
 
         public override void Update(float frameTime)
         {
-            var toRemove = new RemQueue<(EntityUid Entity, PowerSinkComponent Sink)>();
-            var query = EntityQueryEnumerator<PowerSinkComponent, PowerConsumerComponent, BatteryComponent, TransformComponent>();
+            var toRemove = new RemQueue<(PowerSinkComponent Sink, BatteryComponent Battery)>();
 
             // Realistically it's gonna be like <5 per station.
-            while (query.MoveNext(out var entity, out var component, out var networkLoad, out var battery, out var transform))
+            foreach (var (comp, networkLoad, battery, xform) in EntityManager.EntityQuery<PowerSinkComponent, PowerConsumerComponent, BatteryComponent, TransformComponent>())
             {
-                if (!transform.Anchored)
-                    continue;
+                if (!xform.Anchored) continue;
 
-                _battery.SetCharge(entity, battery.CurrentCharge + networkLoad.NetworkLoad.ReceivingPower / 1000, battery);
+                battery.CurrentCharge += networkLoad.NetworkLoad.ReceivingPower / 1000;
+                if (battery.CurrentCharge < battery.MaxCharge) continue;
 
-                var currentBatteryThreshold = battery.CurrentCharge / battery.MaxCharge;
-
-                // Check for warning message threshold
-                if (!component.SentImminentExplosionWarningMessage &&
-                    currentBatteryThreshold >= WarningMessageThreshold)
-                {
-                    NotifyStationOfImminentExplosion(entity, component);
-                }
-
-                // Check for warning sound threshold
-                foreach (var testThreshold in _warningSoundThresholds)
-                {
-                    if (currentBatteryThreshold >= testThreshold &&
-                        testThreshold > component.HighestWarningSoundThreshold)
-                    {
-                        component.HighestWarningSoundThreshold = currentBatteryThreshold; // Don't re-play in future until next threshold hit
-                        _audio.PlayPvs(component.ElectricSound, entity); // Play SFX
-                        break;
-                    }
-                }
-
-                // Check for explosion
-                if (battery.CurrentCharge < battery.MaxCharge)
-                    continue;
-
-                if (component.ExplosionTime == null)
-                {
-                    // Set explosion sequence to start soon
-                    component.ExplosionTime = _gameTiming.CurTime.Add(_explosionDelayTime);
-
-                    // Wind-up SFX
-                    _audio.PlayPvs(component.ChargeFireSound, entity); // Play SFX
-                }
-                else if (_gameTiming.CurTime >= component.ExplosionTime)
-                {
-                    // Explode!
-                    toRemove.Add((entity, component));
-                }
+                toRemove.Add((comp, battery));
             }
 
-            foreach (var (entity, component) in toRemove)
+            foreach (var (comp, battery) in toRemove)
             {
-                _explosionSystem.QueueExplosion(entity, "PowerSink", 2000f, 4f, 20f, canCreateVacuum: true);
-                EntityManager.RemoveComponent(entity, component);
+                _explosionSystem.QueueExplosion(comp.Owner, "Default", 5 * (battery.MaxCharge / 2500000), 0.5f, 10, canCreateVacuum: false);
+                EntityManager.RemoveComponent(comp.Owner, comp);
             }
-        }
-
-        private void NotifyStationOfImminentExplosion(EntityUid uid, PowerSinkComponent powerSinkComponent)
-        {
-            if (powerSinkComponent.SentImminentExplosionWarningMessage)
-                return;
-
-            powerSinkComponent.SentImminentExplosionWarningMessage = true;
-            var station = _station.GetOwningStation(uid);
-
-            if (station == null)
-                return;
-
-            _chat.DispatchStationAnnouncement(
-                station.Value,
-                Loc.GetString("powersink-immiment-explosion-announcement"),
-                playDefaultSound: true,
-                colorOverride: Color.Yellow
-            );
         }
     }
 }

@@ -1,6 +1,10 @@
+using System;
+using System.Threading.Tasks;
 using Content.Client.Lobby;
+using Content.Client.Preferences;
 using Content.Server.Preferences.Managers;
 using Content.Shared.Preferences;
+using NUnit.Framework;
 using Robust.Client.State;
 using Robust.Shared.Network;
 
@@ -14,9 +18,9 @@ namespace Content.IntegrationTests.Tests.Lobby
         [Test]
         public async Task CreateDeleteCreateTest()
         {
-            await using var pair = await PoolManager.GetServerClient(new PoolSettings { InLobby = true });
-            var server = pair.Server;
-            var client = pair.Client;
+            await using var pairTracker = await PoolManager.GetServerClient(new PoolSettings{InLobby = true});
+            var server = pairTracker.Pair.Server;
+            var client = pairTracker.Pair.Client;
 
             var clientNetManager = client.ResolveDependency<IClientNetManager>();
             var clientStateManager = client.ResolveDependency<IStateManager>();
@@ -26,11 +30,11 @@ namespace Content.IntegrationTests.Tests.Lobby
 
 
             // Need to run them in sync to receive the messages.
-            await pair.RunTicksSync(1);
+            await PoolManager.RunTicksSync(pairTracker.Pair, 1);
 
             await PoolManager.WaitUntil(client, () => clientStateManager.CurrentState is LobbyState, 600);
 
-            Assert.That(clientNetManager.ServerChannel, Is.Not.Null);
+            Assert.NotNull(clientNetManager.ServerChannel);
 
             var clientNetId = clientNetManager.ServerChannel.UserId;
             HumanoidCharacterProfile profile = null;
@@ -41,12 +45,9 @@ namespace Content.IntegrationTests.Tests.Lobby
 
                 var clientCharacters = clientPrefManager.Preferences?.Characters;
                 Assert.That(clientCharacters, Is.Not.Null);
-                Assert.Multiple(() =>
-                {
-                    Assert.That(clientCharacters, Has.Count.EqualTo(1));
+                Assert.That(clientCharacters.Count, Is.EqualTo(1));
 
-                    Assert.That(clientStateManager.CurrentState, Is.TypeOf<LobbyState>());
-                });
+                Assert.That(clientStateManager.CurrentState, Is.TypeOf<LobbyState>());
 
                 profile = HumanoidCharacterProfile.Random();
                 clientPrefManager.CreateCharacter(profile);
@@ -54,7 +55,7 @@ namespace Content.IntegrationTests.Tests.Lobby
                 clientCharacters = clientPrefManager.Preferences?.Characters;
 
                 Assert.That(clientCharacters, Is.Not.Null);
-                Assert.That(clientCharacters, Has.Count.EqualTo(2));
+                Assert.That(clientCharacters.Count, Is.EqualTo(2));
                 Assert.That(clientCharacters[1].MemberwiseEquals(profile));
             });
 
@@ -64,7 +65,7 @@ namespace Content.IntegrationTests.Tests.Lobby
             {
                 var serverCharacters = serverPrefManager.GetPreferences(clientNetId).Characters;
 
-                Assert.That(serverCharacters, Has.Count.EqualTo(2));
+                Assert.That(serverCharacters.Count, Is.EqualTo(2));
                 Assert.That(serverCharacters[1].MemberwiseEquals(profile));
             });
 
@@ -95,7 +96,7 @@ namespace Content.IntegrationTests.Tests.Lobby
                 var clientCharacters = clientPrefManager.Preferences?.Characters;
 
                 Assert.That(clientCharacters, Is.Not.Null);
-                Assert.That(clientCharacters, Has.Count.EqualTo(2));
+                Assert.That(clientCharacters.Count, Is.EqualTo(2));
                 Assert.That(clientCharacters[1].MemberwiseEquals(profile));
             });
 
@@ -105,10 +106,10 @@ namespace Content.IntegrationTests.Tests.Lobby
             {
                 var serverCharacters = serverPrefManager.GetPreferences(clientNetId).Characters;
 
-                Assert.That(serverCharacters, Has.Count.EqualTo(2));
+                Assert.That(serverCharacters.Count, Is.EqualTo(2));
                 Assert.That(serverCharacters[1].MemberwiseEquals(profile));
             });
-            await pair.CleanReturnAsync();
+            await pairTracker.CleanReturnAsync();
         }
     }
 }

@@ -7,15 +7,12 @@
   components:
   - type: Sprite
     sprite: Objects/Devices/door_remote.rsi
-  - type: Item
-    storedRotation: -90
+    netsync: false
   - type: Access
   - type: DoorRemote
-  - type: StealTarget
-    stealGroup: DoorRemote
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteCommand
   name: command door remote
   components:
@@ -31,7 +28,7 @@
     - Command
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteSecurity
   name: security door remote
   components:
@@ -47,7 +44,7 @@
     - Security
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseSecurityCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteArmory
   name: armory door remote
   components:
@@ -63,7 +60,7 @@
     - Armory
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteService
   name: service door remote
   components:
@@ -79,7 +76,7 @@
     - Service
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteResearch
   name: research door remote
   components:
@@ -95,7 +92,7 @@
     - Research
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteCargo
   name: cargo door remote
   components:
@@ -111,7 +108,7 @@
     - Cargo
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteMedical
   name: medical door remote
   components:
@@ -127,7 +124,7 @@
     - Medical
 
 - type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
+  parent: DoorRemoteDefault
   id: DoorRemoteEngineering
   name: engineering door remote
   components:
@@ -141,24 +138,3 @@
   - type: Access
     groups:
     - Engineering
-
-- type: entity
-  parent: [DoorRemoteDefault, BaseCommandContraband]
-  id: DoorRemoteAll
-  name: super door remote
-  suffix: Admeme
-  components:
-  - type: Sprite
-    layers:
-    - state: door_remotebase
-    - state: door_remotelightscolour
-      color: "#2eba22"
-    - state: door_remotescreencolour
-      color: "#22871a"
-  - type: Access
-    groups:
-    - AllAccess
-    tags:
-    - CentralCommand
-    - NuclearOperative
-    - SyndicateAgent
