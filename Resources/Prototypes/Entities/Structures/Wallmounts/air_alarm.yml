@@ -28,8 +28,8 @@
     layerMap: "airAlarmBase"
     alarmStates:
       Normal: alarm0
-      Warning: alarm2
-      Danger: alarm1
+      Warning: alarm1  # Corvax-Resprite
+      Danger: alarm2 # Corvax-Resprite
     setOnDepowered:
       airAlarmBase: alarmp
   - type: Tag
@@ -99,7 +99,16 @@
   - type: InteractionOutline
   - type: Sprite
     sprite: Structures/Wallmounts/air_monitors.rsi
-    state: alarm_b1
+    layers:
+    - state: alarm_b1
+      map: [ "enum.ConstructionVisuals.Layer" ]
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.ConstructionVisuals.Key:
+        enum.ConstructionVisuals.Layer:
+          assembly: { state: alarm_b1 }
+          electronics: { state: alarm_b1 }
   - type: Construction
     graph: AirAlarm
     node: assembly

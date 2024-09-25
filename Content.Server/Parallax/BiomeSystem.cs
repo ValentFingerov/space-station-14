@@ -1,4 +1,5 @@
 using Content.Server.Decals;
+using Content.Server.Ghost.Roles.Components;
 using Content.Server.Shuttles.Events;
 using Content.Shared.Decals;
 using Content.Shared.Parallax.Biomes;
@@ -193,7 +194,7 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
         if (!TryComp<BiomeComponent>(targetMapUid, out var biome))
             return;
 
-        var targetArea = new Box2(targetMap.Position - 64f, targetMap.Position + 64f);
+        var targetArea = new Box2(targetMap.Position - 32f, targetMap.Position + 32f);
         Preload(targetMapUid, biome, targetArea);
     }
 
@@ -313,6 +314,9 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
 
     #region Load
 
+    /// <summary>
+    /// Loads all of the chunks for a particular biome, as well as handle any marker chunks.
+    /// </summary>
     private void LoadChunks(
         BiomeComponent component,
         EntityUid gridUid,
@@ -346,8 +350,8 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
                     for (var j = 0; j < 5; j++)
                     {
                         var point = new Vector2(
-                            chunk.X + buffer * rand.NextFloat() * (layerProto.Size - buffer),
-                            chunk.Y + buffer * rand.NextFloat() * (layerProto.Size - buffer));
+                            chunk.X + buffer + rand.NextFloat() * (layerProto.Size - buffer),
+                            chunk.Y + buffer + rand.NextFloat() * (layerProto.Size - buffer));
 
                         var coords = new EntityCoordinates(gridUid, point);
                         var tile = grid.LocalToTile(coords);
@@ -358,7 +362,13 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
 
                         for (var k = 0; k < layerProto.GroupCount; k++)
                         {
-                            Spawn(layerProto.Prototype, new EntityCoordinates(gridUid, point));
+                            // If it is a ghost role then purge it
+                            // TODO: This is *kind* of a bandaid but natural mobs spawns needs a lot more work.
+                            // Ideally we'd just have ghost role and non-ghost role variants for some stuff.
+                            var uid = EntityManager.CreateEntityUninitialized(layerProto.Prototype, new EntityCoordinates(gridUid, point));
+                            RemComp<GhostTakeoverAvailableComponent>(uid);
+                            RemComp<GhostRoleComponent>(uid);
+                            EntityManager.InitializeAndStartEntity(uid);
                         }
 
                         break;
@@ -381,6 +391,9 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
         }
     }
 
+    /// <summary>
+    /// Loads a particular queued chunk for a biome.
+    /// </summary>
     private void LoadChunk(
         BiomeComponent component,
         EntityUid gridUid,
@@ -419,7 +432,7 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
         tiles.Clear();
 
         // Now do entities
-        var loadedEntities = new List<EntityUid>();
+        var loadedEntities = new Dictionary<EntityUid, Vector2i>();
         component.LoadedEntities.Add(chunk, loadedEntities);
 
         for (var x = 0; x < ChunkSize; x++)
@@ -447,7 +460,7 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
                     _transform.AnchorEntity(ent, xform, gridUid, grid, indices);
                 }
 
-                loadedEntities.Add(ent);
+                loadedEntities.Add(ent, indices);
             }
         }
 
@@ -494,6 +507,9 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
 
     #region Unload
 
+    /// <summary>
+    /// Handles all of the queued chunk unloads for a particular biome.
+    /// </summary>
     private void UnloadChunks(BiomeComponent component, EntityUid gridUid, MapGridComponent grid, FastNoiseLite noise)
     {
         var active = _activeChunks[component];
@@ -510,6 +526,9 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
         }
     }
 
+    /// <summary>
+    /// Unloads a specific biome chunk.
+    /// </summary>
     private void UnloadChunk(BiomeComponent component, EntityUid gridUid, MapGridComponent grid, Vector2i chunk, FastNoiseLite noise, List<(Vector2i, Tile)> tiles)
     {
         // Reverse order to loading
@@ -529,11 +548,36 @@ public sealed partial class BiomeSystem : SharedBiomeSystem
         component.LoadedDecals.Remove(chunk);
 
         // Delete entities
-        // This is a TODO
         // Ideally any entities that aren't modified just get deleted and re-generated later
         // This is because if we want to save the map (e.g. persistent server) it makes the file much smaller
         // and also if the map is enormous will make stuff like physics broadphase much faster
-        // For now we'll just leave them because no entity diffs.
+        var xformQuery = GetEntityQuery<TransformComponent>();
+
+        foreach (var (ent, tile) in component.LoadedEntities[chunk])
+        {
+            if (Deleted(ent) || !xformQuery.TryGetComponent(ent, out var xform))
+            {
+                modified.Add(tile);
+                continue;
+            }
+
+            // It's moved
+            var entTile = grid.LocalToTile(xform.Coordinates);
+
+            if (!xform.Anchored || entTile != tile)
+            {
+                modified.Add(tile);
+                continue;
+            }
+
+            if (!EntityManager.IsDefault(ent))
+            {
+                modified.Add(tile);
+                continue;
+            }
+
+            Del(ent);
+        }
 
         component.LoadedEntities.Remove(chunk);
 

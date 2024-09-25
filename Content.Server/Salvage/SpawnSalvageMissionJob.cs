@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Content.Server.Atmos;
 using Content.Server.Atmos.Components;
 using Content.Server.CPUJob.JobQueues;
+using Content.Server.Ghost.Roles.Components;
 using Content.Server.Parallax;
 using Content.Server.Procedural;
 using Content.Server.Salvage.Expeditions;
@@ -138,26 +139,19 @@ public sealed class SpawnSalvageMissionJob : Job<bool>
         _entManager.InitializeAndStartEntity(ftlUid);
 
         var landingPadRadius = 24;
-        var minDungeonOffset = landingPadRadius + 12;
+        var minDungeonOffset = landingPadRadius + 4;
 
+        // We'll use the dungeon rotation as the spawn angle
         var dungeonRotation = _dungeon.GetDungeonRotation(_missionParams.Seed);
-        var dungeonSpawnRotation = new Angle(random.NextDouble() * Math.Tau);
-
-        // If the dungeon were to spawn facing the landing pad then bump the offset a bit
-        // This isn't robust but fine for now.
-        if (Math.Abs((dungeonRotation - dungeonSpawnRotation).Theta) < Math.PI / 2)
-        {
-            minDungeonOffset += 16;
-        }
 
         Dungeon dungeon = default!;
 
         if (config != SalvageMissionType.Mining)
         {
-            var maxDungeonOffset = minDungeonOffset + 24;
+            var maxDungeonOffset = minDungeonOffset + 12;
             var dungeonOffsetDistance = minDungeonOffset + (maxDungeonOffset - minDungeonOffset) * random.NextFloat();
-            var dungeonOffset = new Vector2(dungeonOffsetDistance, 0f);
-            dungeonOffset = dungeonSpawnRotation.RotateVec(dungeonOffset);
+            var dungeonOffset = new Vector2(0f, dungeonOffsetDistance);
+            dungeonOffset = dungeonRotation.RotateVec(dungeonOffset);
             var dungeonMod = _prototypeManager.Index<SalvageDungeonMod>(mission.Dungeon);
             var dungeonConfig = _prototypeManager.Index<DungeonConfigPrototype>(dungeonMod.Proto);
             dungeon =
@@ -359,7 +353,10 @@ public sealed class SpawnSalvageMissionJob : Job<bool>
 
                 foreach (var entry in EntitySpawnCollection.GetSpawns(mobGroup.Entries, random))
                 {
-                    _entManager.SpawnEntity(entry, spawnPosition);
+                    var uid = _entManager.CreateEntityUninitialized(entry, spawnPosition);
+                    _entManager.RemoveComponent<GhostTakeoverAvailableComponent>(uid);
+                    _entManager.RemoveComponent<GhostRoleComponent>(uid);
+                    _entManager.InitializeAndStartEntity(uid);
                 }
 
                 await SuspendIfOutOfTime();

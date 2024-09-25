@@ -12,8 +12,8 @@
       state: ertleader
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitaryLeader
-      - names_last
+      - NamesFirstMilitaryLeaderCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: RandomHumanoidSpawner
       settings: ERTLeader
 
@@ -22,15 +22,15 @@
   randomizeName: false
   components:
     - type: GhostRole
-      name: ERT Leader
-      description: Lead a team of specialists to resolve the stations issues.
+      name: ghost-role-information-ert-leader-name
+      description: ghost-role-information-ert-leader-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ ERTLeaderGear ]
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitaryLeader
-      - names_last
+      - NamesFirstMilitaryLeaderCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
 
 - type: entity
   id: RandomHumanoidSpawnerERTLeaderEVA
@@ -50,8 +50,8 @@
   parent: ERTLeader
   components:
     - type: GhostRole
-      name: ERT Leader
-      description: Lead a team of specialists to resolve the stations issues.
+      name: ghost-role-information-ert-leader-name
+      description: ghost-role-information-ert-leader-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ ERTLeaderGearEVA ]
@@ -69,8 +69,8 @@
       state: ertjanitor
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: RandomHumanoidSpawner
       settings: ERTJanitor
 
@@ -79,13 +79,13 @@
   parent: ERTLeader
   components:
     - type: GhostRole
-      name: ERT Janitor
-      description: Assist with custodial efforts to resolve the stations issues.
+      name: ghost-role-information-ert-janitor-name
+      description: ghost-role-information-ert-janitor-description
     - type: GhostTakeoverAvailable
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: Loadout
       prototypes: [ ERTJanitorGear ]
 
@@ -107,8 +107,8 @@
   parent: ERTJanitor
   components:
     - type: GhostRole
-      name: ERT Janitor
-      description: Assist with custodial efforts to resolve the stations issues.
+      name: ghost-role-information-ert-janitor-name
+      description: ghost-role-information-ert-janitor-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ ERTJanitorGearEVA ]
@@ -126,8 +126,8 @@
       state: ertengineer
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: RandomHumanoidSpawner
       settings: ERTEngineer
 
@@ -136,13 +136,13 @@
   parent: ERTLeader
   components:
     - type: GhostRole
-      name: ERT Engineer
-      description: Assist with engineering efforts to resolve the stations issues.
+      name: ghost-role-information-ert-engineer-name
+      description: ghost-role-information-ert-engineer-description
     - type: GhostTakeoverAvailable
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: Loadout
       prototypes: [ ERTEngineerGear ]
 
@@ -164,8 +164,8 @@
   parent: ERTEngineer
   components:
     - type: GhostRole
-      name: ERT Engineer
-      description: Assist with engineering efforts to resolve the stations issues.
+      name: ghost-role-information-ert-engineer-name
+      description: ghost-role-information-ert-engineer-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ ERTEngineerGearEVA ]
@@ -183,8 +183,8 @@
       state: ertsecurity
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: RandomHumanoidSpawner
       settings: ERTSecurity
 
@@ -193,13 +193,13 @@
   parent: ERTLeader
   components:
     - type: GhostRole
-      name: ERT Security
-      description: Assist with security efforts to resolve the stations issues.
+      name: ghost-role-information-ert-security-name
+      description: ghost-role-information-ert-security-description
     - type: GhostTakeoverAvailable
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: Loadout
       prototypes: [ ERTSecurityGear ]
 
@@ -221,8 +221,8 @@
   parent: ERTSecurity
   components:
     - type: GhostRole
-      name: ERT Security
-      description: Assist with security efforts to resolve the stations issues.
+      name: ghost-role-information-ert-security-name
+      description: ghost-role-information-ert-security-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ ERTSecurityGearEVA ]
@@ -240,8 +240,8 @@
       state: ertmedical
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: RandomHumanoidSpawner
       settings: ERTMedical
 
@@ -250,13 +250,13 @@
   parent: ERTLeader
   components:
     - type: GhostRole
-      name: ERT Medical
-      description: Assist with medicaling efforts to resolve the stations issues.
+      name: ghost-role-information-ert-medical-name
+      description: ghost-role-information-ert-medical-description
     - type: GhostTakeoverAvailable
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
     - type: Loadout
       prototypes: [ ERTMedicalGear ]
 
@@ -278,8 +278,8 @@
   parent: ERTMedical
   components:
     - type: GhostRole
-      name: ERT Medical
-      description: Assist with medicaling efforts to resolve the stations issues.
+      name: ghost-role-information-ert-medical-name
+      description: ghost-role-information-ert-medical-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ ERTMedicalGearEVA ]
@@ -303,13 +303,13 @@
     - type: Loadout
       prototypes: [CBURNGear]
     - type: GhostRole
-      name: CBURN Agent
-      description: A highly trained CentCom agent, capable of dealing with various threats.
+      name: ghost-role-information-cburn-agent-name
+      description: ghost-role-information-cburn-agent-description
     - type: GhostTakeoverAvailable
     - type: RandomMetadata
       nameSegments:
-      - NamesFirstMilitary
-      - names_last
+      - NamesFirstMilitaryCorvax # Corvax-Localization
+      - NamesLastERTCallsign # Corvax-Localization
 ## Central Command
 
 - type: entity
@@ -327,8 +327,8 @@
   id: CentcomOfficial
   components:
     - type: GhostRole
-      name: CentCom official
-      description: Inspect the station, jot down performance reviews for heads of staff, bug the Captain.
+      name: ghost-role-information-centcom-official-name
+      description: ghost-role-information-centcom-official-description
     - type: GhostTakeoverAvailable
     - type: Loadout
       prototypes: [ CentcomGear ]
@@ -344,7 +344,7 @@
       sprite: Mobs/Species/Human/parts.rsi
       state: full
     - type: RandomMetadata
-      nameSegments: [ names_death_commando ]
+      nameSegments: [ corvax_names_death_commando ] # Corvax-Localization
     - type: RandomHumanoidSpawner
       settings: SyndicateAgent
 
@@ -392,7 +392,7 @@
   randomizeName: false
   components:
     - type: GhostRole
-      name: Cluwne
-      description: Become a pitiful cluwne, your only goal in life is to find a sweet release from your suffering (usually by being beaten to death). A cluwne is not an antagonist but may defend itself. Crewmembers may murder cluwnes freely.
+      name: ghost-role-information-cluwne-name
+      description: ghost-role-information-cluwne-description
     - type: GhostTakeoverAvailable
     - type: Cluwne

@@ -13,11 +13,15 @@ public sealed class TypingIndicatorPrototype : IPrototype
     public string ID { get; } = default!;
 
     [DataField("spritePath")]
-    public ResourcePath SpritePath = new("/Textures/Effects/speech.rsi");
+    public ResPath SpritePath = new("/Textures/Effects/speech.rsi");
 
     [DataField("typingState", required: true)]
     public string TypingState = default!;
 
+    // Corvax-TypingIndicator-Start
+    [DataField("idleState", required: true)]
+    public string IdleState = default!;
+    // Corvax-TypingIndicator-End
     [DataField("offset")]
     public Vector2 Offset = new(0.5f, 0.5f);
 

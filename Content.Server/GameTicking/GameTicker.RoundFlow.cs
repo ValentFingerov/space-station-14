@@ -239,6 +239,7 @@ namespace Content.Server.GameTicking
             UpdateLateJoinStatus();
             AnnounceRound();
             UpdateInfoText();
+            RaiseLocalEvent(new RoundStartedEvent(RoundId)); // Corvax-RoundNotifications
 
 #if EXCEPTION_TOLERANCE
             }
@@ -254,7 +255,7 @@ namespace Content.Server.GameTicking
                     return;
                 }
 
-                _sawmill.Warning($"Exception caught while trying to start the round! Restarting round...");
+                _sawmill.Error($"Exception caught while trying to start the round! Restarting round...");
                 _runtimeLog.LogException(e, nameof(GameTicker));
                 _startingRound = false;
                 RestartRound();
@@ -362,6 +363,7 @@ namespace Content.Server.GameTicking
             RaiseNetworkEvent(new RoundEndMessageEvent(gamemodeTitle, roundEndText, roundDuration, RoundId,
                 listOfPlayerInfoFinal.Length, listOfPlayerInfoFinal, LobbySong,
                 new SoundCollectionSpecifier("RoundEnd").GetSound()));
+            RaiseLocalEvent(new RoundEndedEvent(RoundId, roundDuration)); // Corvax-RoundNotifications
         }
 
         public void RestartRound()
@@ -456,7 +458,6 @@ namespace Content.Server.GameTicking
             // Clear up any game rules.
             ClearGameRules();
 
-            _addedGameRules.Clear();
             _allPreviousGameRules.Clear();
 
             // Round restart cleanup event, so entity systems can reset.

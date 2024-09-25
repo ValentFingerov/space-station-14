@@ -63,21 +63,22 @@
   suffix: Full
   components:
   - type: Material
-    materials:
+  - type: PhysicalComposition
+    materialComposition:
       Plasma: 100
   - type: Stack
     stackType: Plasma
   - type: Sprite
-    state: plasma_3
+    state: plasma # Corvax-Resprite
   - type: Item
     heldPrefix: plasma
-  - type: Appearance
-    visuals:
-    - type: StackVisualizer
-      stackLayers:
-      - plasma
-      - plasma_2
-      - plasma_3
+#  - type: Appearance
+#    visuals:
+#    - type: StackVisualizer
+#      stackLayers:
+#      - plasma
+#      - plasma_2
+#      - plasma_3
   - type: Extractable
     grindableSolutionName: plasma
   - type: SolutionContainerManager
@@ -113,7 +114,8 @@
     - Sheet
     - DroneUsable
   - type: Material
-    materials:
+  - type: PhysicalComposition
+    materialComposition:
       Plastic: 100
   - type: Stack
     stackType: Plastic
@@ -141,13 +143,16 @@
     count: 1
 
 - type: entity
-  parent: SheetOtherBase
+  parent: [SheetOtherBase, FoodBase]
   id: SheetUranium
   name: uranium
   suffix: Full
   components:
   - type: Material
-    materials:
+  - type: Food
+    transferAmount: 10
+  - type: PhysicalComposition
+    materialComposition:
       Uranium: 100
   - type: Stack
     stackType: Uranium
@@ -163,10 +168,10 @@
   - type: Item
     heldPrefix: uranium
   - type: Extractable
-    grindableSolutionName: uranium
+    grindableSolutionName: food
   - type: SolutionContainerManager
     solutions:
-      uranium:
+      food:
         reagents:
         - ReagentId: Uranium
           Quantity: 10

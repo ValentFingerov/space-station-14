@@ -103,7 +103,7 @@ namespace Content.Client.Credits
 
         private IEnumerable<PatronEntry> LoadPatrons()
         {
-            var yamlStream = _resourceManager.ContentFileReadYaml(new ResourcePath("/Credits/Patrons.yml"));
+            var yamlStream = _resourceManager.ContentFileReadYaml(new ("/Credits/Patrons.yml"));
             var sequence = (YamlSequenceNode) yamlStream.Documents[0].RootNode;
 
             return sequence
@@ -155,6 +155,7 @@ namespace Content.Client.Credits
 
             AddSection(Loc.GetString("credits-window-contributors-section-title"), "GitHub.txt");
             AddSection(Loc.GetString("credits-window-codebases-section-title"), "SpaceStation13.txt");
+            AddSection(Loc.GetString("credits-window-tts-title"), "TTS.txt"); // Corvax-TTS
             AddSection(Loc.GetString("credits-window-original-remake-team-section-title"), "OriginalRemake.txt");
             AddSection(Loc.GetString("credits-window-special-thanks-section-title"), "SpecialThanks.txt", true);
 

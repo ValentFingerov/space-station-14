@@ -1,4 +1,4 @@
-using Content.Server.Access.Systems;
+﻿using Content.Server.Access.Systems;
 using Content.Server.DetailExaminable;
 using Content.Server.Hands.Systems;
 using Content.Server.Humanoid;
@@ -231,7 +231,7 @@ public sealed class StationSpawningSystem : EntitySystem
 
         _accessSystem.SetAccessToJob(cardId, jobPrototype, extendedAccess);
 
-        _pdaSystem.SetOwner(pdaComponent, characterName);
+        _pdaSystem.SetOwner(idUid.Value, pdaComponent, characterName);
     }
 
 

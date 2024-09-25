@@ -217,6 +217,7 @@ namespace Content.Server.Database
         public string Sex { get; set; } = null!;
         public string Gender { get; set; } = null!;
         public string Species { get; set; } = null!;
+        public string Voice { get; set; } = null!; // Corvax-TTS
         [Column(TypeName = "jsonb")] public JsonDocument? Markings { get; set; } = null!;
         public string HairName { get; set; } = null!;
         public string HairColor { get; set; } = null!;
@@ -459,6 +460,14 @@ namespace Content.Server.Database
         /// Ban is a datacenter range, connections usually imply usage of a VPN service.
         /// </summary>
         Datacenter = 1 << 0,
+
+        /// <summary>
+        /// Ban only matches the IP.
+        /// </summary>
+        /// <remarks>
+        /// Intended use is for users with shared connections. This should not be used as an alternative to <see cref="Datacenter"/>.
+        /// </remarks>
+        IP = 1 << 1,
         // @formatter:on
     }
 
